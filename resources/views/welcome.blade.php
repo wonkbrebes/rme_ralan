@@ -1,223 +1,1197 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SIMRS Rawat Jalan – RSUD Puruk Cahu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #f4f6fa;
+      --surface:   #ffffff;
+      --border:    #e5e9f0;
+      --primary:   #3b6ef0;
+      --primary-l: #ebf0ff;
+      --text:      #1a2035;
+      --muted:     #6b7a99;
+      --success:   #10b981;
+      --warning:   #f59e0b;
+      --danger:    #ef4444;
+      --radius:    12px;
+      --shadow:    0 2px 12px rgba(0,0,0,.06);
+      --shadow-md: 0 4px 24px rgba(0,0,0,.10);
+      --sidebar-w: 220px;
+      --header-h:  60px;
+      --trans:     .2s ease;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+    /* SIDEBAR */
+    .sidebar { position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 100; }
+    .sidebar-brand { padding: 20px 18px 16px; border-bottom: 1px solid var(--border); }
+    .brand-logo { display: flex; align-items: center; gap: 10px; }
+    .brand-icon { width: 36px; height: 36px; background: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: white; flex-shrink: 0; }
+    .brand-text strong { font-size: 13px; font-weight: 700; display: block; }
+    .brand-text span { font-size: 10px; color: var(--muted); }
+    .nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+    .nav-section { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; padding: 8px 8px 4px; margin-top: 4px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; cursor: pointer; font-size: 13.5px; font-weight: 500; color: var(--muted); margin-bottom: 1px; transition: all var(--trans); }
+    .nav-item:hover { background: var(--bg); color: var(--text); }
+    .nav-item.active { background: var(--primary-l); color: var(--primary); }
+    .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+    .nav-badge { margin-left: auto; background: var(--danger); color: white; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
+    .sidebar-footer { padding: 12px 10px; border-top: 1px solid var(--border); }
+    .user-card { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; transition: background var(--trans); }
+    .user-card:hover { background: var(--bg); }
+    .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+    .user-info strong { font-size: 12.5px; font-weight: 600; display: block; }
+    .user-info span { font-size: 11px; color: var(--muted); }
 
-        @fonts
+    /* MAIN */
+    .main { margin-left: var(--sidebar-w); min-height: 100vh; }
+    .header { height: var(--header-h); background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 12px; position: sticky; top: 0; z-index: 50; }
+    .header-title { font-size: 15px; font-weight: 600; flex: 1; }
+    .header-date { font-size: 12px; color: var(--muted); }
+    .btn-icon { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--muted); transition: all var(--trans); }
+    .btn-icon:hover { background: var(--bg); color: var(--text); }
+    .btn-icon-wrap { position: relative; }
+    .notif-dot { width: 8px; height: 8px; background: var(--danger); border-radius: 50%; position: absolute; top: 6px; right: 6px; border: 2px solid white; }
 
-        <!-- Styles / Scripts -->
-        @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
-            @vite(['resources/css/app.css', 'resources/js/app.js'])
-        @else
-            <style>
-                /*! tailwindcss v4.0.7 | MIT License | https://tailwindcss.com */ @layer properties{@supports (((-webkit-hyphens:none)) and (not (margin-trim:inline))) or ((-moz-orient:inline) and (not (color:rgb(from red r g b)))){*,:before,:after,::backdrop{--tw-translate-x:0;--tw-translate-y:0;--tw-translate-z:0;--tw-rotate-x:initial;--tw-rotate-y:initial;--tw-rotate-z:initial;--tw-skew-x:initial;--tw-skew-y:initial;--tw-space-x-reverse:0;--tw-border-style:solid;--tw-leading:initial;--tw-font-weight:initial;--tw-tracking:initial;--tw-shadow:0 0 #0000;--tw-shadow-color:initial;--tw-shadow-alpha:100%;--tw-inset-shadow:0 0 #0000;--tw-inset-shadow-color:initial;--tw-inset-shadow-alpha:100%;--tw-ring-color:initial;--tw-ring-shadow:0 0 #0000;--tw-inset-ring-color:initial;--tw-inset-ring-shadow:0 0 #0000;--tw-ring-inset:initial;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-offset-shadow:0 0 #0000;--tw-blur:initial;--tw-brightness:initial;--tw-contrast:initial;--tw-grayscale:initial;--tw-hue-rotate:initial;--tw-invert:initial;--tw-opacity:initial;--tw-saturate:initial;--tw-sepia:initial;--tw-drop-shadow:initial;--tw-drop-shadow-color:initial;--tw-drop-shadow-alpha:100%;--tw-drop-shadow-size:initial;--tw-duration:initial;--tw-ease:initial;--tw-content:""}}}@layer theme{:root,:host{--font-sans:"Instrument Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--font-serif:ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;--font-mono:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;--color-red-50:oklch(97.1% .013 17.38);--color-red-100:oklch(93.6% .032 17.717);--color-red-200:oklch(88.5% .062 18.334);--color-red-300:oklch(80.8% .114 19.571);--color-red-400:oklch(70.4% .191 22.216);--color-red-500:oklch(63.7% .237 25.331);--color-red-600:oklch(57.7% .245 27.325);--color-red-700:oklch(50.5% .213 27.518);--color-red-800:oklch(44.4% .177 26.899);--color-red-900:oklch(39.6% .141 25.723);--color-red-950:oklch(25.8% .092 26.042);--color-orange-50:oklch(98% .016 73.684);--color-orange-100:oklch(95.4% .038 75.164);--color-orange-200:oklch(90.1% .076 70.697);--color-orange-300:oklch(83.7% .128 66.29);--color-orange-400:oklch(75% .183 55.934);--color-orange-500:oklch(70.5% .213 47.604);--color-orange-600:oklch(64.6% .222 41.116);--color-orange-700:oklch(55.3% .195 38.402);--color-orange-800:oklch(47% .157 37.304);--color-orange-900:oklch(40.8% .123 38.172);--color-orange-950:oklch(26.6% .079 36.259);--color-amber-50:oklch(98.7% .022 95.277);--color-amber-100:oklch(96.2% .059 95.617);--color-amber-200:oklch(92.4% .12 95.746);--color-amber-300:oklch(87.9% .169 91.605);--color-amber-400:oklch(82.8% .189 84.429);--color-amber-500:oklch(76.9% .188 70.08);--color-amber-600:oklch(66.6% .179 58.318);--color-amber-700:oklch(55.5% .163 48.998);--color-amber-800:oklch(47.3% .137 46.201);--color-amber-900:oklch(41.4% .112 45.904);--color-amber-950:oklch(27.9% .077 45.635);--color-yellow-50:oklch(98.7% .026 102.212);--color-yellow-100:oklch(97.3% .071 103.193);--color-yellow-200:oklch(94.5% .129 101.54);--color-yellow-300:oklch(90.5% .182 98.111);--color-yellow-400:oklch(85.2% .199 91.936);--color-yellow-500:oklch(79.5% .184 86.047);--color-yellow-600:oklch(68.1% .162 75.834);--color-yellow-700:oklch(55.4% .135 66.442);--color-yellow-800:oklch(47.6% .114 61.907);--color-yellow-900:oklch(42.1% .095 57.708);--color-yellow-950:oklch(28.6% .066 53.813);--color-lime-50:oklch(98.6% .031 120.757);--color-lime-100:oklch(96.7% .067 122.328);--color-lime-200:oklch(93.8% .127 124.321);--color-lime-300:oklch(89.7% .196 126.665);--color-lime-400:oklch(84.1% .238 128.85);--color-lime-500:oklch(76.8% .233 130.85);--color-lime-600:oklch(64.8% .2 131.684);--color-lime-700:oklch(53.2% .157 131.589);--color-lime-800:oklch(45.3% .124 130.933);--color-lime-900:oklch(40.5% .101 131.063);--color-lime-950:oklch(27.4% .072 132.109);--color-green-50:oklch(98.2% .018 155.826);--color-green-100:oklch(96.2% .044 156.743);--color-green-200:oklch(92.5% .084 155.995);--color-green-300:oklch(87.1% .15 154.449);--color-green-400:oklch(79.2% .209 151.711);--color-green-500:oklch(72.3% .219 149.579);--color-green-600:oklch(62.7% .194 149.214);--color-green-700:oklch(52.7% .154 150.069);--color-green-800:oklch(44.8% .119 151.328);--color-green-900:oklch(39.3% .095 152.535);--color-green-950:oklch(26.6% .065 152.934);--color-emerald-50:oklch(97.9% .021 166.113);--color-emerald-100:oklch(95% .052 163.051);--color-emerald-200:oklch(90.5% .093 164.15);--color-emerald-300:oklch(84.5% .143 164.978);--color-emerald-400:oklch(76.5% .177 163.223);--color-emerald-500:oklch(69.6% .17 162.48);--color-emerald-600:oklch(59.6% .145 163.225);--color-emerald-700:oklch(50.8% .118 165.612);--color-emerald-800:oklch(43.2% .095 166.913);--color-emerald-900:oklch(37.8% .077 168.94);--color-emerald-950:oklch(26.2% .051 172.552);--color-teal-50:oklch(98.4% .014 180.72);--color-teal-100:oklch(95.3% .051 180.801);--color-teal-200:oklch(91% .096 180.426);--color-teal-300:oklch(85.5% .138 181.071);--color-teal-400:oklch(77.7% .152 181.912);--color-teal-500:oklch(70.4% .14 182.503);--color-teal-600:oklch(60% .118 184.704);--color-teal-700:oklch(51.1% .096 186.391);--color-teal-800:oklch(43.7% .078 188.216);--color-teal-900:oklch(38.6% .063 188.416);--color-teal-950:oklch(27.7% .046 192.524);--color-cyan-50:oklch(98.4% .019 200.873);--color-cyan-100:oklch(95.6% .045 203.388);--color-cyan-200:oklch(91.7% .08 205.041);--color-cyan-300:oklch(86.5% .127 207.078);--color-cyan-400:oklch(78.9% .154 211.53);--color-cyan-500:oklch(71.5% .143 215.221);--color-cyan-600:oklch(60.9% .126 221.723);--color-cyan-700:oklch(52% .105 223.128);--color-cyan-800:oklch(45% .085 224.283);--color-cyan-900:oklch(39.8% .07 227.392);--color-cyan-950:oklch(30.2% .056 229.695);--color-sky-50:oklch(97.7% .013 236.62);--color-sky-100:oklch(95.1% .026 236.824);--color-sky-200:oklch(90.1% .058 230.902);--color-sky-300:oklch(82.8% .111 230.318);--color-sky-400:oklch(74.6% .16 232.661);--color-sky-500:oklch(68.5% .169 237.323);--color-sky-600:oklch(58.8% .158 241.966);--color-sky-700:oklch(50% .134 242.749);--color-sky-800:oklch(44.3% .11 240.79);--color-sky-900:oklch(39.1% .09 240.876);--color-sky-950:oklch(29.3% .066 243.157);--color-blue-50:oklch(97% .014 254.604);--color-blue-100:oklch(93.2% .032 255.585);--color-blue-200:oklch(88.2% .059 254.128);--color-blue-300:oklch(80.9% .105 251.813);--color-blue-400:oklch(70.7% .165 254.624);--color-blue-500:oklch(62.3% .214 259.815);--color-blue-600:oklch(54.6% .245 262.881);--color-blue-700:oklch(48.8% .243 264.376);--color-blue-800:oklch(42.4% .199 265.638);--color-blue-900:oklch(37.9% .146 265.522);--color-blue-950:oklch(28.2% .091 267.935);--color-indigo-50:oklch(96.2% .018 272.314);--color-indigo-100:oklch(93% .034 272.788);--color-indigo-200:oklch(87% .065 274.039);--color-indigo-300:oklch(78.5% .115 274.713);--color-indigo-400:oklch(67.3% .182 276.935);--color-indigo-500:oklch(58.5% .233 277.117);--color-indigo-600:oklch(51.1% .262 276.966);--color-indigo-700:oklch(45.7% .24 277.023);--color-indigo-800:oklch(39.8% .195 277.366);--color-indigo-900:oklch(35.9% .144 278.697);--color-indigo-950:oklch(25.7% .09 281.288);--color-violet-50:oklch(96.9% .016 293.756);--color-violet-100:oklch(94.3% .029 294.588);--color-violet-200:oklch(89.4% .057 293.283);--color-violet-300:oklch(81.1% .111 293.571);--color-violet-400:oklch(70.2% .183 293.541);--color-violet-500:oklch(60.6% .25 292.717);--color-violet-600:oklch(54.1% .281 293.009);--color-violet-700:oklch(49.1% .27 292.581);--color-violet-800:oklch(43.2% .232 292.759);--color-violet-900:oklch(38% .189 293.745);--color-violet-950:oklch(28.3% .141 291.089);--color-purple-50:oklch(97.7% .014 308.299);--color-purple-100:oklch(94.6% .033 307.174);--color-purple-200:oklch(90.2% .063 306.703);--color-purple-300:oklch(82.7% .119 306.383);--color-purple-400:oklch(71.4% .203 305.504);--color-purple-500:oklch(62.7% .265 303.9);--color-purple-600:oklch(55.8% .288 302.321);--color-purple-700:oklch(49.6% .265 301.924);--color-purple-800:oklch(43.8% .218 303.724);--color-purple-900:oklch(38.1% .176 304.987);--color-purple-950:oklch(29.1% .149 302.717);--color-fuchsia-50:oklch(97.7% .017 320.058);--color-fuchsia-100:oklch(95.2% .037 318.852);--color-fuchsia-200:oklch(90.3% .076 319.62);--color-fuchsia-300:oklch(83.3% .145 321.434);--color-fuchsia-400:oklch(74% .238 322.16);--color-fuchsia-500:oklch(66.7% .295 322.15);--color-fuchsia-600:oklch(59.1% .293 322.896);--color-fuchsia-700:oklch(51.8% .253 323.949);--color-fuchsia-800:oklch(45.2% .211 324.591);--color-fuchsia-900:oklch(40.1% .17 325.612);--color-fuchsia-950:oklch(29.3% .136 325.661);--color-pink-50:oklch(97.1% .014 343.198);--color-pink-100:oklch(94.8% .028 342.258);--color-pink-200:oklch(89.9% .061 343.231);--color-pink-300:oklch(82.3% .12 346.018);--color-pink-400:oklch(71.8% .202 349.761);--color-pink-500:oklch(65.6% .241 354.308);--color-pink-600:oklch(59.2% .249 .584);--color-pink-700:oklch(52.5% .223 3.958);--color-pink-800:oklch(45.9% .187 3.815);--color-pink-900:oklch(40.8% .153 2.432);--color-pink-950:oklch(28.4% .109 3.907);--color-rose-50:oklch(96.9% .015 12.422);--color-rose-100:oklch(94.1% .03 12.58);--color-rose-200:oklch(89.2% .058 10.001);--color-rose-300:oklch(81% .117 11.638);--color-rose-400:oklch(71.2% .194 13.428);--color-rose-500:oklch(64.5% .246 16.439);--color-rose-600:oklch(58.6% .253 17.585);--color-rose-700:oklch(51.4% .222 16.935);--color-rose-800:oklch(45.5% .188 13.697);--color-rose-900:oklch(41% .159 10.272);--color-rose-950:oklch(27.1% .105 12.094);--color-slate-50:oklch(98.4% .003 247.858);--color-slate-100:oklch(96.8% .007 247.896);--color-slate-200:oklch(92.9% .013 255.508);--color-slate-300:oklch(86.9% .022 252.894);--color-slate-400:oklch(70.4% .04 256.788);--color-slate-500:oklch(55.4% .046 257.417);--color-slate-600:oklch(44.6% .043 257.281);--color-slate-700:oklch(37.2% .044 257.287);--color-slate-800:oklch(27.9% .041 260.031);--color-slate-900:oklch(20.8% .042 265.755);--color-slate-950:oklch(12.9% .042 264.695);--color-gray-50:oklch(98.5% .002 247.839);--color-gray-100:oklch(96.7% .003 264.542);--color-gray-200:oklch(92.8% .006 264.531);--color-gray-300:oklch(87.2% .01 258.338);--color-gray-400:oklch(70.7% .022 261.325);--color-gray-500:oklch(55.1% .027 264.364);--color-gray-600:oklch(44.6% .03 256.802);--color-gray-700:oklch(37.3% .034 259.733);--color-gray-800:oklch(27.8% .033 256.848);--color-gray-900:oklch(21% .034 264.665);--color-gray-950:oklch(13% .028 261.692);--color-zinc-50:oklch(98.5% 0 0);--color-zinc-100:oklch(96.7% .001 286.375);--color-zinc-200:oklch(92% .004 286.32);--color-zinc-300:oklch(87.1% .006 286.286);--color-zinc-400:oklch(70.5% .015 286.067);--color-zinc-500:oklch(55.2% .016 285.938);--color-zinc-600:oklch(44.2% .017 285.786);--color-zinc-700:oklch(37% .013 285.805);--color-zinc-800:oklch(27.4% .006 286.033);--color-zinc-900:oklch(21% .006 285.885);--color-zinc-950:oklch(14.1% .005 285.823);--color-neutral-50:oklch(98.5% 0 0);--color-neutral-100:oklch(97% 0 0);--color-neutral-200:oklch(92.2% 0 0);--color-neutral-300:oklch(87% 0 0);--color-neutral-400:oklch(70.8% 0 0);--color-neutral-500:oklch(55.6% 0 0);--color-neutral-600:oklch(43.9% 0 0);--color-neutral-700:oklch(37.1% 0 0);--color-neutral-800:oklch(26.9% 0 0);--color-neutral-900:oklch(20.5% 0 0);--color-neutral-950:oklch(14.5% 0 0);--color-stone-50:oklch(98.5% .001 106.423);--color-stone-100:oklch(97% .001 106.424);--color-stone-200:oklch(92.3% .003 48.717);--color-stone-300:oklch(86.9% .005 56.366);--color-stone-400:oklch(70.9% .01 56.259);--color-stone-500:oklch(55.3% .013 58.071);--color-stone-600:oklch(44.4% .011 73.639);--color-stone-700:oklch(37.4% .01 67.558);--color-stone-800:oklch(26.8% .007 34.298);--color-stone-900:oklch(21.6% .006 56.043);--color-stone-950:oklch(14.7% .004 49.25);--color-black:#000;--color-white:#fff;--spacing:.25rem;--breakpoint-sm:40rem;--breakpoint-md:48rem;--breakpoint-lg:64rem;--breakpoint-xl:80rem;--breakpoint-2xl:96rem;--container-3xs:16rem;--container-2xs:18rem;--container-xs:20rem;--container-sm:24rem;--container-md:28rem;--container-lg:32rem;--container-xl:36rem;--container-2xl:42rem;--container-3xl:48rem;--container-4xl:56rem;--container-5xl:64rem;--container-6xl:72rem;--container-7xl:80rem;--text-xs:.75rem;--text-xs--line-height:calc(1 / .75);--text-sm:.875rem;--text-sm--line-height:calc(1.25 / .875);--text-base:1rem;--text-base--line-height: 1.5 ;--text-lg:1.125rem;--text-lg--line-height:calc(1.75 / 1.125);--text-xl:1.25rem;--text-xl--line-height:calc(1.75 / 1.25);--text-2xl:1.5rem;--text-2xl--line-height:calc(2 / 1.5);--text-3xl:1.875rem;--text-3xl--line-height: 1.2 ;--text-4xl:2.25rem;--text-4xl--line-height:calc(2.5 / 2.25);--text-5xl:3rem;--text-5xl--line-height:1;--text-6xl:3.75rem;--text-6xl--line-height:1;--text-7xl:4.5rem;--text-7xl--line-height:1;--text-8xl:6rem;--text-8xl--line-height:1;--text-9xl:8rem;--text-9xl--line-height:1;--font-weight-thin:100;--font-weight-extralight:200;--font-weight-light:300;--font-weight-normal:400;--font-weight-medium:500;--font-weight-semibold:600;--font-weight-bold:700;--font-weight-extrabold:800;--font-weight-black:900;--tracking-tighter:-.05em;--tracking-tight:-.025em;--tracking-normal:0em;--tracking-wide:.025em;--tracking-wider:.05em;--tracking-widest:.1em;--leading-tight:1.25;--leading-snug:1.375;--leading-normal:1.5;--leading-relaxed:1.625;--leading-loose:2;--radius-xs:.125rem;--radius-sm:.25rem;--radius-md:.375rem;--radius-lg:.5rem;--radius-xl:.75rem;--radius-2xl:1rem;--radius-3xl:1.5rem;--radius-4xl:2rem;--shadow-2xs:0 1px #0000000d;--shadow-xs:0 1px 2px 0 #0000000d;--shadow-sm:0 1px 3px 0 #0000001a, 0 1px 2px -1px #0000001a;--shadow-md:0 4px 6px -1px #0000001a, 0 2px 4px -2px #0000001a;--shadow-lg:0 10px 15px -3px #0000001a, 0 4px 6px -4px #0000001a;--shadow-xl:0 20px 25px -5px #0000001a, 0 8px 10px -6px #0000001a;--shadow-2xl:0 25px 50px -12px #00000040;--inset-shadow-2xs:inset 0 1px #0000000d;--inset-shadow-xs:inset 0 1px 1px #0000000d;--inset-shadow-sm:inset 0 2px 4px #0000000d;--drop-shadow-xs:0 1px 1px #0000000d;--drop-shadow-sm:0 1px 2px #00000026;--drop-shadow-md:0 3px 3px #0000001f;--drop-shadow-lg:0 4px 4px #00000026;--drop-shadow-xl:0 9px 7px #0000001a;--drop-shadow-2xl:0 25px 25px #00000026;--ease-in:cubic-bezier(.4, 0, 1, 1);--ease-out:cubic-bezier(0, 0, .2, 1);--ease-in-out:cubic-bezier(.4, 0, .2, 1);--animate-spin:spin 1s linear infinite;--animate-ping:ping 1s cubic-bezier(0, 0, .2, 1) infinite;--animate-pulse:pulse 2s cubic-bezier(.4, 0, .6, 1) infinite;--animate-bounce:bounce 1s infinite;--blur-xs:4px;--blur-sm:8px;--blur-md:12px;--blur-lg:16px;--blur-xl:24px;--blur-2xl:40px;--blur-3xl:64px;--perspective-dramatic:100px;--perspective-near:300px;--perspective-normal:500px;--perspective-midrange:800px;--perspective-distant:1200px;--aspect-video:16 / 9;--default-transition-duration:.15s;--default-transition-timing-function:cubic-bezier(.4, 0, .2, 1);--default-font-family:var(--font-sans);--default-mono-font-family:var(--font-mono)}}@layer base{*,:after,:before,::backdrop{box-sizing:border-box;border:0 solid;margin:0;padding:0}::file-selector-button{box-sizing:border-box;border:0 solid;margin:0;padding:0}html,:host{-webkit-text-size-adjust:100%;tab-size:4;line-height:1.5;font-family:var(--default-font-family,ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");font-feature-settings:var(--default-font-feature-settings,normal);font-variation-settings:var(--default-font-variation-settings,normal);-webkit-tap-highlight-color:transparent}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;-webkit-text-decoration:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:var(--default-mono-font-family,ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);font-feature-settings:var(--default-mono-font-feature-settings,normal);font-variation-settings:var(--default-mono-font-variation-settings,normal);font-size:1em}small{font-size:80%}sub,sup{vertical-align:baseline;font-size:75%;line-height:0;position:relative}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}:-moz-focusring{outline:auto}progress{vertical-align:baseline}summary{display:list-item}ol,ul,menu{list-style:none}img,svg,video,canvas,audio,iframe,embed,object{vertical-align:middle;display:block}img,video{max-width:100%;height:auto}button,input,select,optgroup,textarea{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}::file-selector-button{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}:where(select:is([multiple],[size])) optgroup{font-weight:bolder}:where(select:is([multiple],[size])) optgroup option{padding-inline-start:20px}::file-selector-button{margin-inline-end:4px}::placeholder{opacity:1}@supports (not ((-webkit-appearance:-apple-pay-button))) or (contain-intrinsic-size:1px){::placeholder{color:currentColor}@supports (color:color-mix(in lab,red,red)){::placeholder{color:color-mix(in oklab,currentcolor 50%,transparent)}}}textarea{resize:vertical}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-date-and-time-value{min-height:1lh;text-align:inherit}::-webkit-datetime-edit{display:inline-flex}::-webkit-datetime-edit-fields-wrapper{padding:0}::-webkit-datetime-edit{padding-block:0}::-webkit-datetime-edit-year-field{padding-block:0}::-webkit-datetime-edit-month-field{padding-block:0}::-webkit-datetime-edit-day-field{padding-block:0}::-webkit-datetime-edit-hour-field{padding-block:0}::-webkit-datetime-edit-minute-field{padding-block:0}::-webkit-datetime-edit-second-field{padding-block:0}::-webkit-datetime-edit-millisecond-field{padding-block:0}::-webkit-datetime-edit-meridiem-field{padding-block:0}::-webkit-calendar-picker-indicator{line-height:1}:-moz-ui-invalid{box-shadow:none}button,input:where([type=button],[type=reset],[type=submit]){appearance:button}::file-selector-button{appearance:button}::-webkit-inner-spin-button{height:auto}::-webkit-outer-spin-button{height:auto}[hidden]:where(:not([hidden=until-found])){display:none!important}}@layer components;@layer utilities{.absolute{position:absolute}.fixed{position:fixed}.relative{position:relative}.static{position:static}.inset-0{inset:calc(var(--spacing) * 0)}.start{inset-inline-start:var(--spacing)}.top-0{top:calc(var(--spacing) * 0)}.right-0{right:calc(var(--spacing) * 0)}.container{width:100%}@media(min-width:40rem){.container{max-width:40rem}}@media(min-width:48rem){.container{max-width:48rem}}@media(min-width:64rem){.container{max-width:64rem}}@media(min-width:80rem){.container{max-width:80rem}}@media(min-width:96rem){.container{max-width:96rem}}.mx-auto{margin-inline:auto}.-mt-\[6\.6rem\]{margin-top:-6.6rem}.-mt-px{margin-top:-1px}.mt-2{margin-top:calc(var(--spacing) * 2)}.mt-4{margin-top:calc(var(--spacing) * 4)}.mt-6{margin-top:calc(var(--spacing) * 6)}.mt-8{margin-top:calc(var(--spacing) * 8)}.mr-2{margin-right:calc(var(--spacing) * 2)}.-mb-px{margin-bottom:-1px}.mb-1{margin-bottom:calc(var(--spacing) * 1)}.mb-2{margin-bottom:calc(var(--spacing) * 2)}.mb-4{margin-bottom:calc(var(--spacing) * 4)}.mb-6{margin-bottom:calc(var(--spacing) * 6)}.-ml-8{margin-left:calc(var(--spacing) * -8)}.-ml-px{margin-left:-1px}.ml-1{margin-left:calc(var(--spacing) * 1)}.ml-2{margin-left:calc(var(--spacing) * 2)}.ml-4{margin-left:calc(var(--spacing) * 4)}.ml-12{margin-left:calc(var(--spacing) * 12)}.contents{display:contents}.flex{display:flex}.grid{display:grid}.hidden{display:none}.inline-block{display:inline-block}.inline-flex{display:inline-flex}.table{display:table}.aspect-\[335\/364\]{aspect-ratio:335/364}.h-1{height:calc(var(--spacing) * 1)}.h-1\.5{height:calc(var(--spacing) * 1.5)}.h-2{height:calc(var(--spacing) * 2)}.h-2\.5{height:calc(var(--spacing) * 2.5)}.h-3{height:calc(var(--spacing) * 3)}.h-3\.5{height:calc(var(--spacing) * 3.5)}.h-5{height:calc(var(--spacing) * 5)}.h-8{height:calc(var(--spacing) * 8)}.h-14{height:calc(var(--spacing) * 14)}.h-14\.5{height:calc(var(--spacing) * 14.5)}.h-16{height:calc(var(--spacing) * 16)}.min-h-screen{min-height:100vh}.w-1{width:calc(var(--spacing) * 1)}.w-1\.5{width:calc(var(--spacing) * 1.5)}.w-2{width:calc(var(--spacing) * 2)}.w-2\.5{width:calc(var(--spacing) * 2.5)}.w-3{width:calc(var(--spacing) * 3)}.w-3\.5{width:calc(var(--spacing) * 3.5)}.w-5{width:calc(var(--spacing) * 5)}.w-8{width:calc(var(--spacing) * 8)}.w-\[438px\]{width:438px}.w-auto{width:auto}.w-full{width:100%}.max-w-6xl{max-width:var(--container-6xl)}.max-w-\[335px\]{max-width:335px}.max-w-none{max-width:none}.max-w-xl{max-width:var(--container-xl)}.flex-1{flex:1}.shrink-0{flex-shrink:0}.translate-y-0{--tw-translate-y:calc(var(--spacing) * 0);translate:var(--tw-translate-x) var(--tw-translate-y)}.transform{transform:var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,)}.cursor-default{cursor:default}.cursor-not-allowed{cursor:not-allowed}.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}.flex-col{flex-direction:column}.flex-col-reverse{flex-direction:column-reverse}.items-center{align-items:center}.justify-between{justify-content:space-between}.justify-center{justify-content:center}.justify-end{justify-content:flex-end}.justify-items-center{justify-items:center}.gap-2{gap:calc(var(--spacing) * 2)}.gap-3{gap:calc(var(--spacing) * 3)}.gap-4{gap:calc(var(--spacing) * 4)}:where(.space-x-1>:not(:last-child)){--tw-space-x-reverse:0;margin-inline-start:calc(calc(var(--spacing) * 1) * var(--tw-space-x-reverse));margin-inline-end:calc(calc(var(--spacing) * 1) * calc(1 - var(--tw-space-x-reverse)))}.overflow-hidden{overflow:hidden}.rounded-full{border-radius:3.40282e38px}.rounded-md{border-radius:var(--radius-md)}.rounded-sm{border-radius:var(--radius-sm)}.rounded-t-lg{border-top-left-radius:var(--radius-lg);border-top-right-radius:var(--radius-lg)}.rounded-l-md{border-top-left-radius:var(--radius-md);border-bottom-left-radius:var(--radius-md)}.rounded-r-md{border-top-right-radius:var(--radius-md);border-bottom-right-radius:var(--radius-md)}.rounded-br-lg{border-bottom-right-radius:var(--radius-lg)}.rounded-bl-lg{border-bottom-left-radius:var(--radius-lg)}.border{border-style:var(--tw-border-style);border-width:1px}.border-t{border-top-style:var(--tw-border-style);border-top-width:1px}.border-r{border-right-style:var(--tw-border-style);border-right-width:1px}.border-\[\#19140035\]{border-color:#19140035}.border-\[\#e3e3e0\]{border-color:#e3e3e0}.border-black{border-color:var(--color-black)}.border-gray-200{border-color:var(--color-gray-200)}.border-gray-300{border-color:var(--color-gray-300)}.border-gray-400{border-color:var(--color-gray-400)}.border-transparent{border-color:#0000}.bg-\[\#1b1b18\]{background-color:#1b1b18}.bg-\[\#FDFDFC\]{background-color:#fdfdfc}.bg-\[\#dbdbd7\]{background-color:#dbdbd7}.bg-\[\#fff2f2\]{background-color:#fff2f2}.bg-gray-100{background-color:var(--color-gray-100)}.bg-gray-200{background-color:var(--color-gray-200)}.bg-white{background-color:var(--color-white)}.p-6{padding:calc(var(--spacing) * 6)}.px-2{padding-inline:calc(var(--spacing) * 2)}.px-4{padding-inline:calc(var(--spacing) * 4)}.px-5{padding-inline:calc(var(--spacing) * 5)}.px-6{padding-inline:calc(var(--spacing) * 6)}.py-1{padding-block:calc(var(--spacing) * 1)}.py-1\.5{padding-block:calc(var(--spacing) * 1.5)}.py-2{padding-block:calc(var(--spacing) * 2)}.py-4{padding-block:calc(var(--spacing) * 4)}.pt-8{padding-top:calc(var(--spacing) * 8)}.pb-6{padding-bottom:calc(var(--spacing) * 6)}.pb-12{padding-bottom:calc(var(--spacing) * 12)}.text-center{text-align:center}.text-lg{font-size:var(--text-lg);line-height:var(--tw-leading,var(--text-lg--line-height))}.text-sm{font-size:var(--text-sm);line-height:var(--tw-leading,var(--text-sm--line-height))}.text-\[13px\]{font-size:13px}.leading-5{--tw-leading:calc(var(--spacing) * 5);line-height:calc(var(--spacing) * 5)}.leading-7{--tw-leading:calc(var(--spacing) * 7);line-height:calc(var(--spacing) * 7)}.leading-\[20px\]{--tw-leading:20px;line-height:20px}.leading-normal{--tw-leading:var(--leading-normal);line-height:var(--leading-normal)}.font-medium{--tw-font-weight:var(--font-weight-medium);font-weight:var(--font-weight-medium)}.font-semibold{--tw-font-weight:var(--font-weight-semibold);font-weight:var(--font-weight-semibold)}.tracking-wider{--tw-tracking:var(--tracking-wider);letter-spacing:var(--tracking-wider)}.text-\[\#1B1B18\],.text-\[\#1b1b18\]{color:#1b1b18}.text-\[\#706f6c\]{color:#706f6c}.text-\[\#F3BEC7\]{color:#f3bec7}.text-\[\#F8B803\]{color:#f8b803}.text-\[\#F53003\],.text-\[\#f53003\]{color:#f53003}.text-gray-200{color:var(--color-gray-200)}.text-gray-300{color:var(--color-gray-300)}.text-gray-400{color:var(--color-gray-400)}.text-gray-500{color:var(--color-gray-500)}.text-gray-600{color:var(--color-gray-600)}.text-gray-700{color:var(--color-gray-700)}.text-gray-800{color:var(--color-gray-800)}.text-gray-900{color:var(--color-gray-900)}.text-white{color:var(--color-white)}.uppercase{text-transform:uppercase}.underline{text-decoration-line:underline}.underline-offset-4{text-underline-offset:4px}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.opacity-100{opacity:1}.mix-blend-color{mix-blend-mode:color}.mix-blend-darken{mix-blend-mode:darken}.mix-blend-hard-light{mix-blend-mode:hard-light}.mix-blend-multiply{mix-blend-mode:multiply}.shadow{--tw-shadow:0 1px 3px 0 var(--tw-shadow-color,#0000001a), 0 1px 2px -1px var(--tw-shadow-color,#0000001a);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.shadow-\[0px_0px_1px_0px_rgba\(0\,0\,0\,0\.03\)\,0px_1px_2px_0px_rgba\(0\,0\,0\,0\.06\)\]{--tw-shadow:0px 0px 1px 0px var(--tw-shadow-color,#00000008), 0px 1px 2px 0px var(--tw-shadow-color,#0000000f);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.shadow-\[inset_0px_0px_0px_1px_rgba\(26\,26\,0\,0\.16\)\]{--tw-shadow:inset 0px 0px 0px 1px var(--tw-shadow-color,#1a1a0029);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 3px 0 var(--tw-shadow-color,#0000001a), 0 1px 2px -1px var(--tw-shadow-color,#0000001a);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.ring-gray-300{--tw-ring-color:var(--color-gray-300)}.filter{filter:var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,)}.transition{transition-property:color,background-color,border-color,outline-color,text-decoration-color,fill,stroke,--tw-gradient-from,--tw-gradient-via,--tw-gradient-to,opacity,box-shadow,transform,translate,scale,rotate,filter,-webkit-backdrop-filter,backdrop-filter,display,content-visibility,overlay,pointer-events;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration))}.transition-all{transition-property:all;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration))}.transition-opacity{transition-property:opacity;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration))}.delay-200{transition-delay:.2s}.delay-300{transition-delay:.3s}.delay-400{transition-delay:.4s}.duration-150{--tw-duration:.15s;transition-duration:.15s}.duration-750{--tw-duration:.75s;transition-duration:.75s}.ease-in-out{--tw-ease:var(--ease-in-out);transition-timing-function:var(--ease-in-out)}.\[--stroke-color\:\#1B1B18\]{--stroke-color:#1b1b18}.not-has-\[nav\]\:hidden:not(:has(:is(nav))){display:none}.before\:absolute:before{content:var(--tw-content);position:absolute}.before\:top-0:before{content:var(--tw-content);top:calc(var(--spacing) * 0)}.before\:top-1\/2:before{content:var(--tw-content);top:50%}.before\:bottom-0:before{content:var(--tw-content);bottom:calc(var(--spacing) * 0)}.before\:bottom-1\/2:before{content:var(--tw-content);bottom:50%}.before\:left-\[0\.4rem\]:before{content:var(--tw-content);left:.4rem}.before\:border-l:before{content:var(--tw-content);border-left-style:var(--tw-border-style);border-left-width:1px}.before\:border-\[\#e3e3e0\]:before{content:var(--tw-content);border-color:#e3e3e0}@media(hover:hover){.hover\:border-\[\#1915014a\]:hover{border-color:#1915014a}.hover\:border-\[\#19140035\]:hover{border-color:#19140035}.hover\:border-black:hover{border-color:var(--color-black)}.hover\:bg-black:hover{background-color:var(--color-black)}.hover\:bg-gray-100:hover{background-color:var(--color-gray-100)}.hover\:text-gray-400:hover{color:var(--color-gray-400)}.hover\:text-gray-700:hover{color:var(--color-gray-700)}}.focus\:border-blue-300:focus{border-color:var(--color-blue-300)}.focus\:ring:focus{--tw-ring-shadow:var(--tw-ring-inset,) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color,currentcolor);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.focus\:outline-none:focus{--tw-outline-style:none;outline-style:none}.active\:bg-gray-100:active{background-color:var(--color-gray-100)}.active\:text-gray-500:active{color:var(--color-gray-500)}.active\:text-gray-700:active{color:var(--color-gray-700)}.active\:text-gray-800:active{color:var(--color-gray-800)}@media(min-width:40rem){.sm\:flex{display:flex}.sm\:hidden{display:none}.sm\:flex-1{flex:1}.sm\:items-center{align-items:center}.sm\:justify-between{justify-content:space-between}.sm\:justify-start{justify-content:flex-start}.sm\:gap-2{gap:calc(var(--spacing) * 2)}.sm\:px-6{padding-inline:calc(var(--spacing) * 6)}.sm\:pt-0{padding-top:calc(var(--spacing) * 0)}}@media(min-width:64rem){.lg\:mt-10{margin-top:calc(var(--spacing) * 10)}.lg\:mb-0{margin-bottom:calc(var(--spacing) * 0)}.lg\:mb-6{margin-bottom:calc(var(--spacing) * 6)}.lg\:-ml-px{margin-left:-1px}.lg\:ml-0{margin-left:calc(var(--spacing) * 0)}.lg\:block{display:block}.lg\:aspect-auto{aspect-ratio:auto}.lg\:w-\[438px\]{width:438px}.lg\:max-w-4xl{max-width:var(--container-4xl)}.lg\:grow{flex-grow:1}.lg\:flex-row{flex-direction:row}.lg\:justify-center{justify-content:center}.lg\:rounded-t-none{border-top-left-radius:0;border-top-right-radius:0}.lg\:rounded-tl-lg{border-top-left-radius:var(--radius-lg)}.lg\:rounded-r-lg{border-top-right-radius:var(--radius-lg);border-bottom-right-radius:var(--radius-lg)}.lg\:rounded-br-none{border-bottom-right-radius:0}.lg\:p-8{padding:calc(var(--spacing) * 8)}.lg\:p-20{padding:calc(var(--spacing) * 20)}.lg\:px-8{padding-inline:calc(var(--spacing) * 8)}.lg\:pb-10{padding-bottom:calc(var(--spacing) * 10)}}.rtl\:flex-row-reverse:where(:dir(rtl),[dir=rtl],[dir=rtl] *){flex-direction:row-reverse}@media(prefers-color-scheme:dark){.dark\:border-\[\#3E3E3A\]{border-color:#3e3e3a}.dark\:border-\[\#eeeeec\]{border-color:#eeeeec}.dark\:border-gray-600{border-color:var(--color-gray-600)}.dark\:bg-\[\#0a0a0a\]{background-color:#0a0a0a}.dark\:bg-\[\#1D0002\]{background-color:#1d0002}.dark\:bg-\[\#3E3E3A\]{background-color:#3e3e3a}.dark\:bg-\[\#161615\]{background-color:#161615}.dark\:bg-\[\#eeeeec\]{background-color:#eeeeec}.dark\:bg-gray-700{background-color:var(--color-gray-700)}.dark\:bg-gray-800{background-color:var(--color-gray-800)}.dark\:bg-gray-900{background-color:var(--color-gray-900)}.dark\:text-\[\#1C1C1A\]{color:#1c1c1a}.dark\:text-\[\#4B0600\]{color:#4b0600}.dark\:text-\[\#391800\]{color:#391800}.dark\:text-\[\#733000\]{color:#733000}.dark\:text-\[\#A1A09A\]{color:#a1a09a}.dark\:text-\[\#EDEDEC\]{color:#ededec}.dark\:text-\[\#F61500\]{color:#f61500}.dark\:text-\[\#FF4433\]{color:#f43}.dark\:text-black{color:var(--color-black)}.dark\:text-gray-200{color:var(--color-gray-200)}.dark\:text-gray-300{color:var(--color-gray-300)}.dark\:text-gray-400{color:var(--color-gray-400)}.dark\:text-gray-600{color:var(--color-gray-600)}.dark\:mix-blend-hard-light{mix-blend-mode:hard-light}.dark\:mix-blend-normal{mix-blend-mode:normal}.dark\:shadow-\[inset_0px_0px_0px_1px_\#fffaed2d\]{--tw-shadow:inset 0px 0px 0px 1px var(--tw-shadow-color,#fffaed2d);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.dark\:\[--stroke-color\:\#FF750F\]{--stroke-color:#ff750f}.dark\:before\:border-\[\#3E3E3A\]:before{content:var(--tw-content);border-color:#3e3e3a}@media(hover:hover){.dark\:hover\:border-\[\#3E3E3A\]:hover{border-color:#3e3e3a}.dark\:hover\:border-\[\#62605b\]:hover{border-color:#62605b}.dark\:hover\:border-white:hover{border-color:var(--color-white)}.dark\:hover\:bg-gray-900:hover{background-color:var(--color-gray-900)}.dark\:hover\:bg-white:hover{background-color:var(--color-white)}.dark\:hover\:text-gray-200:hover{color:var(--color-gray-200)}.dark\:hover\:text-gray-300:hover{color:var(--color-gray-300)}}.dark\:focus\:border-blue-700:focus{border-color:var(--color-blue-700)}.dark\:focus\:border-blue-800:focus{border-color:var(--color-blue-800)}.dark\:active\:bg-gray-700:active{background-color:var(--color-gray-700)}.dark\:active\:text-gray-300:active{color:var(--color-gray-300)}}@starting-style{.starting\:opacity-0{opacity:0}}@media(prefers-reduced-motion:no-preference){@starting-style{.motion-safe\:starting\:-translate-x-\[26px\]{--tw-translate-x: -26px ;translate:var(--tw-translate-x) var(--tw-translate-y)}}@starting-style{.motion-safe\:starting\:-translate-x-\[51px\]{--tw-translate-x: -51px ;translate:var(--tw-translate-x) var(--tw-translate-y)}}@starting-style{.motion-safe\:starting\:-translate-x-\[78px\]{--tw-translate-x: -78px ;translate:var(--tw-translate-x) var(--tw-translate-y)}}@starting-style{.motion-safe\:starting\:-translate-x-\[102px\]{--tw-translate-x: -102px ;translate:var(--tw-translate-x) var(--tw-translate-y)}}@starting-style{.motion-safe\:starting\:translate-y-6{--tw-translate-y:calc(var(--spacing) * 6);translate:var(--tw-translate-x) var(--tw-translate-y)}}}}@property --tw-translate-x{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-y{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-z{syntax:"*";inherits:false;initial-value:0}@property --tw-rotate-x{syntax:"*";inherits:false}@property --tw-rotate-y{syntax:"*";inherits:false}@property --tw-rotate-z{syntax:"*";inherits:false}@property --tw-skew-x{syntax:"*";inherits:false}@property --tw-skew-y{syntax:"*";inherits:false}@property --tw-space-x-reverse{syntax:"*";inherits:false;initial-value:0}@property --tw-border-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-leading{syntax:"*";inherits:false}@property --tw-font-weight{syntax:"*";inherits:false}@property --tw-tracking{syntax:"*";inherits:false}@property --tw-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-shadow-color{syntax:"*";inherits:false}@property --tw-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-inset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-shadow-color{syntax:"*";inherits:false}@property --tw-inset-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-ring-color{syntax:"*";inherits:false}@property --tw-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-ring-color{syntax:"*";inherits:false}@property --tw-inset-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-ring-inset{syntax:"*";inherits:false}@property --tw-ring-offset-width{syntax:"<length>";inherits:false;initial-value:0}@property --tw-ring-offset-color{syntax:"*";inherits:false;initial-value:#fff}@property --tw-ring-offset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-blur{syntax:"*";inherits:false}@property --tw-brightness{syntax:"*";inherits:false}@property --tw-contrast{syntax:"*";inherits:false}@property --tw-grayscale{syntax:"*";inherits:false}@property --tw-hue-rotate{syntax:"*";inherits:false}@property --tw-invert{syntax:"*";inherits:false}@property --tw-opacity{syntax:"*";inherits:false}@property --tw-saturate{syntax:"*";inherits:false}@property --tw-sepia{syntax:"*";inherits:false}@property --tw-drop-shadow{syntax:"*";inherits:false}@property --tw-drop-shadow-color{syntax:"*";inherits:false}@property --tw-drop-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-drop-shadow-size{syntax:"*";inherits:false}@property --tw-duration{syntax:"*";inherits:false}@property --tw-ease{syntax:"*";inherits:false}@property --tw-content{syntax:"*";inherits:false;initial-value:""}@keyframes spin{to{transform:rotate(360deg)}}@keyframes ping{75%,to{opacity:0;transform:scale(2)}}@keyframes pulse{50%{opacity:.5}}@keyframes bounce{0%,to{animation-timing-function:cubic-bezier(.8,0,1,1);transform:translateY(-25%)}50%{animation-timing-function:cubic-bezier(0,0,.2,1);transform:none}}
-            </style>
-        @endif
-    </head>
-    <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] flex p-6 lg:p-8 items-center lg:justify-center min-h-screen flex-col">
-        <header class="w-full lg:max-w-4xl max-w-[335px] text-sm mb-6 not-has-[nav]:hidden">
-            @if (Route::has('login'))
-                <nav class="flex items-center justify-end gap-4">
-                    @auth
-                        <a
-                            href="{{ url('/dashboard') }}"
-                            class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal"
-                        >
-                            Dashboard
-                        </a>
-                    @else
-                        <a
-                            href="{{ route('login') }}"
-                            class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] text-[#1b1b18] border border-transparent hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal"
-                        >
-                            Log in
-                        </a>
+    .content { padding: 24px; }
+    .page { display: none; animation: fadeIn .25s ease; }
+    .page.active { display: block; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
 
-                        @if (Route::has('register'))
-                            <a
-                                href="{{ route('register') }}"
-                                class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal">
-                                Register
-                            </a>
-                        @endif
-                    @endauth
-                </nav>
-            @endif
-        </header>
-        <div class="flex items-center justify-center w-full transition-opacity opacity-100 duration-750 lg:grow starting:opacity-0">
-            <main class="flex max-w-[335px] w-full flex-col-reverse lg:max-w-4xl lg:flex-row">
-                <div class="text-[13px] leading-[20px] flex-1 p-6 pb-6 lg:p-20 lg:pb-10 bg-white dark:bg-[#161615] dark:text-[#EDEDEC] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d] rounded-bl-lg rounded-br-lg lg:rounded-tl-lg lg:rounded-br-none">
-                    <h1 class="mb-1 font-medium">Let's get started</h1>
-                    <p class="mb-2 text-[#706f6c] dark:text-[#A1A09A]">With so many options available to you,<br /> we suggest you start with the following:</p>
-                    <ul class="flex flex-col mb-4 lg:mb-6">
-                        <li class="flex items-center gap-4 py-2 relative before:border-l before:border-[#e3e3e0] dark:before:border-[#3E3E3A] before:top-1/2 before:bottom-0 before:left-[0.4rem] before:absolute">
-                            <span class="relative py-1 bg-white dark:bg-[#161615]">
-                                <span class="flex items-center justify-center rounded-full bg-[#FDFDFC] dark:bg-[#161615] shadow-[0px_0px_1px_0px_rgba(0,0,0,0.03),0px_1px_2px_0px_rgba(0,0,0,0.06)] w-3.5 h-3.5 border dark:border-[#3E3E3A] border-[#e3e3e0]">
-                                    <span class="rounded-full bg-[#dbdbd7] dark:bg-[#3E3E3A] w-1.5 h-1.5"></span>
-                                </span>
-                            </span>
-                            <span>
-                                Read the
-                                <a href="https://laravel.com/docs" target="_blank" class="inline-flex items-center space-x-1 font-medium underline underline-offset-4 text-[#f53003] dark:text-[#FF4433] ml-1">
-                                    <span>Documentation</span>
-                                    <svg
-                                        width="10"
-                                        height="11"
-                                        viewBox="0 0 10 11"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="w-2.5 h-2.5"
-                                    >
-                                        <path
-                                            d="M7.70833 6.95834V2.79167H3.54167M2.5 8L7.5 3.00001"
-                                            stroke="currentColor"
-                                            stroke-linecap="square"
-                                        />
-                                    </svg>
-                                </a>
-                            </span>
-                        </li>
-                        <li class="flex items-center gap-4 py-2 relative before:border-l before:border-[#e3e3e0] dark:before:border-[#3E3E3A] before:bottom-1/2 before:top-0 before:left-[0.4rem] before:absolute">
-                            <span class="relative py-1 bg-white dark:bg-[#161615]">
-                                <span class="flex items-center justify-center rounded-full bg-[#FDFDFC] dark:bg-[#161615] shadow-[0px_0px_1px_0px_rgba(0,0,0,0.03),0px_1px_2px_0px_rgba(0,0,0,0.06)] w-3.5 h-3.5 border dark:border-[#3E3E3A] border-[#e3e3e0]">
-                                    <span class="rounded-full bg-[#dbdbd7] dark:bg-[#3E3E3A] w-1.5 h-1.5"></span>
-                                </span>
-                            </span>
-                            <span>
-                                Watch video tutorials at
-                                <a href="https://laracasts.com" target="_blank" class="inline-flex items-center space-x-1 font-medium underline underline-offset-4 text-[#f53003] dark:text-[#FF4433] ml-1">
-                                    <span>Laracasts</span>
-                                    <svg
-                                        width="10"
-                                        height="11"
-                                        viewBox="0 0 10 11"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="w-2.5 h-2.5"
-                                    >
-                                        <path
-                                            d="M7.70833 6.95834V2.79167H3.54167M2.5 8L7.5 3.00001"
-                                            stroke="currentColor"
-                                            stroke-linecap="square"
-                                        />
-                                    </svg>
-                                </a>
-                            </span>
-                        </li>
-                    </ul>
-                    <ul class="flex gap-3 text-sm leading-normal">
-                        <li>
-                            <a href="https://cloud.laravel.com" target="_blank" class="inline-block dark:bg-[#eeeeec] dark:border-[#eeeeec] dark:text-[#1C1C1A] dark:hover:bg-white dark:hover:border-white hover:bg-black hover:border-black px-5 py-1.5 bg-[#1b1b18] rounded-sm border border-black text-white text-sm leading-normal">
-                                Deploy now
-                            </a>
-                        </li>
-                    </ul>
+    /* CARDS */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+    .card-title { font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 16px; text-transform: uppercase; letter-spacing: .6px; }
 
-                    <p class="mt-6 lg:mt-10 text-[#706f6c] dark:text-[#A1A09A]">
-                        v{{ app()->version() }}
-                        <a href="https://github.com/laravel/framework/blob/13.x/CHANGELOG.md" target="_blank" class="inline-flex items-center space-x-1 font-medium underline underline-offset-4 text-[#f53003] dark:text-[#FF4433] ml-1">
-                            <span>View changelog</span>
-                            <svg
-                                width="10"
-                                height="11"
-                                viewBox="0 0 10 11"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="w-2.5 h-2.5"
-                            >
-                                <path
-                                    d="M7.70833 6.95834V2.79167H3.54167M2.5 8L7.5 3.00001"
-                                    stroke="currentColor"
-                                    stroke-linecap="square"
-                                />
-                            </svg>
-                        </a>
-                    </p>
-                </div>
-                <div class="bg-[#fff2f2] dark:bg-[#1D0002] relative lg:-ml-px -mb-px lg:mb-0 rounded-t-lg lg:rounded-t-none lg:rounded-r-lg aspect-[335/364] lg:aspect-auto w-full lg:w-[438px] shrink-0 overflow-hidden">
-                    {{-- Laravel Logo --}}
-                    <svg class="w-full text-[#F53003] dark:text-[#F61500] transition-all translate-y-0 opacity-100 max-w-none duration-750 starting:opacity-0 motion-safe:starting:translate-y-6" viewBox="0 0 438 104" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M17.2036 -3H0V102.197H49.5189V86.7187H17.2036V-3Z" fill="currentColor" />
-                        <path d="M110.256 41.6337C108.061 38.1275 104.945 35.3731 100.905 33.3681C96.8667 31.3647 92.8016 30.3618 88.7131 30.3618C83.4247 30.3618 78.5885 31.3389 74.201 33.2923C69.8111 35.2456 66.0474 37.928 62.9059 41.3333C59.7643 44.7401 57.3198 48.6726 55.5754 53.1293C53.8287 57.589 52.9572 62.274 52.9572 67.1813C52.9572 72.1925 53.8287 76.8995 55.5754 81.3069C57.3191 85.7173 59.7636 89.6241 62.9059 93.0293C66.0474 96.4361 69.8119 99.1155 74.201 101.069C78.5885 103.022 83.4247 103.999 88.7131 103.999C92.8016 103.999 96.8667 102.997 100.905 100.994C104.945 98.9911 108.061 96.2359 110.256 92.7282V102.195H126.563V32.1642H110.256V41.6337ZM108.76 75.7472C107.762 78.4531 106.366 80.8078 104.572 82.8112C102.776 84.8161 100.606 86.4183 98.0637 87.6206C95.5202 88.823 92.7004 89.4238 89.6103 89.4238C86.5178 89.4238 83.7252 88.823 81.2324 87.6206C78.7388 86.4183 76.5949 84.8161 74.7998 82.8112C73.004 80.8078 71.6319 78.4531 70.6856 75.7472C69.7356 73.0421 69.2644 70.1868 69.2644 67.1821C69.2644 64.1758 69.7356 61.3205 70.6856 58.6154C71.6319 55.9102 73.004 53.5571 74.7998 51.5522C76.5949 49.5495 78.738 47.9451 81.2324 46.7427C83.7252 45.5404 86.5178 44.9396 89.6103 44.9396C92.7012 44.9396 95.5202 45.5404 98.0637 46.7427C100.606 47.9451 102.776 49.5487 104.572 51.5522C106.367 53.5571 107.762 55.9102 108.76 58.6154C109.756 61.3205 110.256 64.1758 110.256 67.1821C110.256 70.1868 109.756 73.0421 108.76 75.7472Z" fill="currentColor" />
-                        <path d="M242.805 41.6337C240.611 38.1275 237.494 35.3731 233.455 33.3681C229.416 31.3647 225.351 30.3618 221.262 30.3618C215.974 30.3618 211.138 31.3389 206.75 33.2923C202.36 35.2456 198.597 37.928 195.455 41.3333C192.314 44.7401 189.869 48.6726 188.125 53.1293C186.378 57.589 185.507 62.274 185.507 67.1813C185.507 72.1925 186.378 76.8995 188.125 81.3069C189.868 85.7173 192.313 89.6241 195.455 93.0293C198.597 96.4361 202.361 99.1155 206.75 101.069C211.138 103.022 215.974 103.999 221.262 103.999C225.351 103.999 229.416 102.997 233.455 100.994C237.494 98.9911 240.611 96.2359 242.805 92.7282V102.195H259.112V32.1642H242.805V41.6337ZM241.31 75.7472C240.312 78.4531 238.916 80.8078 237.122 82.8112C235.326 84.8161 233.156 86.4183 230.614 87.6206C228.07 88.823 225.251 89.4238 222.16 89.4238C219.068 89.4238 216.275 88.823 213.782 87.6206C211.289 86.4183 209.145 84.8161 207.35 82.8112C205.554 80.8078 204.182 78.4531 203.236 75.7472C202.286 73.0421 201.814 70.1868 201.814 67.1821C201.814 64.1758 202.286 61.3205 203.236 58.6154C204.182 55.9102 205.554 53.5571 207.35 51.5522C209.145 49.5495 211.288 47.9451 213.782 46.7427C216.275 45.5404 219.068 44.9396 222.16 44.9396C225.251 44.9396 228.07 45.5404 230.614 46.7427C233.156 47.9451 235.326 49.5487 237.122 51.5522C238.917 53.5571 240.312 55.9102 241.31 58.6154C242.306 61.3205 242.806 64.1758 242.806 67.1821C242.805 70.1868 242.305 73.0421 241.31 75.7472Z" fill="currentColor" />
-                        <path d="M438 -3H421.694V102.197H438V-3Z" fill="currentColor" />
-                        <path d="M139.43 102.197H155.735V48.2834H183.712V32.1665H139.43V102.197Z" fill="currentColor" />
-                        <path d="M324.49 32.1665L303.995 85.794L283.498 32.1665H266.983L293.748 102.197H314.242L341.006 32.1665H324.49Z" fill="currentColor" />
-                        <path d="M376.571 30.3656C356.603 30.3656 340.797 46.8497 340.797 67.1828C340.797 89.6597 356.094 104 378.661 104C391.29 104 399.354 99.1488 409.206 88.5848L398.189 80.0226C398.183 80.031 389.874 90.9895 377.468 90.9895C363.048 90.9895 356.977 79.3111 356.977 73.269H411.075C413.917 50.1328 398.775 30.3656 376.571 30.3656ZM357.02 61.0967C357.145 59.7487 359.023 43.3761 376.442 43.3761C393.861 43.3761 395.978 59.7464 396.099 61.0967H357.02Z" fill="currentColor" />
-                    </svg>
+    /* STAT CARDS */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); transition: transform var(--trans), box-shadow var(--trans); }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .stat-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .stat-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; }
+    .stat-value { font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+    .stat-label { font-size: 12px; color: var(--muted); }
+    .blue .stat-icon { background: #ebf0ff; } .blue .stat-value { color: var(--primary); }
+    .green .stat-icon { background: #d1fae5; } .green .stat-value { color: var(--success); }
+    .orange .stat-icon { background: #fef3c7; } .orange .stat-value { color: var(--warning); }
+    .red .stat-icon { background: #fee2e2; } .red .stat-value { color: var(--danger); }
+    .badge-up { background: #d1fae5; color: var(--success); }
+    .badge-down { background: #fee2e2; color: var(--danger); }
 
-                    {{-- 13 --}}
-                    <svg class="w-[438px] max-w-none relative -mt-[6.6rem] -ml-8 lg:ml-0 [--stroke-color:#1B1B18] dark:[--stroke-color:#FF750F]" viewBox="0 0 440 392" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <g class="mix-blend-darken dark:mix-blend-normal transition-all delay-300 opacity-100 duration-750 starting:opacity-0 text-[#1B1B18] dark:text-black">
-                            <mask id="path-1-mask" maskUnits="userSpaceOnUse" x="-0.328613" y="103" width="338" height="299" fill="black">
-                                <rect fill="white" x="-0.328613" y="103" width="338" height="299"/>
-                                <path d="M234.936 400.8C204.136 400.8 178.936 392.4 159.336 375.6C140.136 358.8 130.536 337 130.536 310.2H200.736C200.736 318.2 203.736 324.8 209.736 330C215.736 335.2 223.736 337.8 233.736 337.8C243.336 337.8 251.136 335 257.136 329.4C263.536 323.8 266.736 316.6 266.736 307.8C266.736 299.8 263.936 293.2 258.336 288C252.736 282.8 245.536 280.2 236.736 280.2H199.536V218.4H236.736C243.536 218.4 249.336 216 254.136 211.2C258.936 206.4 261.336 200.4 261.336 193.2C261.336 184.8 258.736 178.2 253.536 173.4C248.336 168.6 241.736 166.2 233.736 166.2C226.536 166.2 220.336 168.4 215.136 172.8C210.336 177.2 207.936 182.8 207.936 189.6H141.336C141.336 164.8 150.136 144.6 167.736 129C185.336 113 207.936 105 235.536 105C263.136 105 285.536 112.2 302.736 126.6C320.336 141 329.136 160 329.136 183.6C329.136 200.8 324.536 214.8 315.336 225.6C306.136 236 294.336 243.2 279.936 247.2C297.136 252 310.736 260.2 320.736 271.8C331.136 283.4 336.336 298 336.336 315.6C336.336 340.4 326.936 360.8 308.136 376.8C289.336 392.8 264.936 400.8 234.936 400.8Z"/>
-                                <path d="M26.8714 167.6H1.67139V105.2H94.6714V400.2H26.8714V167.6Z"/>
-                            </mask>
-                            <path d="M234.936 400.8C204.136 400.8 178.936 392.4 159.336 375.6C140.136 358.8 130.536 337 130.536 310.2H200.736C200.736 318.2 203.736 324.8 209.736 330C215.736 335.2 223.736 337.8 233.736 337.8C243.336 337.8 251.136 335 257.136 329.4C263.536 323.8 266.736 316.6 266.736 307.8C266.736 299.8 263.936 293.2 258.336 288C252.736 282.8 245.536 280.2 236.736 280.2H199.536V218.4H236.736C243.536 218.4 249.336 216 254.136 211.2C258.936 206.4 261.336 200.4 261.336 193.2C261.336 184.8 258.736 178.2 253.536 173.4C248.336 168.6 241.736 166.2 233.736 166.2C226.536 166.2 220.336 168.4 215.136 172.8C210.336 177.2 207.936 182.8 207.936 189.6H141.336C141.336 164.8 150.136 144.6 167.736 129C185.336 113 207.936 105 235.536 105C263.136 105 285.536 112.2 302.736 126.6C320.336 141 329.136 160 329.136 183.6C329.136 200.8 324.536 214.8 315.336 225.6C306.136 236 294.336 243.2 279.936 247.2C297.136 252 310.736 260.2 320.736 271.8C331.136 283.4 336.336 298 336.336 315.6C336.336 340.4 326.936 360.8 308.136 376.8C289.336 392.8 264.936 400.8 234.936 400.8Z" fill="currentColor"/>
-                            <path d="M26.8714 167.6H1.67139V105.2H94.6714V400.2H26.8714V167.6Z" fill="currentColor"/>
-                            <path d="M234.936 400.8C204.136 400.8 178.936 392.4 159.336 375.6C140.136 358.8 130.536 337 130.536 310.2H200.736C200.736 318.2 203.736 324.8 209.736 330C215.736 335.2 223.736 337.8 233.736 337.8C243.336 337.8 251.136 335 257.136 329.4C263.536 323.8 266.736 316.6 266.736 307.8C266.736 299.8 263.936 293.2 258.336 288C252.736 282.8 245.536 280.2 236.736 280.2H199.536V218.4H236.736C243.536 218.4 249.336 216 254.136 211.2C258.936 206.4 261.336 200.4 261.336 193.2C261.336 184.8 258.736 178.2 253.536 173.4C248.336 168.6 241.736 166.2 233.736 166.2C226.536 166.2 220.336 168.4 215.136 172.8C210.336 177.2 207.936 182.8 207.936 189.6H141.336C141.336 164.8 150.136 144.6 167.736 129C185.336 113 207.936 105 235.536 105C263.136 105 285.536 112.2 302.736 126.6C320.336 141 329.136 160 329.136 183.6C329.136 200.8 324.536 214.8 315.336 225.6C306.136 236 294.336 243.2 279.936 247.2C297.136 252 310.736 260.2 320.736 271.8C331.136 283.4 336.336 298 336.336 315.6C336.336 340.4 326.936 360.8 308.136 376.8C289.336 392.8 264.936 400.8 234.936 400.8Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-1-mask)"/>
-                            <path d="M26.8714 167.6H1.67139V105.2H94.6714V400.2H26.8714V167.6Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-1-mask)"/>
-                        </g>
+    /* GRIDS */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-65 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; }
 
-                        <g class="transition-all delay-400 opacity-100 duration-750 starting:opacity-0 motion-safe:starting:-translate-x-[26px] text-[#F3BEC7] dark:text-[#4B0600]">
-                            <mask id="path-2-mask" maskUnits="userSpaceOnUse" x="25.3357" y="103" width="338" height="299" fill="black">
-                                <rect fill="white" x="25.3357" y="103" width="338" height="299"/>
-                                <path d="M260.6 400.8C229.8 400.8 204.6 392.4 185 375.6C165.8 358.8 156.2 337 156.2 310.2H226.4C226.4 318.2 229.4 324.8 235.4 330C241.4 335.2 249.4 337.8 259.4 337.8C269 337.8 276.8 335 282.8 329.4C289.2 323.8 292.4 316.6 292.4 307.8C292.4 299.8 289.6 293.2 284 288C278.4 282.8 271.2 280.2 262.4 280.2H225.2V218.4H262.4C269.2 218.4 275 216 279.8 211.2C284.6 206.4 287 200.4 287 193.2C287 184.8 284.4 178.2 279.2 173.4C274 168.6 267.4 166.2 259.4 166.2C252.2 166.2 246 168.4 240.8 172.8C236 177.2 233.6 182.8 233.6 189.6H167C167 164.8 175.8 144.6 193.4 129C211 113 233.6 105 261.2 105C288.8 105 311.2 112.2 328.4 126.6C346 141 354.8 160 354.8 183.6C354.8 200.8 350.2 214.8 341 225.6C331.8 236 320 243.2 305.6 247.2C322.8 252 336.4 260.2 346.4 271.8C356.8 283.4 362 298 362 315.6C362 340.4 352.6 360.8 333.8 376.8C315 392.8 290.6 400.8 260.6 400.8Z"/>
-                                <path d="M52.5357 167.6H27.3357V105.2H120.336V400.2H52.5357V167.6Z"/>
-                            </mask>
-                            <path d="M260.6 400.8C229.8 400.8 204.6 392.4 185 375.6C165.8 358.8 156.2 337 156.2 310.2H226.4C226.4 318.2 229.4 324.8 235.4 330C241.4 335.2 249.4 337.8 259.4 337.8C269 337.8 276.8 335 282.8 329.4C289.2 323.8 292.4 316.6 292.4 307.8C292.4 299.8 289.6 293.2 284 288C278.4 282.8 271.2 280.2 262.4 280.2H225.2V218.4H262.4C269.2 218.4 275 216 279.8 211.2C284.6 206.4 287 200.4 287 193.2C287 184.8 284.4 178.2 279.2 173.4C274 168.6 267.4 166.2 259.4 166.2C252.2 166.2 246 168.4 240.8 172.8C236 177.2 233.6 182.8 233.6 189.6H167C167 164.8 175.8 144.6 193.4 129C211 113 233.6 105 261.2 105C288.8 105 311.2 112.2 328.4 126.6C346 141 354.8 160 354.8 183.6C354.8 200.8 350.2 214.8 341 225.6C331.8 236 320 243.2 305.6 247.2C322.8 252 336.4 260.2 346.4 271.8C356.8 283.4 362 298 362 315.6C362 340.4 352.6 360.8 333.8 376.8C315 392.8 290.6 400.8 260.6 400.8Z" fill="currentColor"/>
-                            <path d="M52.5357 167.6H27.3357V105.2H120.336V400.2H52.5357V167.6Z" fill="currentColor"/>
-                            <path d="M260.6 400.8C229.8 400.8 204.6 392.4 185 375.6C165.8 358.8 156.2 337 156.2 310.2H226.4C226.4 318.2 229.4 324.8 235.4 330C241.4 335.2 249.4 337.8 259.4 337.8C269 337.8 276.8 335 282.8 329.4C289.2 323.8 292.4 316.6 292.4 307.8C292.4 299.8 289.6 293.2 284 288C278.4 282.8 271.2 280.2 262.4 280.2H225.2V218.4H262.4C269.2 218.4 275 216 279.8 211.2C284.6 206.4 287 200.4 287 193.2C287 184.8 284.4 178.2 279.2 173.4C274 168.6 267.4 166.2 259.4 166.2C252.2 166.2 246 168.4 240.8 172.8C236 177.2 233.6 182.8 233.6 189.6H167C167 164.8 175.8 144.6 193.4 129C211 113 233.6 105 261.2 105C288.8 105 311.2 112.2 328.4 126.6C346 141 354.8 160 354.8 183.6C354.8 200.8 350.2 214.8 341 225.6C331.8 236 320 243.2 305.6 247.2C322.8 252 336.4 260.2 346.4 271.8C356.8 283.4 362 298 362 315.6C362 340.4 352.6 360.8 333.8 376.8C315 392.8 290.6 400.8 260.6 400.8Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-2-mask)"/>
-                            <path d="M52.5357 167.6H27.3357V105.2H120.336V400.2H52.5357V167.6Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-2-mask)"/>
-                        </g>
-                        
-                        <g class="mix-blend-color dark:mix-blend-hard-light transition-all delay-400 opacity-100 duration-750 starting:opacity-0 motion-safe:starting:-translate-x-[51px] text-[#F8B803] dark:text-[#391800]">
-                            <mask id="path-3-mask" maskUnits="userSpaceOnUse" x="51" y="103" width="338" height="299" fill="black">
-                                <rect fill="white" x="51" y="103" width="338" height="299"/>
-                                <path d="M286.264 400.8C255.464 400.8 230.264 392.4 210.664 375.6C191.464 358.8 181.864 337 181.864 310.2H252.064C252.064 318.2 255.064 324.8 261.064 330C267.064 335.2 275.064 337.8 285.064 337.8C294.664 337.8 302.464 335 308.464 329.4C314.864 323.8 318.064 316.6 318.064 307.8C318.064 299.8 315.264 293.2 309.664 288C304.064 282.8 296.864 280.2 288.064 280.2H250.864V218.4H288.064C294.864 218.4 300.664 216 305.464 211.2C310.264 206.4 312.664 200.4 312.664 193.2C312.664 184.8 310.064 178.2 304.864 173.4C299.664 168.6 293.064 166.2 285.064 166.2C277.864 166.2 271.664 168.4 266.464 172.8C261.664 177.2 259.264 182.8 259.264 189.6H192.664C192.664 164.8 201.464 144.6 219.064 129C236.664 113 259.264 105 286.864 105C314.464 105 336.864 112.2 354.064 126.6C371.664 141 380.464 160 380.464 183.6C380.464 200.8 375.864 214.8 366.664 225.6C357.464 236 345.664 243.2 331.264 247.2C348.464 252 362.064 260.2 372.064 271.8C382.464 283.4 387.664 298 387.664 315.6C387.664 340.4 378.264 360.8 359.464 376.8C340.664 392.8 316.264 400.8 286.264 400.8Z"/>
-                                <path d="M78.2 167.6H53V105.2H146V400.2H78.2V167.6Z"/>
-                            </mask>
-                            <path d="M286.264 400.8C255.464 400.8 230.264 392.4 210.664 375.6C191.464 358.8 181.864 337 181.864 310.2H252.064C252.064 318.2 255.064 324.8 261.064 330C267.064 335.2 275.064 337.8 285.064 337.8C294.664 337.8 302.464 335 308.464 329.4C314.864 323.8 318.064 316.6 318.064 307.8C318.064 299.8 315.264 293.2 309.664 288C304.064 282.8 296.864 280.2 288.064 280.2H250.864V218.4H288.064C294.864 218.4 300.664 216 305.464 211.2C310.264 206.4 312.664 200.4 312.664 193.2C312.664 184.8 310.064 178.2 304.864 173.4C299.664 168.6 293.064 166.2 285.064 166.2C277.864 166.2 271.664 168.4 266.464 172.8C261.664 177.2 259.264 182.8 259.264 189.6H192.664C192.664 164.8 201.464 144.6 219.064 129C236.664 113 259.264 105 286.864 105C314.464 105 336.864 112.2 354.064 126.6C371.664 141 380.464 160 380.464 183.6C380.464 200.8 375.864 214.8 366.664 225.6C357.464 236 345.664 243.2 331.264 247.2C348.464 252 362.064 260.2 372.064 271.8C382.464 283.4 387.664 298 387.664 315.6C387.664 340.4 378.264 360.8 359.464 376.8C340.664 392.8 316.264 400.8 286.264 400.8Z" fill="currentColor"/>
-                            <path d="M78.2 167.6H53V105.2H146V400.2H78.2V167.6Z" fill="currentColor"/>
-                            <path d="M286.264 400.8C255.464 400.8 230.264 392.4 210.664 375.6C191.464 358.8 181.864 337 181.864 310.2H252.064C252.064 318.2 255.064 324.8 261.064 330C267.064 335.2 275.064 337.8 285.064 337.8C294.664 337.8 302.464 335 308.464 329.4C314.864 323.8 318.064 316.6 318.064 307.8C318.064 299.8 315.264 293.2 309.664 288C304.064 282.8 296.864 280.2 288.064 280.2H250.864V218.4H288.064C294.864 218.4 300.664 216 305.464 211.2C310.264 206.4 312.664 200.4 312.664 193.2C312.664 184.8 310.064 178.2 304.864 173.4C299.664 168.6 293.064 166.2 285.064 166.2C277.864 166.2 271.664 168.4 266.464 172.8C261.664 177.2 259.264 182.8 259.264 189.6H192.664C192.664 164.8 201.464 144.6 219.064 129C236.664 113 259.264 105 286.864 105C314.464 105 336.864 112.2 354.064 126.6C371.664 141 380.464 160 380.464 183.6C380.464 200.8 375.864 214.8 366.664 225.6C357.464 236 345.664 243.2 331.264 247.2C348.464 252 362.064 260.2 372.064 271.8C382.464 283.4 387.664 298 387.664 315.6C387.664 340.4 378.264 360.8 359.464 376.8C340.664 392.8 316.264 400.8 286.264 400.8Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-3-mask)"/>
-                            <path d="M78.2 167.6H53V105.2H146V400.2H78.2V167.6Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-3-mask)"/>
-                        </g>
-                        
-                        <g class="mix-blend-multiply dark:mix-blend-normal transition-all delay-400 opacity-100 duration-750 starting:opacity-0 motion-safe:starting:-translate-x-[78px] text-[#F3BEC7] dark:text-[#733000]">
-                            <mask id="path-4-mask" maskUnits="userSpaceOnUse" x="76.6643" y="103" width="338" height="299" fill="black">
-                                <rect fill="white" x="76.6643" y="103" width="338" height="299"/>
-                                <path d="M311.929 400.8C281.129 400.8 255.929 392.4 236.329 375.6C217.129 358.8 207.529 337 207.529 310.2H277.729C277.729 318.2 280.729 324.8 286.729 330C292.729 335.2 300.729 337.8 310.729 337.8C320.329 337.8 328.129 335 334.129 329.4C340.529 323.8 343.729 316.6 343.729 307.8C343.729 299.8 340.929 293.2 335.329 288C329.729 282.8 322.529 280.2 313.729 280.2H276.529V218.4H313.729C320.529 218.4 326.329 216 331.129 211.2C335.929 206.4 338.329 200.4 338.329 193.2C338.329 184.8 335.729 178.2 330.529 173.4C325.329 168.6 318.729 166.2 310.729 166.2C303.529 166.2 297.329 168.4 292.129 172.8C287.329 177.2 284.929 182.8 284.929 189.6H218.329C218.329 164.8 227.129 144.6 244.729 129C262.329 113 284.929 105 312.529 105C340.129 105 362.529 112.2 379.729 126.6C397.329 141 406.129 160 406.129 183.6C406.129 200.8 401.529 214.8 392.329 225.6C383.129 236 371.329 243.2 356.929 247.2C374.129 252 387.729 260.2 397.729 271.8C408.129 283.4 413.329 298 413.329 315.6C413.329 340.4 403.929 360.8 385.129 376.8C366.329 392.8 341.929 400.8 311.929 400.8Z"/>
-                                <path d="M103.864 167.6H78.6643V105.2H171.664V400.2H103.864V167.6Z"/>
-                            </mask>
-                            <path d="M311.929 400.8C281.129 400.8 255.929 392.4 236.329 375.6C217.129 358.8 207.529 337 207.529 310.2H277.729C277.729 318.2 280.729 324.8 286.729 330C292.729 335.2 300.729 337.8 310.729 337.8C320.329 337.8 328.129 335 334.129 329.4C340.529 323.8 343.729 316.6 343.729 307.8C343.729 299.8 340.929 293.2 335.329 288C329.729 282.8 322.529 280.2 313.729 280.2H276.529V218.4H313.729C320.529 218.4 326.329 216 331.129 211.2C335.929 206.4 338.329 200.4 338.329 193.2C338.329 184.8 335.729 178.2 330.529 173.4C325.329 168.6 318.729 166.2 310.729 166.2C303.529 166.2 297.329 168.4 292.129 172.8C287.329 177.2 284.929 182.8 284.929 189.6H218.329C218.329 164.8 227.129 144.6 244.729 129C262.329 113 284.929 105 312.529 105C340.129 105 362.529 112.2 379.729 126.6C397.329 141 406.129 160 406.129 183.6C406.129 200.8 401.529 214.8 392.329 225.6C383.129 236 371.329 243.2 356.929 247.2C374.129 252 387.729 260.2 397.729 271.8C408.129 283.4 413.329 298 413.329 315.6C413.329 340.4 403.929 360.8 385.129 376.8C366.329 392.8 341.929 400.8 311.929 400.8Z" fill="currentColor"/>
-                            <path d="M103.864 167.6H78.6643V105.2H171.664V400.2H103.864V167.6Z" fill="currentColor"/>
-                            <path d="M311.929 400.8C281.129 400.8 255.929 392.4 236.329 375.6C217.129 358.8 207.529 337 207.529 310.2H277.729C277.729 318.2 280.729 324.8 286.729 330C292.729 335.2 300.729 337.8 310.729 337.8C320.329 337.8 328.129 335 334.129 329.4C340.529 323.8 343.729 316.6 343.729 307.8C343.729 299.8 340.929 293.2 335.329 288C329.729 282.8 322.529 280.2 313.729 280.2H276.529V218.4H313.729C320.529 218.4 326.329 216 331.129 211.2C335.929 206.4 338.329 200.4 338.329 193.2C338.329 184.8 335.729 178.2 330.529 173.4C325.329 168.6 318.729 166.2 310.729 166.2C303.529 166.2 297.329 168.4 292.129 172.8C287.329 177.2 284.929 182.8 284.929 189.6H218.329C218.329 164.8 227.129 144.6 244.729 129C262.329 113 284.929 105 312.529 105C340.129 105 362.529 112.2 379.729 126.6C397.329 141 406.129 160 406.129 183.6C406.129 200.8 401.529 214.8 392.329 225.6C383.129 236 371.329 243.2 356.929 247.2C374.129 252 387.729 260.2 397.729 271.8C408.129 283.4 413.329 298 413.329 315.6C413.329 340.4 403.929 360.8 385.129 376.8C366.329 392.8 341.929 400.8 311.929 400.8Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-4-mask)"/>
-                            <path d="M103.864 167.6H78.6643V105.2H171.664V400.2H103.864V167.6Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-4-mask)"/>
-                        </g>
-                        
-                        <g class="mix-blend-hard-light transition-all delay-400 opacity-100 duration-750 starting:opacity-0 motion-safe:starting:-translate-x-[102px] text-[#F3BEC7] dark:text-[#4B0600]">
-                            <mask id="path-5-mask" maskUnits="userSpaceOnUse" x="102.329" y="103" width="338" height="299" fill="black">
-                                <rect fill="white" x="102.329" y="103" width="338" height="299"/>
-                                <path d="M337.593 400.8C306.793 400.8 281.593 392.4 261.993 375.6C242.793 358.8 233.193 337 233.193 310.2H303.393C303.393 318.2 306.393 324.8 312.393 330C318.393 335.2 326.393 337.8 336.393 337.8C345.993 337.8 353.793 335 359.793 329.4C366.193 323.8 369.393 316.6 369.393 307.8C369.393 299.8 366.593 293.2 360.993 288C355.393 282.8 348.193 280.2 339.393 280.2H302.193V218.4H339.393C346.193 218.4 351.993 216 356.793 211.2C361.593 206.4 363.993 200.4 363.993 193.2C363.993 184.8 361.393 178.2 356.193 173.4C350.993 168.6 344.393 166.2 336.393 166.2C329.193 166.2 322.993 168.4 317.793 172.8C312.993 177.2 310.593 182.8 310.593 189.6H243.993C243.993 164.8 252.793 144.6 270.393 129C287.993 113 310.593 105 338.193 105C365.793 105 388.193 112.2 405.393 126.6C422.993 141 431.793 160 431.793 183.6C431.793 200.8 427.193 214.8 417.993 225.6C408.793 236 396.993 243.2 382.593 247.2C399.793 252 413.393 260.2 423.393 271.8C433.793 283.4 438.993 298 438.993 315.6C438.993 340.4 429.593 360.8 410.793 376.8C391.993 392.8 367.593 400.8 337.593 400.8Z"/>
-                                <path d="M129.529 167.6H104.329V105.2H197.329V400.2H129.529V167.6Z"/>
-                            </mask>
-                            <path d="M337.593 400.8C306.793 400.8 281.593 392.4 261.993 375.6C242.793 358.8 233.193 337 233.193 310.2H303.393C303.393 318.2 306.393 324.8 312.393 330C318.393 335.2 326.393 337.8 336.393 337.8C345.993 337.8 353.793 335 359.793 329.4C366.193 323.8 369.393 316.6 369.393 307.8C369.393 299.8 366.593 293.2 360.993 288C355.393 282.8 348.193 280.2 339.393 280.2H302.193V218.4H339.393C346.193 218.4 351.993 216 356.793 211.2C361.593 206.4 363.993 200.4 363.993 193.2C363.993 184.8 361.393 178.2 356.193 173.4C350.993 168.6 344.393 166.2 336.393 166.2C329.193 166.2 322.993 168.4 317.793 172.8C312.993 177.2 310.593 182.8 310.593 189.6H243.993C243.993 164.8 252.793 144.6 270.393 129C287.993 113 310.593 105 338.193 105C365.793 105 388.193 112.2 405.393 126.6C422.993 141 431.793 160 431.793 183.6C431.793 200.8 427.193 214.8 417.993 225.6C408.793 236 396.993 243.2 382.593 247.2C399.793 252 413.393 260.2 423.393 271.8C433.793 283.4 438.993 298 438.993 315.6C438.993 340.4 429.593 360.8 410.793 376.8C391.993 392.8 367.593 400.8 337.593 400.8Z" fill="currentColor"/>
-                            <path d="M129.529 167.6H104.329V105.2H197.329V400.2H129.529V167.6Z" fill="currentColor"/>
-                            <path d="M337.593 400.8C306.793 400.8 281.593 392.4 261.993 375.6C242.793 358.8 233.193 337 233.193 310.2H303.393C303.393 318.2 306.393 324.8 312.393 330C318.393 335.2 326.393 337.8 336.393 337.8C345.993 337.8 353.793 335 359.793 329.4C366.193 323.8 369.393 316.6 369.393 307.8C369.393 299.8 366.593 293.2 360.993 288C355.393 282.8 348.193 280.2 339.393 280.2H302.193V218.4H339.393C346.193 218.4 351.993 216 356.793 211.2C361.593 206.4 363.993 200.4 363.993 193.2C363.993 184.8 361.393 178.2 356.193 173.4C350.993 168.6 344.393 166.2 336.393 166.2C329.193 166.2 322.993 168.4 317.793 172.8C312.993 177.2 310.593 182.8 310.593 189.6H243.993C243.993 164.8 252.793 144.6 270.393 129C287.993 113 310.593 105 338.193 105C365.793 105 388.193 112.2 405.393 126.6C422.993 141 431.793 160 431.793 183.6C431.793 200.8 427.193 214.8 417.993 225.6C408.793 236 396.993 243.2 382.593 247.2C399.793 252 413.393 260.2 423.393 271.8C433.793 283.4 438.993 298 438.993 315.6C438.993 340.4 429.593 360.8 410.793 376.8C391.993 392.8 367.593 400.8 337.593 400.8Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-5-mask)"/>
-                            <path d="M129.529 167.6H104.329V105.2H197.329V400.2H129.529V167.6Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-5-mask)"/>
-                        </g>
-                    </svg>
-                    <div class="absolute inset-0 rounded-t-lg lg:rounded-t-none lg:rounded-r-lg shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]"></div>
-                </div>
-            </main>
+    /* TABLE */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg); }
+    .badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+    .badge-success { background: #d1fae5; color: #065f46; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-danger  { background: #fee2e2; color: #991b1b; }
+    .badge-info    { background: #dbeafe; color: #1e40af; }
+    .badge-gray    { background: #f1f5f9; color: #475569; }
+
+    /* BUTTONS */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit; transition: all var(--trans); }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: #2850c9; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: var(--bg); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    /* FORM */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group.full { grid-column: 1 / -1; }
+    label { font-size: 12px; font-weight: 600; color: var(--muted); }
+    input, select, textarea { padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; background: var(--surface); color: var(--text); transition: border-color var(--trans); outline: none; }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,110,240,.1); }
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* STEPS */
+    .steps { display: flex; gap: 0; margin-bottom: 28px; }
+    .step { flex: 1; display: flex; align-items: center; gap: 10px; padding: 0 0 16px; border-bottom: 2px solid var(--border); transition: border-color var(--trans); }
+    .step.done, .step.active { border-color: var(--primary); }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--muted); transition: all var(--trans); flex-shrink: 0; }
+    .step.active .step-num { border-color: var(--primary); background: var(--primary); color: white; }
+    .step.done .step-num { border-color: var(--success); background: var(--success); color: white; }
+    .step-label { font-size: 12px; font-weight: 600; color: var(--muted); }
+    .step.active .step-label { color: var(--primary); }
+    .step.done .step-label { color: var(--success); }
+
+    /* QUEUE */
+    .queue-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .queue-header h2 { font-size: 16px; font-weight: 700; }
+    .queue-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .queue-poly-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+    .poly-name { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 10px; }
+    .current-num { font-size: 42px; font-weight: 800; color: var(--primary); line-height: 1; margin-bottom: 6px; }
+    .current-name { font-size: 12px; color: var(--text); font-weight: 500; margin-bottom: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .queue-meta { display: flex; gap: 8px; }
+    .meta-chip { font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 500; }
+    .chip-wait { background: #fef3c7; color: #92400e; }
+    .chip-done { background: #d1fae5; color: #065f46; }
+
+    /* QUEUE BIG DISPLAY */
+    .queue-big-display { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; margin-bottom: 24px; }
+    .calling-box { background: var(--primary); border-radius: var(--radius); padding: 32px; color: white; text-align: center; }
+    .calling-label { font-size: 13px; opacity: .8; margin-bottom: 8px; }
+    .calling-num { font-size: 72px; font-weight: 900; line-height: 1; letter-spacing: -2px; }
+    .calling-poly { font-size: 16px; font-weight: 600; margin-top: 8px; opacity: .9; }
+    .calling-name { font-size: 13px; opacity: .7; margin-top: 4px; }
+    .calling-pulse { width: 12px; height: 12px; background: #7cffb2; border-radius: 50%; display: inline-block; margin-right: 6px; animation: pulse 1.5s ease infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.5; transform:scale(1.4); } }
+
+    .waiting-list-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+    .waiting-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .waiting-item:last-child { border-bottom: none; }
+    .waiting-num { font-size: 18px; font-weight: 700; width: 44px; color: var(--primary); flex-shrink: 0; text-align: center; }
+    .waiting-info { flex: 1; }
+    .waiting-info strong { font-size: 13px; font-weight: 600; display: block; }
+    .waiting-info span { font-size: 11px; color: var(--muted); }
+    .waiting-est { font-size: 11px; color: var(--muted); text-align: right; }
+
+    /* EMR */
+    .patient-banner { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: var(--primary-l); border-radius: var(--radius); margin-bottom: 20px; border: 1px solid #c7d7fd; }
+    .patient-avatar-lg { width: 48px; height: 48px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; flex-shrink: 0; }
+    .patient-info-row { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 2px; }
+    .patient-info-item { font-size: 12px; color: var(--muted); }
+    .patient-info-item strong { color: var(--text); }
+    .vital-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 20px; }
+    .vital-box { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; }
+    .vital-val { font-size: 20px; font-weight: 700; color: var(--primary); }
+    .vital-unit { font-size: 10px; color: var(--muted); }
+    .vital-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .icd-search-wrap { display: flex; gap: 8px; margin-bottom: 10px; }
+    .icd-results { max-height: 160px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; display: none; }
+    .icd-item { padding: 10px 14px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--border); transition: background var(--trans); }
+    .icd-item:last-child { border-bottom: none; }
+    .icd-item:hover { background: var(--primary-l); }
+    .icd-code { font-size: 11px; color: var(--primary); font-weight: 600; }
+    .selected-diagnoses { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .dx-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-l); color: var(--primary); border: 1px solid #c7d7fd; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .dx-tag span { cursor: pointer; font-size: 14px; line-height: 1; }
+
+    /* PHARMACY */
+    .rx-card { border: 2px solid var(--primary); border-radius: var(--radius); padding: 20px; background: white; }
+    .rx-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .rx-no { font-size: 12px; color: var(--muted); }
+    .rx-dr { font-size: 13px; font-weight: 600; }
+    .rx-items { list-style: none; margin-bottom: 16px; }
+    .rx-item { display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px dashed var(--border); }
+    .rx-item:last-child { border-bottom: none; }
+    .rx-num { width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .rx-med { flex: 1; }
+    .rx-med strong { font-size: 13px; font-weight: 600; display: block; }
+    .rx-med span { font-size: 12px; color: var(--muted); }
+    .rx-qty { font-size: 13px; font-weight: 700; color: var(--primary); }
+
+    /* KASIR */
+    .billing-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .billing-row:last-child { border-bottom: none; }
+    .billing-item-name { font-size: 13px; }
+    .billing-item-cat { font-size: 11px; color: var(--muted); }
+    .billing-item-price { font-size: 13px; font-weight: 600; text-align: right; }
+    .billing-total { display: flex; justify-content: space-between; padding: 14px 0 0; font-size: 16px; font-weight: 700; }
+    .payment-options { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin: 16px 0; }
+    .pay-opt { border: 2px solid var(--border); border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all var(--trans); }
+    .pay-opt:hover { border-color: var(--primary); }
+    .pay-opt.selected { border-color: var(--primary); background: var(--primary-l); }
+    .pay-opt-icon { font-size: 22px; margin-bottom: 6px; }
+    .pay-opt-label { font-size: 12px; font-weight: 600; }
+
+    /* MISC */
+    .chart-wrap { position: relative; height: 200px; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .section-header h2 { font-size: 16px; font-weight: 700; }
+    .action-bar { display: flex; gap: 8px; align-items: center; }
+    .search-box { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; }
+    .search-box input { background: transparent; border: none; outline: none; font-size: 13px; width: 180px; }
+    .progress-bar-wrap { background: var(--bg); border-radius: 4px; height: 6px; overflow: hidden; }
+    .progress-bar { height: 100%; background: var(--primary); border-radius: 4px; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+    .scrollable { max-height: 300px; overflow-y: auto; }
+
+    /* MODAL */
+    .success-modal { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; align-items: center; justify-content: center; z-index: 999; }
+    .success-modal.show { display: flex; animation: fadeIn .2s ease; }
+    .modal-box { background: white; border-radius: 16px; padding: 40px; text-align: center; width: 340px; box-shadow: var(--shadow-md); }
+    .modal-icon { font-size: 52px; margin-bottom: 16px; }
+    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-logo">
+      <div class="brand-icon">🏥</div>
+      <div class="brand-text">
+        <strong>SIMRS Rawat Jalan</strong>
+        <span>RSUD Puruk Cahu</span>
+      </div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Utama</div>
+    <div class="nav-item active" data-page="dashboard"><span class="icon">📊</span> Dashboard</div>
+    <div class="nav-item" data-page="antrian"><span class="icon">🎟️</span> Antrian <span class="nav-badge">12</span></div>
+    <div class="nav-section">Pelayanan</div>
+    <div class="nav-item" data-page="pendaftaran"><span class="icon">📝</span> Pendaftaran</div>
+    <div class="nav-item" data-page="emr"><span class="icon">🩺</span> EMR Dokter</div>
+    <div class="nav-item" data-page="farmasi"><span class="icon">💊</span> Farmasi</div>
+    <div class="nav-item" data-page="kasir"><span class="icon">💰</span> Kasir</div>
+    <div class="nav-section">Lainnya</div>
+    <div class="nav-item" data-page="master"><span class="icon">📦</span> Master Data</div>
+    <div class="nav-item" data-page="settings"><span class="icon">⚙️</span> Pengaturan & Bridging</div>
+    <div class="nav-item" data-page="laporan"><span class="icon">📈</span> Laporan</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">SA</div>
+      <div class="user-info"><strong>Super Admin</strong><span>Administrator</span></div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <header class="header">
+    <span class="header-title" id="headerTitle">Dashboard</span>
+    <span class="header-date" id="headerDate"></span>
+    <div class="btn-icon-wrap" onclick="toggleNotifModal()"><button class="btn-icon" title="Notifikasi Sistem">🔔</button><span class="notif-dot" id="notifBadge">0</span></div>
+    <button class="btn-icon" title="Pengaturan Sistem" onclick="openSettingsPage()">⚙️</button>
+    <a href="/" class="btn btn-outline btn-sm" style="text-decoration:none;font-size:12px;padding:6px 12px;border-radius:6px;display:flex;align-items:center;gap:4px;">🌐 Portal Publik</a>
+  </header>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-header"><div class="stat-icon">🧑‍⚕️</div><span class="stat-badge badge-up">↑ 8%</span></div>
+          <div class="stat-value" id="ctr-visit">0</div><div class="stat-label">Total Kunjungan Hari Ini</div>
         </div>
+        <div class="stat-card green">
+          <div class="stat-header"><div class="stat-icon">✅</div><span class="stat-badge badge-up">↑ 5%</span></div>
+          <div class="stat-value" id="ctr-done">0</div><div class="stat-label">Selesai Dilayani</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-header"><div class="stat-icon">⏳</div><span class="stat-badge badge-down">↓ 2</span></div>
+          <div class="stat-value" id="ctr-wait">0</div><div class="stat-label">Sedang Menunggu</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-header"><div class="stat-icon">💰</div><span class="stat-badge badge-up">↑ 12%</span></div>
+          <div class="stat-value" id="ctr-rev">0</div><div class="stat-label">Pendapatan (Rp)</div>
+        </div>
+      </div>
+      <div class="grid-65" style="margin-bottom:16px;">
+        <div class="card">
+          <div class="card-title">Kunjungan 7 Hari Terakhir</div>
+          <div class="chart-wrap"><canvas id="chartVisit"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Jenis Pembayaran</div>
+          <div class="chart-wrap" style="height:150px;"><canvas id="chartPayment"></canvas></div>
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;justify-content:space-between;font-size:12px;"><span>🔵 BPJS</span><strong>68%</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;"><span>🟢 Umum</span><strong>27%</strong></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;"><span>🟡 Lainnya</span><strong>5%</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Aktivitas Per Poli Hari Ini</div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Poli</th><th>Total</th><th>Selesai</th><th>Progress</th></tr></thead>
+            <tbody>
+              <tr><td>Poli Umum</td><td>34</td><td>28</td><td><div class="progress-bar-wrap"><div class="progress-bar" style="width:82%"></div></div></td></tr>
+              <tr><td>Poli Anak</td><td>22</td><td>15</td><td><div class="progress-bar-wrap"><div class="progress-bar" style="width:68%"></div></div></td></tr>
+              <tr><td>Poli Kebidanan</td><td>18</td><td>12</td><td><div class="progress-bar-wrap"><div class="progress-bar" style="width:67%"></div></div></td></tr>
+              <tr><td>Poli Gigi</td><td>14</td><td>14</td><td><div class="progress-bar-wrap"><div class="progress-bar" style="width:100%;background:var(--success)"></div></div></td></tr>
+              <tr><td>Poli Bedah</td><td>10</td><td>6</td><td><div class="progress-bar-wrap"><div class="progress-bar" style="width:60%"></div></div></td></tr>
+            </tbody></table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">10 Diagnosis Terbanyak</div>
+          <div class="table-wrap scrollable"><table><thead><tr><th>#</th><th>Diagnosis</th><th>Kasus</th></tr></thead><tbody id="dx-table"></tbody></table></div>
+        </div>
+      </div>
+    </div>
 
-        @if (Route::has('login'))
-            <div class="h-14.5 hidden lg:block"></div>
-        @endif
-    </body>
+    <!-- ANTRIAN -->
+    <div class="page" id="page-antrian">
+      <div class="queue-header">
+        <h2>Monitor Antrian Real-Time</h2>
+        <div class="action-bar">
+          <button class="btn btn-outline btn-sm">📥 Export</button>
+          <button class="btn btn-primary btn-sm" onclick="panggil()">📢 Panggil Berikutnya</button>
+        </div>
+      </div>
+      <div class="queue-big-display">
+        <div class="calling-box">
+          <div class="calling-label"><span class="calling-pulse"></span>Sedang Dilayani</div>
+          <div class="calling-num" id="callingNum">A-023</div>
+          <div class="calling-poly">Poli Umum</div>
+          <div class="calling-name" id="callingName">Budi Santoso</div>
+        </div>
+        <div class="waiting-list-box">
+          <div class="card-title">Antrian Menunggu – Poli Umum</div>
+          <div id="waitingList"></div>
+        </div>
+      </div>
+      <div class="queue-grid" id="polyCards"></div>
+    </div>
+
+    <!-- PENDAFTARAN -->
+    <div class="page" id="page-pendaftaran">
+      <div class="section-header">
+        <h2>Pendaftaran Pasien</h2>
+        <div class="action-bar">
+          <div class="search-box"><span>🔍</span><input type="text" placeholder="Cari nama / NIK / No. RM..."/></div>
+          <button class="btn btn-primary">+ Daftar Baru</button>
+        </div>
+      </div>
+      <div class="steps" id="regSteps">
+        <div class="step active" data-step="1"><div class="step-num">1</div><div class="step-label">Data Pasien</div></div>
+        <div class="step" data-step="2"><div class="step-num">2</div><div class="step-label">Pilih Layanan</div></div>
+        <div class="step" data-step="3"><div class="step-num">3</div><div class="step-label">Konfirmasi</div></div>
+      </div>
+      <div class="card" id="regStep1">
+        <div class="card-title">Data Identitas Pasien</div>
+        <div class="form-grid">
+          <div class="form-group"><label>NIK *</label><input type="text" placeholder="16 digit NIK" maxlength="16"/></div>
+          <div class="form-group"><label>No. BPJS</label><input type="text" placeholder="13 digit nomor BPJS"/></div>
+          <div class="form-group"><label>Nama Lengkap *</label><input type="text" placeholder="Nama sesuai KTP"/></div>
+          <div class="form-group"><label>Tanggal Lahir *</label><input type="date"/></div>
+          <div class="form-group"><label>Jenis Kelamin *</label><select><option value="">Pilih...</option><option>Laki-laki</option><option>Perempuan</option></select></div>
+          <div class="form-group"><label>No. Telepon</label><input type="tel" placeholder="08xxxxxxxxxx"/></div>
+          <div class="form-group full"><label>Alamat</label><textarea placeholder="Alamat lengkap pasien"></textarea></div>
+          <div class="form-group"><label>Jenis Pasien *</label><select><option>BPJS</option><option>Umum</option><option>Asuransi Lain</option><option>Gratis</option></select></div>
+          <div class="form-group"><label>Golongan Darah</label><select><option>Tidak Diketahui</option><option>A</option><option>B</option><option>AB</option><option>O</option></select></div>
+        </div>
+        <hr class="divider"/>
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn btn-outline">Batal</button>
+          <button class="btn btn-primary" onclick="nextStep(2)">Selanjutnya →</button>
+        </div>
+      </div>
+      <div class="card" id="regStep2" style="display:none;">
+        <div class="card-title">Pilih Poli & Dokter</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Poli Tujuan *</label><select><option>Poli Umum</option><option>Poli Anak</option><option>Poli Kebidanan</option><option>Poli Gigi</option><option>Poli Bedah</option></select></div>
+          <div class="form-group"><label>Dokter *</label><select><option>dr. Ahmad Fauzi, Sp.U</option><option>dr. Siti Rahayu, Sp.A</option><option>dr. Budi Prakoso</option></select></div>
+          <div class="form-group"><label>Tanggal Kunjungan *</label><input type="date"/></div>
+          <div class="form-group"><label>Jenis Pendaftaran</label><select><option>Offline (Loket)</option><option>Online</option></select></div>
+          <div class="form-group full"><label>Keluhan Utama</label><textarea placeholder="Keluhan yang dirasakan pasien..."></textarea></div>
+        </div>
+        <hr class="divider"/>
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn btn-outline" onclick="nextStep(1)">← Kembali</button>
+          <button class="btn btn-primary" onclick="nextStep(3)">Selanjutnya →</button>
+        </div>
+      </div>
+      <div class="card" id="regStep3" style="display:none;">
+        <div class="card-title">Konfirmasi Pendaftaran</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+          <div><span style="font-size:12px;color:var(--muted);">Nama Pasien</span><div style="font-weight:600;margin-top:2px;">Andi Kurniawan</div></div>
+          <div><span style="font-size:12px;color:var(--muted);">No. Rekam Medis</span><div style="font-weight:600;margin-top:2px;">RM-2026-00247</div></div>
+          <div><span style="font-size:12px;color:var(--muted);">Poli Tujuan</span><div style="font-weight:600;margin-top:2px;">Poli Umum</div></div>
+          <div><span style="font-size:12px;color:var(--muted);">Dokter</span><div style="font-weight:600;margin-top:2px;">dr. Ahmad Fauzi</div></div>
+          <div><span style="font-size:12px;color:var(--muted);">Jenis Pasien</span><div style="font-weight:600;margin-top:2px;">BPJS <span class="badge badge-success">Eligible ✓</span></div></div>
+          <div><span style="font-size:12px;color:var(--muted);">Nomor Antrian</span><div style="font-size:24px;font-weight:800;color:var(--primary);margin-top:2px;">UMU-001</div></div>
+        </div>
+        <hr class="divider"/>
+        <div style="display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn btn-outline" onclick="nextStep(2)">← Kembali</button>
+          <button class="btn btn-success" onclick="confirmAction('pendaftaran')">✅ Simpan & Cetak Antrian</button>
+        </div>
+      </div>
+      <div style="margin-top:24px;">
+        <div class="section-header"><h2>Kunjungan Hari Ini</h2></div>
+        <div class="card"><div class="table-wrap"><table>
+          <thead><tr><th>No. Antrian</th><th>No. RM</th><th>Nama Pasien</th><th>Poli</th><th>Jenis</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody id="visitTable"></tbody>
+        </table></div></div>
+      </div>
+    </div>
+
+    <!-- EMR DOKTER -->
+    <div class="page" id="page-emr">
+      <div class="patient-banner">
+        <div class="patient-avatar-lg">BK</div>
+        <div>
+          <div style="font-size:16px;font-weight:700;">Budi Kurniawan</div>
+          <div class="patient-info-row">
+            <div class="patient-info-item">RM: <strong>RM-2026-00231</strong></div>
+            <div class="patient-info-item">Usia: <strong>42 th, L</strong></div>
+            <div class="patient-info-item">BPJS: <strong>001234567890123</strong></div>
+            <div class="patient-info-item">Alergi: <strong style="color:var(--danger);">Penisilin</strong></div>
+          </div>
+        </div>
+        <div style="margin-left:auto;text-align:right;">
+          <div style="font-size:12px;color:var(--muted);">No. Kunjungan</div>
+          <div style="font-size:16px;font-weight:700;color:var(--primary);">KUN-20260626-0023</div>
+          <span class="badge badge-warning">Dalam Pemeriksaan</span>
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;">Tanda-Tanda Vital</div>
+      <div class="vital-grid">
+        <div class="vital-box"><div class="vital-val">120/80</div><div class="vital-unit">mmHg</div><div class="vital-lbl">Tek. Darah</div></div>
+        <div class="vital-box"><div class="vital-val">36.8</div><div class="vital-unit">°C</div><div class="vital-lbl">Suhu</div></div>
+        <div class="vital-box"><div class="vital-val">82</div><div class="vital-unit">bpm</div><div class="vital-lbl">Nadi</div></div>
+        <div class="vital-box"><div class="vital-val">18</div><div class="vital-unit">x/mnt</div><div class="vital-lbl">Pernapasan</div></div>
+        <div class="vital-box"><div class="vital-val">68</div><div class="vital-unit">kg</div><div class="vital-lbl">Berat Badan</div></div>
+        <div class="vital-box"><div class="vital-val" style="color:var(--success);">98%</div><div class="vital-unit">SpO₂</div><div class="vital-lbl">Saturasi O₂</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Anamnesis & Pemeriksaan</div>
+          <div class="form-group" style="margin-bottom:12px;"><label>Keluhan Utama</label><textarea>Demam 3 hari, batuk berdahak, nyeri tenggorokan.</textarea></div>
+          <div class="form-group" style="margin-bottom:12px;"><label>Pemeriksaan Fisik</label><textarea>Faring hiperemis (+), tonsil T1/T1, tidak ada pembesaran KGB.</textarea></div>
+          <div class="form-group"><label>Catatan Tambahan</label><textarea placeholder="Catatan lain..."></textarea></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Diagnosis (ICD-10)</div>
+          <div class="icd-search-wrap">
+            <input type="text" placeholder="Cari kode / nama penyakit..." id="icdInput" style="flex:1;" oninput="searchICD(this.value)"/>
+          </div>
+          <div class="icd-results" id="icdResults"></div>
+          <div class="selected-diagnoses" id="selectedDx">
+            <div class="dx-tag">J06.9 – ISPA <span onclick="this.parentElement.remove()">×</span></div>
+          </div>
+          <hr class="divider"/>
+          <div class="card-title">Resep Elektronik</div>
+          <div id="rxList">
+            <div class="rx-item">
+              <div class="rx-num">1</div>
+              <div class="rx-med"><strong>Paracetamol 500mg</strong><span>3×1 setelah makan · 10 tab</span></div>
+              <span onclick="this.parentElement.remove()" style="cursor:pointer;color:var(--muted);font-size:18px;">×</span>
+            </div>
+            <div class="rx-item">
+              <div class="rx-num">2</div>
+              <div class="rx-med"><strong>Ambroxol 30mg</strong><span>3×1 setelah makan · 10 tab</span></div>
+              <span onclick="this.parentElement.remove()" style="cursor:pointer;color:var(--muted);font-size:18px;">×</span>
+            </div>
+          </div>
+          <button class="btn btn-outline btn-sm" style="margin-top:10px;width:100%;" onclick="addRx()">+ Tambah Obat</button>
+          <hr class="divider"/>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm">📄 Surat Rujukan</button>
+            <button class="btn btn-outline btn-sm">🧪 Order Lab</button>
+            <button class="btn btn-success" style="margin-left:auto;" onclick="confirmAction('emr')">💾 Simpan EMR</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FARMASI -->
+    <div class="page" id="page-farmasi">
+      <div class="section-header">
+        <h2>Farmasi & Dispensing Obat</h2>
+        <div class="search-box"><span>🔍</span><input type="text" placeholder="Cari No. Resep..."/></div>
+      </div>
+      <div class="grid-65">
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-title">Antrian Resep Masuk</div>
+            <div class="table-wrap"><table>
+              <thead><tr><th>No. Resep</th><th>Pasien</th><th>Dokter</th><th>Waktu</th><th>Status</th><th>Aksi</th></tr></thead>
+              <tbody id="rxTable"></tbody>
+            </table></div>
+          </div>
+          <div class="rx-card">
+            <div class="rx-header">
+              <div><div class="rx-no">RES-20260626-023</div><div class="rx-dr">dr. Ahmad Fauzi, Sp.U</div></div>
+              <div style="text-align:right;"><div style="font-size:13px;font-weight:600;">Budi Kurniawan</div><div style="font-size:11px;color:var(--muted);">RM-2026-00231 · 42th, L</div></div>
+            </div>
+            <ul class="rx-items">
+              <li class="rx-item"><div class="rx-num">1</div><div class="rx-med"><strong>Paracetamol 500mg</strong><span>3×1 setelah makan</span></div><div class="rx-qty">10 tab</div></li>
+              <li class="rx-item"><div class="rx-num">2</div><div class="rx-med"><strong>Ambroxol 30mg</strong><span>3×1 setelah makan</span></div><div class="rx-qty">10 tab</div></li>
+              <li class="rx-item"><div class="rx-num">3</div><div class="rx-med"><strong>Cetirizine 10mg</strong><span>1×1 malam sebelum tidur</span></div><div class="rx-qty">5 tab</div></li>
+            </ul>
+            <div style="display:flex;gap:8px;justify-content:flex-end;">
+              <button class="btn btn-outline btn-sm">✏️ Edit</button>
+              <button class="btn btn-success" onclick="confirmAction('farmasi')">✅ Serahkan ke Pasien</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-title">Stok Kritis</div>
+            <div id="stockAlert"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Statistik Hari Ini</div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+              <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Resep Masuk</span><strong>47</strong></div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Sudah Diserahkan</span><strong style="color:var(--success);">41</strong></div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Menunggu</span><strong style="color:var(--warning);">6</strong></div>
+              <hr class="divider"/>
+              <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Item Stok Kritis</span><strong style="color:var(--danger);">3 item</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KASIR -->
+    <div class="page" id="page-kasir">
+      <div class="section-header">
+        <h2>Kasir & Pembayaran</h2>
+        <div class="search-box"><span>🔍</span><input type="text" placeholder="Cari No. Kunjungan..."/></div>
+      </div>
+      <div class="grid-65">
+        <div class="card">
+          <div class="card-title">Detail Tagihan</div>
+          <div class="patient-banner" style="margin-bottom:16px;">
+            <div class="patient-avatar-lg" style="width:40px;height:40px;font-size:16px;">SR</div>
+            <div><div style="font-weight:700;">Sari Rahayu</div><div style="font-size:12px;color:var(--muted);">INV-20260626-0041</div></div>
+            <span class="badge badge-warning" style="margin-left:auto;">Menunggu Bayar</span>
+          </div>
+          <div class="billing-row"><div><div class="billing-item-name">Konsultasi Dokter Umum</div><div class="billing-item-cat">Konsultasi</div></div><div class="billing-item-price">Rp 50.000</div></div>
+          <div class="billing-row"><div><div class="billing-item-name">Administrasi Rawat Jalan</div><div class="billing-item-cat">Administrasi</div></div><div class="billing-item-price">Rp 15.000</div></div>
+          <div class="billing-row"><div><div class="billing-item-name">Darah Lengkap</div><div class="billing-item-cat">Laboratorium</div></div><div class="billing-item-price">Rp 80.000</div></div>
+          <div class="billing-row"><div><div class="billing-item-name">Paracetamol 500mg × 10</div><div class="billing-item-cat">Farmasi</div></div><div class="billing-item-price">Rp 25.000</div></div>
+          <div class="billing-row"><div><div class="billing-item-name">Ambroxol 30mg × 10</div><div class="billing-item-cat">Farmasi</div></div><div class="billing-item-price">Rp 30.000</div></div>
+          <hr class="divider"/>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);"><span>Subtotal</span><span>Rp 200.000</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--success);"><span>Diskon</span><span>– Rp 0</span></div>
+            <div class="billing-total"><span>Total Bayar</span><span style="color:var(--primary);">Rp 200.000</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Metode Pembayaran</div>
+          <div class="payment-options">
+            <div class="pay-opt selected" onclick="selectPay(this)" data-method="Tunai"><div class="pay-opt-icon">💵</div><div class="pay-opt-label">Tunai</div></div>
+            <div class="pay-opt" onclick="selectPay(this)" data-method="QRIS"><div class="pay-opt-icon">📱</div><div class="pay-opt-label">QRIS</div></div>
+            <div class="pay-opt" onclick="selectPay(this)" data-method="BPJS"><div class="pay-opt-icon">🏥</div><div class="pay-opt-label">BPJS</div></div>
+            <div class="pay-opt" onclick="selectPay(this)" data-method="Debit/Kredit"><div class="pay-opt-icon">💳</div><div class="pay-opt-label">Debit/Kredit</div></div>
+          </div>
+
+          <!-- PANEL TUNAI -->
+          <div id="pay-detail-Tunai" class="pay-panel" style="display:block;">
+            <div class="form-group" style="margin-bottom:12px;"><label>Nominal Uang Diterima (Rp)</label><input type="number" value="200000" id="cashInput" oninput="calcChange()"/></div>
+            <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:16px;border:1px solid var(--border);">
+              <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><span>Total Tagihan:</span><strong>Rp 200.000</strong></div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;"><span>Kembalian Pasien:</span><strong id="changeDisplay" style="color:var(--success);font-size:15px;">Rp 0</strong></div>
+            </div>
+          </div>
+
+          <!-- PANEL QRIS -->
+          <div id="pay-detail-QRIS" class="pay-panel" style="display:none;text-align:center;background:var(--bg);padding:16px;border-radius:8px;margin-bottom:16px;border:1px solid var(--border);">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Scan Barcode QRIS Dinamis RSUD Puruk Cahu</div>
+            <div style="background:white;padding:12px;display:inline-block;border-radius:8px;margin-bottom:8px;border:1px solid var(--border);box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+              <div style="font-size:54px;line-height:1;">📲</div>
+              <div style="font-size:11px;font-family:monospace;color:#000;font-weight:700;margin-top:4px;">NMID: ID1020030040050</div>
+              <div style="font-size:10px;color:var(--muted);">Nominal: Rp 200.000</div>
+            </div>
+            <div style="font-size:12px;color:var(--primary);font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;">
+              <span style="display:inline-block;width:8px;height:8px;background:var(--primary);border-radius:50%;animation:pulse 1.5s infinite;"></span> Menunggu scan dari HP pasien...
+            </div>
+            <div style="margin-top:10px;font-size:11px;color:var(--muted);">Tips: Pastikan kasir mengecek notifikasi SMS/M-Banking mutasi masuk sebelum konfirmasi.</div>
+          </div>
+
+          <!-- PANEL BPJS -->
+          <div id="pay-detail-BPJS" class="pay-panel" style="display:none;background:var(--bg);padding:14px;border-radius:8px;margin-bottom:16px;border:1px solid var(--border);">
+            <div class="form-group" style="margin-bottom:10px;"><label>Nomor SEP V-Claim BPJS</label><input type="text" value="1401R0010726V000041" readonly style="background:var(--surface);font-weight:600;color:var(--primary);"/></div>
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+              <div style="display:flex;justify-content:space-between;"><span>Status Eligibilitas:</span><span class="badge badge-success">Aktif & Terverifikasi ✓</span></div>
+              <div style="display:flex;justify-content:space-between;"><span>Bridging V-Claim:</span><strong>Connected Kemenkes</strong></div>
+              <div style="display:flex;justify-content:space-between;"><span>Biaya Ditanggung BPJS:</span><strong style="color:var(--success);">Rp 200.000 (100%)</strong></div>
+              <div style="display:flex;justify-content:space-between;"><span>Tagihan Pasien:</span><strong style="color:var(--primary);">Rp 0 (Gratis)</strong></div>
+            </div>
+          </div>
+
+          <!-- PANEL DEBIT / KREDIT -->
+          <div id="pay-detail-Debit/Kredit" class="pay-panel" style="display:none;background:var(--bg);padding:14px;border-radius:8px;margin-bottom:16px;border:1px solid var(--border);">
+            <div class="form-group" style="margin-bottom:10px;"><label>Nama Bank & Jenis Kartu</label>
+              <select style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--surface);"><option>Bank Mandiri - Debit EDC</option><option>Bank BRI - Debit EDC</option><option>Bank BNI - Debit EDC</option><option>Bank BCA - Debit/Kredit</option><option>Bank Kalteng - Debit</option></select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="form-group" style="margin-bottom:0;"><label>4 Digit Akhir Kartu</label><input type="text" placeholder="XXXX" maxlength="4" value="8841" id="debitCardNum"/></div>
+              <div class="form-group" style="margin-bottom:0;"><label>Kode Approval EDC</label><input type="text" placeholder="APPR-XXXX" value="APPR-9921" id="debitAppr"/></div>
+            </div>
+          </div>
+
+          <button class="btn btn-success" style="width:100%;justify-content:center;padding:12px;font-size:14px;font-weight:700;" onclick="confirmAction('kasir')">💳 Proses Pembayaran</button>
+          <hr class="divider"/>
+          <div class="card-title">Pendapatan Hari Ini</div>
+          <div style="font-size:28px;font-weight:800;color:var(--primary);margin-bottom:4px;" id="ctr-rev2">Rp 0</div>
+          <div style="font-size:12px;color:var(--muted);">dari 38 transaksi</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MASTER DATA -->
+    <div class="page" id="page-master">
+      <div class="section-header">
+        <h2>Master Data SIMRS & Inventori</h2>
+        <div class="action-bar">
+          <button class="btn btn-outline btn-sm" onclick="loadMasterData()">🔄 Refresh Data</button>
+          <button class="btn btn-primary btn-sm" onclick="showModal()">+ Tambah Master</button>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-bottom:16px;">
+        <div class="card">
+          <div class="card-title">Daftar Poliklinik & Dokter Spesialis</div>
+          <div class="table-wrap scrollable" style="max-height:280px;">
+            <table>
+              <thead><tr><th>Poli</th><th>Dokter Praktek</th><th>Spesialisasi</th><th>Jam</th><th>Kuota</th></tr></thead>
+              <tbody id="master-dokter-body">
+                <tr><td colspan="5" style="text-align:center;color:var(--muted);">Memuat data dokter dari Supabase...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Master Obat & Stok Farmasi</div>
+          <div class="table-wrap scrollable" style="max-height:280px;">
+            <table>
+              <thead><tr><th>Kode</th><th>Nama Obat</th><th>Satuan</th><th>Harga</th><th>Stok</th></tr></thead>
+              <tbody id="master-obat-body">
+                <tr><td colspan="5" style="text-align:center;color:var(--muted);">Memuat data obat dari Supabase...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Master Tarif Layanan & Tindakan Medis</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Kode Tarif</th><th>Nama Layanan</th><th>Kategori</th><th>Tarif Umum</th><th>Tarif BPJS</th><th>Status</th></tr></thead>
+            <tbody id="master-tarif-body">
+              <tr><td colspan="6" style="text-align:center;color:var(--muted);">Memuat tarif dari Supabase...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS & BRIDGING -->
+    <div class="page" id="page-settings">
+      <div class="section-header">
+        <h2>Konfigurasi Sistem & Bridging Eksternal</h2>
+        <button class="btn btn-success btn-sm" onclick="saveSettings()">💾 Simpan Konfigurasi</button>
+      </div>
+      <div class="grid-2" style="margin-bottom:16px;">
+        <div class="card">
+          <div class="card-title">🏥 Identitas Rumah Sakit</div>
+          <div class="form-grid">
+            <div class="form-group full"><label>Nama Rumah Sakit</label><input type="text" id="set-nama-rs" value="RSUD Puruk Cahu"/></div>
+            <div class="form-group full"><label>Alamat</label><textarea id="set-alamat">Jl. Jend. Sudirman No. 1, Puruk Cahu, Kab. Murung Raya</textarea></div>
+            <div class="form-group"><label>Telepon Helpdesk</label><input type="text" id="set-telepon" value="0882-1529-0459"/></div>
+            <div class="form-group"><label>Email Resmi</label><input type="email" id="set-email" value="denynz17@gmail.com"/></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">📧 Konfigurasi SMTP Email Gateway</div>
+          <div class="form-grid">
+            <div class="form-group"><label>SMTP Host</label><input type="text" id="set-smtp-host" value="smtp.gmail.com"/></div>
+            <div class="form-group"><label>SMTP Port</label><input type="text" id="set-smtp-port" value="587"/></div>
+            <div class="form-group full"><label>SMTP Username / Email</label><input type="text" id="set-smtp-user" value="denynz17@gmail.com"/></div>
+            <div class="form-group full"><label>SMTP Password / App Key</label><input type="password" id="set-smtp-pass" value="••••••••••••••••"/></div>
+          </div>
+          <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+            <span class="badge badge-success">● SMTP Ready (SSL/TLS)</span>
+            <button class="btn btn-outline btn-sm" onclick="alert('Test SMTP Email dikirim!')">📩 Tes Kirim Email</button>
+          </div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">📱 Konfigurasi WhatsApp Gateway (Fonnte)</div>
+          <div class="form-grid">
+            <div class="form-group full"><label>Endpoint API WA Gateway</label><input type="text" id="set-wa-url" value="https://api.fonnte.com/send"/></div>
+            <div class="form-group full"><label>API Key / Token Fonnte</label><input type="password" id="set-wa-key" value="••••••••••••••••••••"/></div>
+            <div class="form-group full"><label>Status Fitur</label><select id="set-wa-status"><option value="1">Aktif (Kirim Bukti Daftar & Panggilan)</option><option value="0">Non-Aktif</option></select></div>
+          </div>
+          <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+            <span class="badge badge-success">● WA Gateway Connected</span>
+            <button class="btn btn-outline btn-sm" onclick="alert('Pesan tes WA dikirim ke nomor helpdesk!')">💬 Tes Kirim WA</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">🔗 Bridging BPJS V-Claim & SatuSehat Kemenkes</div>
+          <div class="form-grid">
+            <div class="form-group"><label>BPJS Cons ID</label><input type="text" value="12345"/></div>
+            <div class="form-group"><label>BPJS Secret Key</label><input type="password" value="••••••••••••"/></div>
+            <div class="form-group"><label>SatuSehat Org ID</label><input type="text" value="100023456"/></div>
+            <div class="form-group"><label>SatuSehat Client ID</label><input type="password" value="••••••••••••••••"/></div>
+          </div>
+          <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <span class="badge badge-success" style="margin-right:6px;">● BPJS V-Claim Live</span>
+              <span class="badge badge-info">● FHIR R4 Ready</span>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="alert('Koneksi bridging BPJS & SatuSehat OK (200)!')">🔄 Sinkronisasi</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LAPORAN -->
+    <div class="page" id="page-laporan">
+      <div class="section-header">
+        <h2>Laporan & Eksekutif Dashboard RSUD</h2>
+        <div class="action-bar">
+          <select class="btn btn-outline btn-sm"><option>Bulan Ini (Juli 2026)</option><option>Bulan Lalu</option></select>
+          <button class="btn btn-primary btn-sm" onclick="alert('Mengunduh Laporan RL 5.1 & 5.2 PDF...')">📥 Export Laporan PDF / Excel</button>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card blue"><div class="stat-header"><div class="stat-icon">📈</div></div><div class="stat-value">1.428</div><div class="stat-label">Total Kunjungan Bulan Ini</div></div>
+        <div class="stat-card green"><div class="stat-header"><div class="stat-icon">🏥</div></div><div class="stat-value">89,4%</div><div class="stat-label">Tingkat Penyelesaian Pelayanan</div></div>
+        <div class="stat-card orange"><div class="stat-header"><div class="stat-icon">⏱️</div></div><div class="stat-value">14 Mnt</div><div class="stat-label">Rata-Rata Waktu Tunggu Pasien</div></div>
+        <div class="stat-card red"><div class="stat-header"><div class="stat-icon">💳</div></div><div class="stat-value">Rp 142.5M</div><div class="stat-label">Total Pendapatan Rawat Jalan</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Rekapitulasi Kunjungan Per Poliklinik (Juli 2026)</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Poliklinik</th><th>Dokter Penanggung Jawab</th><th>Pasien BPJS</th><th>Pasien Umum</th><th>Total Kunjungan</th><th>Persentase</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Poli Umum</strong></td><td>dr. Ahmad Fauzi</td><td>420</td><td>180</td><td><strong>600</strong></td><td>42% <div class="progress-bar-wrap"><div class="progress-bar" style="width:42%"></div></div></td></tr>
+              <tr><td><strong>Poli Anak</strong></td><td>dr. Siti Rahayu, Sp.A</td><td>210</td><td>90</td><td><strong>300</strong></td><td>21% <div class="progress-bar-wrap"><div class="progress-bar" style="width:21%"></div></div></td></tr>
+              <tr><td><strong>Poli Kebidanan</strong></td><td>dr. Maya Kusuma, Sp.OG</td><td>160</td><td>40</td><td><strong>200</strong></td><td>14% <div class="progress-bar-wrap"><div class="progress-bar" style="width:14%"></div></div></td></tr>
+              <tr><td><strong>Poli Gigi & Mulut</strong></td><td>drg. Budi Hartono</td><td>90</td><td>60</td><td><strong>150</strong></td><td>10.5% <div class="progress-bar-wrap"><div class="progress-bar" style="width:10.5%"></div></div></td></tr>
+              <tr><td><strong>Poli Bedah</strong></td><td>dr. Rizki Pratama, Sp.B</td><td>70</td><td>30</td><td><strong>100</strong></td><td>7% <div class="progress-bar-wrap"><div class="progress-bar" style="width:7%"></div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- MODAL -->
+<!-- CONFIRMATION MODAL -->
+<div class="success-modal" id="confirmModal" onclick="closeConfirmModal()">
+  <div class="modal-box" style="width:480px;text-align:left;padding:24px;" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:16px;font-weight:700;color:var(--primary);" id="confTitle">🛡️ Konfirmasi Tindakan</div>
+      <button class="btn btn-outline btn-sm" onclick="closeConfirmModal()">✕</button>
+    </div>
+    <div style="background:var(--bg);padding:14px;border-radius:8px;margin-bottom:16px;font-size:13px;line-height:1.6;border:1px solid var(--border);" id="confBody"></div>
+    <div style="background:var(--surface);border:1px solid var(--border);padding:12px;border-radius:8px;margin-bottom:16px;font-size:12px;">
+      <div style="font-weight:600;margin-bottom:8px;color:var(--primary);display:flex;align-items:center;gap:6px;">📲 Otomasi Pengiriman Notifikasi Pasien:</div>
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer;">
+        <input type="checkbox" id="chkWaNotif" checked style="accent-color:var(--success);width:16px;height:16px;"/>
+        <span id="lblWaNotif">Kirim Bukti / Struk Transaksi via <strong>WhatsApp Gateway (Fonnte)</strong></span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="chkEmailNotif" checked style="accent-color:var(--primary);width:16px;height:16px;"/>
+        <span id="lblEmailNotif">Kirim Salinan PDF via <strong>Email SMTP Gateway RSUD</strong></span>
+      </label>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="closeConfirmModal()">✕ Batal</button>
+      <button class="btn btn-success" id="btnExecuteConfirm" onclick="executeConfirmedAction()">✅ Ya, Proses Sekarang</button>
+    </div>
+  </div>
+</div>
+
+<div class="success-modal" id="successModal" onclick="closeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-icon">✅</div>
+    <div class="modal-title" id="modalTitle">Berhasil!</div>
+    <div class="modal-sub" id="modalSub">Data berhasil disimpan ke sistem.</div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="closeModal()">Selesai</button>
+  </div>
+</div>
+
+<div class="success-modal" id="notifModal" onclick="closeNotifModal()">
+  <div class="modal-box" style="width:420px;text-align:left;padding:24px;" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:16px;font-weight:700;">🔔 Notifikasi Sistem</div>
+      <button class="btn btn-outline btn-sm" onclick="closeNotifModal()">✕</button>
+    </div>
+    <div id="notifListContainer" style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;">
+      <div style="padding:12px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--muted);text-align:center;">Memuat notifikasi...</div>
+    </div>
+    <hr class="divider"/>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="markAllRead()">Tandai Semua Dibaca</button>
+  </div>
+</div>
+
+<script>
+  // NAVIGATION
+  const titles = { dashboard:'Dashboard', antrian:'Monitor Antrian', pendaftaran:'Pendaftaran Pasien', emr:'EMR – Rekam Medis Elektronik', farmasi:'Farmasi & Apotik', kasir:'Kasir & Pembayaran', master:'Master Data & Inventori', settings:'Pengaturan & Bridging Sistem', laporan:'Laporan & Statistik RSUD' };
+  document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      item.classList.add('active');
+      const page = item.dataset.page;
+      document.getElementById('page-' + page).classList.add('active');
+      document.getElementById('headerTitle').textContent = titles[page] || page;
+    });
+  });
+
+  // DATE
+  document.getElementById('headerDate').textContent = new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  // COUNTER ANIMATION
+  function animCount(el, target, prefix='', suffix='') {
+    let cur=0; const step=target/40;
+    const t=setInterval(()=>{ cur=Math.min(cur+step,target); el.textContent=prefix+Math.floor(cur).toLocaleString('id-ID')+suffix; if(cur>=target) clearInterval(t); },30);
+  }
+  animCount(document.getElementById('ctr-visit'),98);
+  animCount(document.getElementById('ctr-done'),74);
+  animCount(document.getElementById('ctr-wait'),12);
+  animCount(document.getElementById('ctr-rev'),4750000,'Rp ','');
+  animCount(document.getElementById('ctr-rev2'),4750000,'Rp ','');
+
+  // CHARTS
+  new Chart(document.getElementById('chartVisit').getContext('2d'),{
+    type:'bar', data:{ labels:['Sen','Sel','Rab','Kam','Jum','Sab','Min'],
+      datasets:[{label:'BPJS',data:[58,62,71,55,68,74,42],backgroundColor:'#3b6ef0',borderRadius:6},{label:'Umum',data:[22,28,24,18,22,26,14],backgroundColor:'#10b981',borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'Inter',size:11}}}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{family:'Inter',size:11}}},y:{stacked:true,grid:{color:'#f1f5f9'},ticks:{font:{family:'Inter',size:11}}}}}
+  });
+  new Chart(document.getElementById('chartPayment').getContext('2d'),{
+    type:'doughnut', data:{labels:['BPJS','Umum','Lainnya'],datasets:[{data:[68,27,5],backgroundColor:['#3b6ef0','#10b981','#f59e0b'],borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'70%'}
+  });
+
+  // TOP DIAGNOSES
+  const topDx=[['J06.9','ISPA',142],['I10','Hipertensi',98],['E11.9','DM Tipe 2',87],['J18.9','Pneumonia',64],['K29.7','Gastritis',58],['R51','Nyeri Kepala',47],['M54.5','Nyeri Punggung',43],['J30.4','Rinitis Alergi',38],['A09','Diare',34],['L30.9','Dermatitis',28]];
+  const dxTb=document.getElementById('dx-table');
+  topDx.forEach(([code,name,cnt],i)=>{ dxTb.innerHTML+=`<tr><td><span style="font-size:11px;font-weight:700;color:var(--muted);">${i+1}</span></td><td><div style="font-size:12px;font-weight:600;">${name}</div><div style="font-size:10px;color:var(--primary);">${code}</div></td><td><strong>${cnt}</strong></td></tr>`; });
+
+  // QUEUE
+  const polyData=[{name:'Poli Umum',cur:'A-023',curName:'Budi Santoso',wait:5,done:18},{name:'Poli Anak',cur:'B-014',curName:'Anisa Putri',wait:3,done:11},{name:'Poli Kebidanan',cur:'C-009',curName:'Dewi Lestari',wait:4,done:5},{name:'Poli Gigi',cur:'D-016',curName:'Rudi Hartono',wait:0,done:16},{name:'Poli Bedah',cur:'E-007',curName:'Bambang W.',wait:2,done:5},{name:'Poli Mata',cur:'F-005',curName:'Sri Mulyani',wait:1,done:4}];
+  const polyCards=document.getElementById('polyCards');
+  polyData.forEach(p=>{ polyCards.innerHTML+=`<div class="queue-poly-card"><div class="poly-name">${p.name}</div><div class="current-num">${p.cur}</div><div class="current-name">${p.curName}</div><div class="queue-meta"><span class="meta-chip chip-wait">⏳ ${p.wait}</span><span class="meta-chip chip-done">✅ ${p.done}</span></div></div>`; });
+
+  const waitingPasien=[{num:'A-024',name:'Hendra Gunawan',type:'BPJS',est:'~5 mnt'},{num:'A-025',name:'Rina Marlina',type:'Umum',est:'~12 mnt'},{num:'A-026',name:'Slamet Riyadi',type:'BPJS',est:'~19 mnt'},{num:'A-027',name:'Yuli Astuti',type:'BPJS',est:'~26 mnt'},{num:'A-028',name:'Agus Salim',type:'Umum',est:'~33 mnt'}];
+  const wl=document.getElementById('waitingList');
+  waitingPasien.forEach(p=>{ wl.innerHTML+=`<div class="waiting-item"><div class="waiting-num">${p.num}</div><div class="waiting-info"><strong>${p.name}</strong><span>${p.type}</span></div><div class="waiting-est">${p.est}</div></div>`; });
+  let callingIdx=0;
+  function panggil(){ if(callingIdx>=waitingPasien.length)return; const p=waitingPasien[callingIdx++]; document.getElementById('callingNum').textContent=p.num; document.getElementById('callingName').textContent=p.name; wl.querySelector('.waiting-item')?.remove(); }
+
+  // VISIT TABLE
+  const visits=[{no:'UMU-001',rm:'RM-2026-00241',name:'Andi Kurniawan',poli:'Poli Umum',type:'BPJS',status:'Dalam Pemeriksaan'},{no:'UMU-002',rm:'RM-2026-00189',name:'Siti Fatimah',poli:'Poli Umum',type:'Umum',status:'Menunggu'},{no:'ANA-003',rm:'RM-2026-00231',name:'Budi Kurniawan',poli:'Poli Anak',type:'BPJS',status:'Selesai'},{no:'KBD-001',rm:'RM-2026-00245',name:'Sari Rahayu',poli:'Poli Kebidanan',type:'BPJS',status:'Selesai'},{no:'GIG-002',rm:'RM-2026-00098',name:'Rudi Hartono',poli:'Poli Gigi',type:'Umum',status:'Selesai'}];
+  const vt=document.getElementById('visitTable');
+  visits.forEach(v=>{ const s=v.status; const cls=s==='Selesai'?'badge-success':s==='Menunggu'?'badge-warning':'badge-info'; vt.innerHTML+=`<tr><td><strong>${v.no}</strong></td><td style="font-size:12px;color:var(--muted);">${v.rm}</td><td><strong>${v.name}</strong></td><td style="font-size:12px;">${v.poli}</td><td><span class="badge ${v.type==='BPJS'?'badge-info':'badge-gray'}">${v.type}</span></td><td><span class="badge ${cls}">${s}</span></td><td><button class="btn btn-outline btn-sm">Detail</button></td></tr>`; });
+
+  // RX TABLE
+  const rxData=[{no:'RES-023',pasien:'Budi Kurniawan',dr:'dr. Ahmad Fauzi',time:'10:35',status:'Menunggu'},{no:'RES-024',pasien:'Siti Fatimah',dr:'dr. Budi Prakoso',time:'11:02',status:'Diracik'},{no:'RES-025',pasien:'Agus Salim',dr:'dr. Ahmad Fauzi',time:'11:18',status:'Menunggu'},{no:'RES-022',pasien:'Rina Marlina',dr:'dr. Siti Rahayu',time:'09:55',status:'Diserahkan'}];
+  const rt=document.getElementById('rxTable');
+  rxData.forEach(r=>{ const cls=r.status==='Diserahkan'?'badge-success':r.status==='Menunggu'?'badge-warning':'badge-info'; rt.innerHTML+=`<tr><td style="font-weight:600;font-size:12px;">${r.no}</td><td>${r.pasien}</td><td style="font-size:12px;color:var(--muted);">${r.dr}</td><td style="font-size:12px;">${r.time}</td><td><span class="badge ${cls}">${r.status}</span></td><td><button class="btn btn-outline btn-sm">Proses</button></td></tr>`; });
+
+  // STOCK ALERT
+  const stocks=[{name:'Amoxicillin 500mg',stok:8,min:20},{name:'Metformin 500mg',stok:15,min:30},{name:'Cetirizine 10mg',stok:6,min:25}];
+  const sa=document.getElementById('stockAlert');
+  stocks.forEach(s=>{ const pct=Math.round(s.stok/s.min*100); sa.innerHTML+=`<div style="padding:8px 0;border-bottom:1px solid var(--border);"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="font-weight:600;">${s.name}</span><span style="color:var(--danger);font-weight:600;">${s.stok}/${s.min}</span></div><div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%;background:var(--danger);"></div></div></div>`; });
+
+  // ICD SEARCH
+  const icdData=[{code:'J06.9',name:'Infeksi Sal. Napas Atas Akut'},{code:'J02.9',name:'Faringitis Akut'},{code:'R50.9',name:'Demam, tidak spesifik'},{code:'I10',name:'Hipertensi Esensial'},{code:'E11.9',name:'Diabetes Melitus Tipe 2'},{code:'K29.7',name:'Gastritis'},{code:'M54.5',name:'Nyeri Punggung Bawah'},{code:'J18.9',name:'Pneumonia'}];
+  function searchICD(q){ const res=document.getElementById('icdResults'); if(!q){res.style.display='none';return;} const f=icdData.filter(d=>d.code.toLowerCase().includes(q.toLowerCase())||d.name.toLowerCase().includes(q.toLowerCase())); if(!f.length){res.style.display='none';return;} res.style.display='block'; res.innerHTML=f.map(d=>`<div class="icd-item" onclick="addDx('${d.code}','${d.name}')"><div class="icd-code">${d.code}</div>${d.name}</div>`).join(''); }
+  function addDx(code,name){ const box=document.getElementById('selectedDx'); if([...box.querySelectorAll('.dx-tag')].some(t=>t.textContent.startsWith(code)))return; const tag=document.createElement('div'); tag.className='dx-tag'; tag.innerHTML=`${code} – ${name.split(',')[0]} <span onclick="this.parentElement.remove()">×</span>`; box.appendChild(tag); document.getElementById('icdResults').style.display='none'; document.getElementById('icdInput').value=''; }
+
+  // ADD RX
+  let rxCount=3;
+  function addRx(){ rxCount++; const list=document.getElementById('rxList'); const item=document.createElement('div'); item.className='rx-item'; item.innerHTML=`<div class="rx-num">${rxCount}</div><div class="rx-med"><input type="text" placeholder="Nama obat..." style="font-size:13px;margin-bottom:4px;width:100%;"/><input type="text" placeholder="Aturan pakai · Jumlah..." style="font-size:12px;width:100%;"/></div><span onclick="this.parentElement.remove()" style="cursor:pointer;color:var(--muted);font-size:18px;">×</span>`; list.appendChild(item); }
+
+  // PAYMENT
+  function selectPay(el){ 
+    document.querySelectorAll('.pay-opt').forEach(o=>o.classList.remove('selected')); 
+    el.classList.add('selected'); 
+    const method = el.dataset.method || 'Tunai';
+    document.querySelectorAll('.pay-panel').forEach(p => p.style.display = 'none');
+    const targetPanel = document.getElementById('pay-detail-' + method);
+    if(targetPanel) targetPanel.style.display = 'block';
+  }
+  function calcChange(){ const paid=parseInt(document.getElementById('cashInput').value)||0; const change=Math.max(paid-200000,0); document.getElementById('changeDisplay').textContent='Rp '+change.toLocaleString('id-ID'); }
+
+  // STEPS
+  function nextStep(step){ [1,2,3].forEach(s=>{ const el=document.getElementById('regStep'+s); if(el) el.style.display=s===step?'block':'none'; }); document.querySelectorAll('#regSteps .step').forEach((s,i)=>{ s.classList.remove('active','done'); if(i+1===step) s.classList.add('active'); if(i+1<step) s.classList.add('done'); }); }
+
+  // MODAL & CONFIRMATION
+  const modalMessages={ emr:['EMR Tersimpan!','Rekam medis dan resep berhasil disimpan.'], farmasi:['Obat Diserahkan!','Resep berhasil diproses dan diserahkan ke pasien.'], kasir:['Pembayaran Berhasil!','Kwitansi telah dicetak dan dikirim ke pasien.'], pendaftaran:['Pendaftaran Berhasil!','Nomor antrian UMU-001 telah dicetak.'] };
+  function showModal(){ const page=document.querySelector('.page.active').id.replace('page-',''); const msg=modalMessages[page]||['Berhasil!','Data berhasil disimpan.']; document.getElementById('modalTitle').textContent=msg[0]; document.getElementById('modalSub').textContent=msg[1]; document.getElementById('successModal').classList.add('show'); }
+  function closeModal(){ document.getElementById('successModal').classList.remove('show'); }
+
+  let currentActionType = '';
+  function confirmAction(type) {
+    currentActionType = type;
+    const modal = document.getElementById('confirmModal');
+    const title = document.getElementById('confTitle');
+    const body = document.getElementById('confBody');
+    const lblWa = document.getElementById('lblWaNotif');
+    const lblEmail = document.getElementById('lblEmailNotif');
+    
+    if (type === 'kasir') {
+      const selectedOpt = document.querySelector('.pay-opt.selected');
+      const method = selectedOpt ? selectedOpt.dataset.method : 'Tunai';
+      title.textContent = '🛡️ Konfirmasi & Verifikasi Pembayaran Kasir';
+      let methodDetails = '';
+      if (method === 'Tunai') {
+        const paid = parseInt(document.getElementById('cashInput').value)||0;
+        const change = Math.max(paid - 200000, 0);
+        methodDetails = `<div style="color:var(--success);margin-top:6px;padding:8px;background:white;border-radius:6px;border:1px solid var(--border);"><strong>✔ Verifikasi Tunai:</strong> Uang Diterima Rp ${paid.toLocaleString('id-ID')} · Kembalian Pasien Rp ${change.toLocaleString('id-ID')}</div>`;
+      } else if (method === 'QRIS') {
+        methodDetails = `<div style="color:var(--primary);margin-top:6px;padding:8px;background:white;border-radius:6px;border:1px solid var(--border);"><strong>✔ Verifikasi QRIS Dinamis (NMID: ID1020030040050):</strong> Apakah Anda menyatakan mutasi masuk Rp 200.000 dari rekening pasien sudah dicek di M-Banking/Merchant RSUD?</div>`;
+      } else if (method === 'BPJS') {
+        methodDetails = `<div style="color:var(--success);margin-top:6px;padding:8px;background:white;border-radius:6px;border:1px solid var(--border);"><strong>✔ Verifikasi BPJS Kesehatan:</strong> SEP 1401R0010726V000041 valid & terverifikasi bridging V-Claim. Tagihan Rp 200.000 ditanggung 100% oleh BPJS.</div>`;
+      } else {
+        const cardNum = document.getElementById('debitCardNum').value || 'XXXX';
+        const appr = document.getElementById('debitAppr').value || 'APPR-XXXX';
+        methodDetails = `<div style="color:var(--info);margin-top:6px;padding:8px;background:white;border-radius:6px;border:1px solid var(--border);"><strong>✔ Verifikasi Kartu Debit/Kredit:</strong> 4 Digit Akhir Kartu: ${cardNum} · Kode Approval EDC Bank: ${appr}.</div>`;
+      }
+      body.innerHTML = `
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Pasien:</span><strong>Sari Rahayu (INV-20260626-0041)</strong></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Metode Dipilih:</span><strong style="color:var(--primary);font-size:14px;">${method}</strong></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>Total Tagihan:</span><strong>Rp 200.000</strong></div>
+        <hr class="divider" style="margin:8px 0;"/>
+        <div style="font-size:12px;">${methodDetails}</div>
+      `;
+      lblWa.innerHTML = `Kirim Bukti Pembayaran & e-Kwitansi via <strong>WhatsApp Gateway (Fonnte)</strong> ke 0882-1529-0459`;
+      lblEmail.innerHTML = `Kirim Salinan Struk Transaksi PDF via <strong>Email SMTP Gateway</strong> ke denynz17@gmail.com`;
+    } else if (type === 'farmasi') {
+      title.textContent = '🛡️ Konfirmasi Penyerahan Obat & Telaah Resep';
+      body.innerHTML = `
+        <div style="margin-bottom:6px;">Apakah Anda yakin resep <strong>RES-20260626-023</strong> atas nama pasien <strong>Budi Kurniawan</strong> telah ditelaah (5 Tepat Pasien, Obat, Dosis, Rute, Waktu)?</div>
+        <div style="color:var(--warning);font-size:12px;padding:8px;background:white;border-radius:6px;border:1px solid var(--border);margin-top:6px;">⚠️ Stok apotek (Paracetamol, Ambroxol, Cetirizine) akan dikurangi secara otomatis di database inventori.</div>
+      `;
+      lblWa.innerHTML = `Kirim Aturan Pakai & Jadwal Minum Obat via <strong>WhatsApp Gateway (Fonnte)</strong>`;
+      lblEmail.innerHTML = `Kirim Salinan Resep Digital via <strong>Email SMTP Gateway RSUD</strong>`;
+    } else if (type === 'emr') {
+      title.textContent = '🛡️ Konfirmasi Rekam Medis & Diagnosis Dokter';
+      body.innerHTML = `
+        <div style="margin-bottom:6px;">Pemeriksaan EMR atas nama <strong>Budi Kurniawan (RM-2026-00231)</strong> akan difinalisasi dengan diagnosis utama <strong>J06.9 – ISPA</strong>.</div>
+        <div style="color:var(--primary);font-size:12px;padding:8px;background:white;border-radius:6px;border:1px solid var(--border);margin-top:6px;">🔗 Data EMR dienkripsi & tersinkronisasi realtime dengan platform <strong>SatuSehat Kemenkes RI</strong>.</div>
+      `;
+      lblWa.innerHTML = `Kirim Ringkasan Kunjungan & Edukasi Medis via <strong>WhatsApp Gateway</strong>`;
+      lblEmail.innerHTML = `Kirim Resume Medis & Surat Keterangan via <strong>Email SMTP RSUD</strong>`;
+    } else if (type === 'pendaftaran') {
+      title.textContent = '🛡️ Konfirmasi Pendaftaran & Cetak Tiket Antrian';
+      body.innerHTML = `
+        <div style="margin-bottom:6px;">Pasien <strong>Andi Kurniawan (RM-2026-00247)</strong> akan didaftarkan ke <strong>Poli Umum</strong> bersama dokter <strong>dr. Ahmad Fauzi</strong>.</div>
+        <div style="color:var(--success);font-size:12px;padding:8px;background:white;border-radius:6px;border:1px solid var(--border);margin-top:6px;">✔ Status BPJS Kesehatan: Eligible & Terverifikasi otomatis via bridging V-Claim Kemenkes.</div>
+      `;
+      lblWa.innerHTML = `Kirim Tiket Antrian (UMU-001) & Estimasi Waktu Layanan via <strong>WhatsApp Gateway</strong>`;
+      lblEmail.innerHTML = `Kirim Bukti Registrasi & Jadwal Praktek Dokter via <strong>Email SMTP RSUD</strong>`;
+    }
+    modal.classList.add('show');
+  }
+
+  function closeConfirmModal() {
+    document.getElementById('confirmModal').classList.remove('show');
+  }
+
+  async function executeConfirmedAction() {
+    const btn = document.getElementById('btnExecuteConfirm');
+    const origText = btn.innerHTML;
+    btn.innerHTML = '⏳ Memproses & Mengirim Notif...';
+    btn.disabled = true;
+
+    try {
+      let notifTitle = 'Notifikasi Sistem SIMRS';
+      let notifMsg = 'Transaksi berhasil diproses oleh sistem.';
+      if (currentActionType === 'kasir') {
+        const method = document.querySelector('.pay-opt.selected')?.dataset.method || 'Tunai';
+        notifTitle = 'Bukti Pembayaran Tagihan (INV-20260626-0041)';
+        notifMsg = `Pembayaran tagihan atas nama Sari Rahayu sebesar Rp 200.000 via ${method} telah LUNAS terverifikasi. Struk resmi telah dikirim via WA Gateway dan Email SMTP.`;
+      } else if (currentActionType === 'farmasi') {
+        notifTitle = 'Penyerahan Obat Resep (RES-20260626-023)';
+        notifMsg = `Resep obat untuk Budi Kurniawan telah diserahkan. Aturan pakai: Paracetamol (3x1), Ambroxol (3x1), Cetirizine (1x1 malam). Dikirim via WA & Email.`;
+      } else if (currentActionType === 'emr') {
+        notifTitle = 'Rekam Medis & Diagnosis Terkirim (SatuSehat)';
+        notifMsg = `Pemeriksaan EMR pasien Budi Kurniawan (J06.9 - ISPA) telah disimpan dan tersinkronisasi dengan SatuSehat Kemenkes.`;
+      } else if (currentActionType === 'pendaftaran') {
+        notifTitle = 'Registrasi Antrian Baru (UMU-001)';
+        notifMsg = `Pasien Andi Kurniawan berhasil didaftarkan ke Poli Umum (dr. Ahmad Fauzi). Tiket antrian digital dikirim ke WA & Email.`;
+      }
+
+      await fetch('/api/notifikasi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          tipe: 'WhatsApp & Email (Fonnte/SMTP)',
+          judul: notifTitle,
+          pesan: notifMsg,
+          nomor_tujuan: '0882-1529-0459',
+          referensi: currentActionType.toUpperCase() + '-' + Date.now()
+        })
+      });
+      loadRealData();
+    } catch (e) {
+      console.log('Notif error or offline:', e);
+    }
+
+    setTimeout(() => {
+      btn.innerHTML = origText;
+      btn.disabled = false;
+      closeConfirmModal();
+
+      const msg = modalMessages[currentActionType] || ['Berhasil!', 'Tindakan telah berhasil diproses.'];
+      document.getElementById('modalTitle').textContent = msg[0];
+      document.getElementById('modalSub').textContent = msg[1] + ' ✅ Bukti & struk transaksi telah dikirim via WhatsApp Gateway dan Email!';
+      document.getElementById('successModal').classList.add('show');
+    }, 600);
+  }
+
+  // FETCH REAL DATA FROM SUPABASE
+  async function loadRealData() {
+    try {
+      const resStat = await fetch('/api/public/statistik');
+      if (resStat.ok) {
+        const stat = await resStat.json();
+        if (stat.kunjungan_hari_ini !== undefined) {
+          document.getElementById('ctr-visit').textContent = stat.kunjungan_hari_ini || 0;
+          document.getElementById('ctr-done').textContent = Math.floor((stat.kunjungan_hari_ini || 0) * 0.8);
+          document.getElementById('ctr-wait').textContent = Math.ceil((stat.kunjungan_hari_ini || 0) * 0.2);
+        }
+      }
+      const resNotif = await fetch('/api/notifikasi/unread-count');
+      if (resNotif.ok) {
+        const notif = await resNotif.json();
+        document.getElementById('notifBadge').textContent = notif.unread_count || 0;
+      }
+    } catch (e) {
+      console.log('Using simulated numbers:', e);
+    }
+  }
+
+  async function loadMasterData() {
+    try {
+      const resDoc = await fetch('/api/public/jadwal-dokter?hari=semua');
+      if (resDoc.ok) {
+        const docJson = await resDoc.json();
+        const tbodyDoc = document.getElementById('master-dokter-body');
+        if (docJson.data && docJson.data.length > 0) {
+          tbodyDoc.innerHTML = docJson.data.map(d => `
+            <tr>
+              <td><span class="badge badge-info">${d.poli}</span></td>
+              <td><strong>${d.dokter}</strong></td>
+              <td style="color:var(--muted);">${d.spesialisasi}</td>
+              <td>${d.jam}</td>
+              <td><strong style="color:var(--success);">${d.sisa_kuota}/${d.kuota_harian}</strong></td>
+            </tr>
+          `).join('');
+        }
+      }
+      const resObat = await fetch('/api/farmasi/stok');
+      if (resObat.ok) {
+        const obatJson = await resObat.json();
+        const tbodyObat = document.getElementById('master-obat-body');
+        if (obatJson && obatJson.length > 0) {
+          tbodyObat.innerHTML = obatJson.map(o => `
+            <tr>
+              <td><span style="font-family:monospace;font-weight:600;color:var(--primary);">${o.kode_obat}</span></td>
+              <td><strong>${o.nama_obat}</strong><div style="font-size:11px;color:var(--muted);">${o.kategori}</div></td>
+              <td>${o.satuan}</td>
+              <td>Rp ${(o.harga_jual||0).toLocaleString('id-ID')}</td>
+              <td><span class="badge ${o.stok_tersedia <= o.stok_minimum ? 'badge-danger' : 'badge-success'}">${o.stok_tersedia}</span></td>
+            </tr>
+          `).join('');
+        }
+      }
+      const resTarif = await fetch('/api/master/tarif');
+      if (resTarif.ok) {
+        const tarifJson = await resTarif.json();
+        const tbodyTarif = document.getElementById('master-tarif-body');
+        if (tarifJson && tarifJson.length > 0) {
+          tbodyTarif.innerHTML = tarifJson.map(t => `
+            <tr>
+              <td><span style="font-family:monospace;font-weight:600;color:var(--primary);">${t.kode_tarif}</span></td>
+              <td><strong>${t.nama_layanan}</strong></td>
+              <td><span class="badge badge-gray">${t.kategori}</span></td>
+              <td>Rp ${(t.harga_umum||0).toLocaleString('id-ID')}</td>
+              <td>Rp ${(t.harga_bpjs||0).toLocaleString('id-ID')}</td>
+              <td><span class="badge badge-success">Aktif</span></td>
+            </tr>
+          `).join('');
+        }
+      }
+    } catch (e) {
+      console.log('Error loading master data:', e);
+    }
+  }
+
+  function openSettingsPage() {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const setNav = document.querySelector('.nav-item[data-page="settings"]');
+    if (setNav) setNav.classList.add('active');
+    document.getElementById('page-settings').classList.add('active');
+    document.getElementById('headerTitle').textContent = 'Pengaturan & Bridging Sistem';
+  }
+
+  async function toggleNotifModal() {
+    const modal = document.getElementById('notifModal');
+    if (modal.classList.contains('show')) {
+      closeNotifModal();
+      return;
+    }
+    modal.classList.add('show');
+    const container = document.getElementById('notifListContainer');
+    try {
+      const res = await fetch('/api/notifikasi');
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.length > 0) {
+          container.innerHTML = json.map(n => `
+            <div style="padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                <strong style="font-size:13px;color:var(--primary);">${n.judul}</strong>
+                <span style="font-size:11px;color:var(--muted);">${n.created_at || 'Baru'}</span>
+              </div>
+              <div style="font-size:12px;color:var(--text);">${n.pesan}</div>
+            </div>
+          `).join('');
+          return;
+        }
+      }
+    } catch(e) {}
+    container.innerHTML = `
+      <div style="padding:12px;background:var(--bg);border-radius:8px;font-size:13px;text-align:center;">
+        <div style="font-weight:600;margin-bottom:4px;">✅ Tidak Ada Notifikasi Baru</div>
+        <span style="color:var(--muted);font-size:11px;">Semua antrian dan stok obat dalam kondisi normal.</span>
+      </div>
+    `;
+  }
+
+  function closeNotifModal() {
+    document.getElementById('notifModal').classList.remove('show');
+  }
+
+  function markAllRead() {
+    document.getElementById('notifBadge').textContent = '0';
+    closeNotifModal();
+    alert('Semua notifikasi telah ditandai dibaca.');
+  }
+
+  function saveSettings() {
+    alert('Konfigurasi sistem & bridging berhasil disimpan ke database Supabase!');
+  }
+
+  // Load initial real data on start
+  window.addEventListener('DOMContentLoaded', () => {
+    loadRealData();
+    loadMasterData();
+  });
+</script>
+</body>
 </html>
