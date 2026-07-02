@@ -27,7 +27,7 @@ function get_db_connection() {
                 }
             }
         }
-        $host = getenv('DB_HOST') ?: (isset($_ENV['DB_HOST']) ? $_ENV['DB_HOST'] : 'aws-0-ap-southeast-1.pooler.supabase.com');
+        $host = getenv('DB_HOST') ?: (isset($_ENV['DB_HOST']) ? $_ENV['DB_HOST'] : 'aws-1-ap-southeast-1.pooler.supabase.com');
         $port = getenv('DB_PORT') ?: (isset($_ENV['DB_PORT']) ? $_ENV['DB_PORT'] : '6543');
         $db   = getenv('DB_DATABASE') ?: (isset($_ENV['DB_DATABASE']) ? $_ENV['DB_DATABASE'] : 'postgres');
         $user = getenv('DB_USERNAME') ?: (isset($_ENV['DB_USERNAME']) ? $_ENV['DB_USERNAME'] : 'postgres.hzewijlfggyghkaqfqrc');
