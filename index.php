@@ -510,7 +510,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             <i class="fa-solid fa-magnifying-glass"></i>
                             <input type="text" class="search-input" placeholder="Cari nama / no. antrian...">
                         </div>
-                        <button class="btn-refresh">
+                        <button class="btn-refresh" onclick="location.reload()">
                             <i class="fa-solid fa-rotate-right"></i> Refresh
                         </button>
                     </div>
@@ -541,7 +541,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                         <span class="badge-status badge-menunggu">Menunggu</span>
                                     <?php endif; ?>
                                 </td>
-                                <td><button class="btn-detail">Detail</button></td>
+                                <td><a href="?page=emr_dokter&no_antrian=<?= urlencode($row['no']) ?>&nama=<?= urlencode($row['nama']) ?>" class="btn-detail" style="text-decoration:none; display:inline-block;">Detail / Dilayani</a></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>

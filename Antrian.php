@@ -31,12 +31,12 @@ $status_poli = [
 
 // PERBAIKAN: Menggunakan class icon Font Awesome v6 yang valid
 $nav_items = [
-    ['label' => 'Dashboard',   'icon' => 'fa-chart-pie',      'active' => true],
-    ['label' => 'Antrian',     'icon' => 'fa-clipboard-list'],
-    ['label' => 'Pendaftaran', 'icon' => 'fa-user-plus'],
-    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical'],
-    ['label' => 'Farmasi',     'icon' => 'fa-prescription-bottle-medical'],
-    ['label' => 'Kasir',       'icon' => 'fa-credit-card'],
+    ['label' => 'Dashboard',   'icon' => 'fa-chart-pie',      'page' => 'dashboard'],
+    ['label' => 'Antrian',     'icon' => 'fa-clipboard-list', 'page' => 'antrian', 'active' => true],
+    ['label' => 'Pendaftaran', 'icon' => 'fa-user-plus',      'page' => 'pendaftaran'],
+    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical',   'page' => 'emr_dokter'],
+    ['label' => 'Farmasi',     'icon' => 'fa-prescription-bottle-medical', 'page' => 'farmasi'],
+    ['label' => 'Kasir',       'icon' => 'fa-credit-card',    'page' => 'kasir'],
 ];
 ?>
 <!DOCTYPE html>
@@ -431,7 +431,7 @@ $nav_items = [
     <ul class="nav-list">
         <?php foreach ($nav_items as $item): ?>
         <li>
-            <a href="#" <?= !empty($item['active']) ? 'class="active"' : '' ?>>
+            <a href="?page=<?= $item['page'] ?>" <?= !empty($item['active']) ? 'class="active"' : '' ?>>
                 <i class="fa-solid <?= htmlspecialchars($item['icon']) ?>"></i>
                 <?= htmlspecialchars($item['label']) ?>
             </a>
@@ -439,13 +439,13 @@ $nav_items = [
         <?php endforeach; ?>
     </ul>
 
-    <a href="#" class="btn-quick">
+    <a href="?page=pendaftaran" class="btn-quick">
         <i class="fa-solid fa-plus"></i> Quick Admission
     </a>
 
     <div class="sidebar-footer">
-        <a href="#"><i class="fa-solid fa-gear"></i> Settings</a>
-        <a href="#"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        <a href="?page=settings"><i class="fa-solid fa-gear"></i> Settings</a>
+        <a href="?page=logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
     </div>
 </aside>
 
@@ -539,7 +539,7 @@ $nav_items = [
                         <i class="fa-solid fa-magnifying-glass"></i>
                         <input type="text" class="search-input" placeholder="Cari nama / no. antrian...">
                     </div>
-                    <button class="btn-refresh">
+                    <button class="btn-refresh" onclick="location.reload()">
                         <i class="fa-solid fa-rotate-right"></i> Refresh
                     </button>
                 </div>
@@ -571,7 +571,7 @@ $nav_items = [
                                     <span class="badge-status badge-menunggu">Menunggu</span>
                                 <?php endif; ?>
                             </td>
-                            <td><button class="btn-detail">Detail</button></td>
+                            <td><a href="?page=emr_dokter&no_antrian=<?= urlencode($row['no']) ?>&nama=<?= urlencode($row['nama']) ?>" class="btn-detail" style="text-decoration:none; display:inline-block;">Detail / Dilayani</a></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
