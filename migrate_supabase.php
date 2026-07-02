@@ -4,32 +4,23 @@
  * Menjalankan migrasi 15 tabel RME (Rekam Medis Elektronik) langsung ke Supabase
  */
 
-$host = 'aws-1-ap-southeast-1.pooler.supabase.com';
-$port = '6543';
-$db   = 'postgres';
-$user = 'postgres.hzewijlfggyghkaqfqrc';
-$pass = 'rme_ralan.123';
+require_once __DIR__ . '/db_helper.php';
 
 echo "=========================================================\n";
 echo "    MIGRASI DATABASE RME KE SUPABASE (POSTGRESQL)       \n";
 echo "=========================================================\n\n";
 
 try {
-    echo "[1/3] Menghubungkan ke server Supabase ($host:$port)... ";
-    $dsn = "pgsql:host=$host;port=$port;dbname=$db;sslmode=require";
-    $pdo = new PDO($dsn, $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    ]);
+    echo "[1/3] Menghubungkan ke server Supabase via db_helper... ";
+    $pdo = get_db_connection();
     echo "BERHASIL! ✓\n\n";
-} catch (PDOException $e) {
+} catch (Exception $e) {
     echo "GAGAL! ✗\n\n";
     echo "Pesan Error: " . $e->getMessage() . "\n";
     echo "---------------------------------------------------------\n";
     echo "TIPS PERBAIKAN:\n";
-    echo "1. Pastikan password database Anda ('rme_ralan.123') sudah benar.\n";
-    echo "2. Jika gagal login, Anda bisa mereset password di dashboard Supabase:\n";
-    echo "   Project Settings -> Database -> Reset Database Password.\n";
+    echo "1. Pastikan file .env lokal Anda sudah terisi dengan benar.\n";
+    echo "2. Jika di server cloud/Vercel, pastikan Environment Variables sudah diatur.\n";
     echo "---------------------------------------------------------\n";
     exit(1);
 }

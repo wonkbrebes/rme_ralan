@@ -27,11 +27,16 @@ function get_db_connection() {
                 }
             }
         }
-        $host = getenv('DB_HOST') ?: (isset($_ENV['DB_HOST']) ? $_ENV['DB_HOST'] : 'aws-1-ap-southeast-1.pooler.supabase.com');
+        $host = getenv('DB_HOST') ?: (isset($_ENV['DB_HOST']) ? $_ENV['DB_HOST'] : '');
         $port = getenv('DB_PORT') ?: (isset($_ENV['DB_PORT']) ? $_ENV['DB_PORT'] : '6543');
         $db   = getenv('DB_DATABASE') ?: (isset($_ENV['DB_DATABASE']) ? $_ENV['DB_DATABASE'] : 'postgres');
-        $user = getenv('DB_USERNAME') ?: (isset($_ENV['DB_USERNAME']) ? $_ENV['DB_USERNAME'] : 'postgres.hzewijlfggyghkaqfqrc');
-        $pass = getenv('DB_PASSWORD') ?: (isset($_ENV['DB_PASSWORD']) ? $_ENV['DB_PASSWORD'] : 'rme_ralan.123');
+        $user = getenv('DB_USERNAME') ?: (isset($_ENV['DB_USERNAME']) ? $_ENV['DB_USERNAME'] : '');
+        $pass = getenv('DB_PASSWORD') ?: (isset($_ENV['DB_PASSWORD']) ? $_ENV['DB_PASSWORD'] : '');
+        
+        if (empty($host) || empty($user) || empty($pass)) {
+            $last_error = "Konfigurasi database belum diatur. Pastikan file .env sudah ada (untuk lokal) atau Environment Variables sudah diset di server deployment.";
+            throw new Exception($last_error);
+        }
         
         $dsn = "pgsql:host=$host;port=$port;dbname=$db;sslmode=require";
         try {
