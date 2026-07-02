@@ -1,15 +1,21 @@
-# 📊 Diagram Sistem SIMRS Rawat Jalan RSUD Puruk Cahu untuk Laporan Praktikum
+# 📊 Diagram Sistem SIMRS Rawat Jalan RSUD Puruk Cahu (Latar Belakang Putih)
 
-Dokumen ini berisi kumpulan diagram analisis dan perancangan sistem yang lengkap dan formal, dirancang khusus untuk kebutuhan **Laporan Praktikum, Tugas Akhir, atau Laporan Magang**. Seluruh diagram dibuat menggunakan standar **Mermaid.js** yang bersih dan informatif.
-
-Di bagian akhir dokumen ini juga tersedia **Panduan Mudah** untuk mengubah diagram ini menjadi gambar berkualitas tinggi (**PNG / JPEG / SVG**) agar bisa langsung disalin (*copy-paste*) ke Microsoft Word atau Google Docs.
+Dokumen ini berisi kumpulan diagram analisis dan perancangan sistem yang telah dikonfigurasi khusus dengan **Latar Belakang Putih Bersih (Solid White Background)** dan kontras teks gelap. Format ini sangat wajib dan ideal untuk dipasang pada **Laporan Praktikum, Tugas Akhir, atau Skripsi** yang dicetak pada kertas putih.
 
 ---
 
-## 1. Use Case Diagram (Diagram Interaksi Aktor & Sistem)
-Diagram ini menggambarkan siapa saja aktor yang berinteraksi dengan sistem SIMRS dan fitur-fitur utama apa saja yang dapat mereka gunakan.
+## 💡 Cara Paling Cepat Export Gambar Berlatar Putih di [mermaid.live](https://mermaid.live):
+1. Salin kode diagram di bawah ini (tanpa tanda ````mermaid).
+2. Tempel di kolom kiri situs **[https://mermaid.live](https://mermaid.live)**.
+3. **PENTING:** Di panel bawah atau menu **Theme / Background**, pastikan Anda memilih **"Light"** atau **"White"** (jangan *Dark* atau *Transparent*).
+4. Klik tombol **Actions** (sudut kanan atas) -> pilih **Export PNG**. Gambar PNG berlatar putih bersih siap disalin ke Word!
+
+---
+
+## 1. Use Case Diagram (Latar Putih Formal)
 
 ```mermaid
+%%{init: {'theme': 'default', 'themeVariables': { 'background': '#ffffff', 'primaryColor': '#eff6ff', 'primaryTextColor': '#1e293b', 'primaryBorderColor': '#3b82f6', 'lineColor': '#64748b', 'clusterBkg': '#f8fafc', 'clusterBorder': '#cbd5e1' }}}%%
 graph LR
     subgraph Aktor["👥 Aktor Sistem"]
         Pasien["🧑‍🤝‍🧑 Pasien / Masyarakat"]
@@ -42,16 +48,20 @@ graph LR
     Admin --> UC2
     Admin --> UC7
     Admin --> UC8
-```
 
-> **💡 Deskripsi untuk Laporan:** *Use Case Diagram di atas menunjukkan tiga aktor utama yaitu Pasien, Dokter, dan Admin RS. Pasien memiliki hak akses untuk melakukan pendaftaran mandiri, melihat jadwal dokter, melakukan reservasi antrian, melakukan konfirmasi pembayaran, serta menerima bukti transaksi otomatis melalui WhatsApp dan Email.*
+    style Aktor fill:#f1f5f9,stroke:#94a3b8,stroke-width:2px,color:#0f172a
+    style SIMRS fill:#f8fafc,stroke:#3b82f6,stroke-width:2px,color:#0f172a
+    style Pasien fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    style Dokter fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+    style Admin fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
+```
 
 ---
 
-## 2. Activity Diagram (Alur Reservasi dan Konfirmasi Pembayaran)
-Diagram aktivitas ini memetakan urutan langkah (*workflow*) dari sudut pandang pasien mulai dari membuka situs web hingga menyelesaikan pelayanan poliklinik.
+## 2. Activity Diagram (Alur Reservasi & Konfirmasi Pembayaran)
 
 ```mermaid
+%%{init: {'theme': 'default', 'themeVariables': { 'background': '#ffffff', 'primaryColor': '#f0fdf4', 'primaryTextColor': '#14532d', 'primaryBorderColor': '#22c55e', 'lineColor': '#475569' }}}%%
 graph TD
     Start(["🟢 Mulai"]) --> A["Pasien Membuka Web SIMRS RSUD Puruk Cahu"]
     A --> B{"Apakah Sudah Punya Akun?"}
@@ -70,16 +80,19 @@ graph TD
     L --> M["Sistem Mengirim Notifikasi via WhatsApp & Email SMTP"]
     M --> N["Pasien Datang ke Poliklinik Sesuai Nomor Antrian"]
     N --> End(["🔴 Selesai / Pelayanan Medis"])
-```
 
-> **💡 Deskripsi untuk Laporan:** *Activity Diagram menggambarkan alur logika sistem dalam menangani reservasi. Terdapat logika pengecekan kondisi pada metode pembayaran: pasien BPJS akan melewati verifikasi nomor kartu, sedangkan pasien umum/QRIS melakukan konfirmasi pembayaran sebelum sistem mencetak bukti dan mengirimkan notifikasi.*
+    style Start fill:#bbf7d0,stroke:#16a34a,color:#14532d,stroke-width:2px
+    style End fill:#fecaca,stroke:#dc2626,color:#7f1d1d,stroke-width:2px
+    style B fill:#fef3c7,stroke:#d97706,color:#78350f
+    style I fill:#fef3c7,stroke:#d97706,color:#78350f
+```
 
 ---
 
-## 3. Entity Relationship Diagram (ERD - Desain Database Supabase)
-Diagram ini merepresentasikan struktur tabel dalam database **Supabase PostgreSQL** beserta relasi antar tabel (Primary Key & Foreign Key).
+## 3. Entity Relationship Diagram (ERD - Skema Database Supabase)
 
 ```mermaid
+%%{init: {'theme': 'default', 'themeVariables': { 'background': '#ffffff', 'primaryColor': '#eff6ff', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#3b82f6', 'lineColor': '#475569' }}}%%
 erDiagram
     USERS ||--o{ PASIEN : "memiliki profil"
     USERS ||--o{ DOKTER : "memiliki profil"
@@ -151,14 +164,12 @@ erDiagram
     }
 ```
 
-> **💡 Deskripsi untuk Laporan:** *ERD menunjukkan skema relasional database aplikasi. Tabel `reservasi` menjadi pusat transaksi yang menghubungkan `pasien` dengan `dokter`, serta berkorelasi satu-ke-satu dengan tabel `pembayaran` dan memicu rekam jejak pada tabel `notifikasi`.*
-
 ---
 
 ## 4. Sequence Diagram (Proses Konfirmasi & Pengiriman Notifikasi)
-Diagram sekuensial ini menjelaskan komunikasi antar komponen (*Frontend*, *Controller*, *Database*, dan *Gateway Notifikasi*) berdasarkan urutan waktu (sistem waktu nyata).
 
 ```mermaid
+%%{init: {'theme': 'default', 'themeVariables': { 'background': '#ffffff', 'actorBkg': '#eff6ff', 'actorBorder': '#3b82f6', 'actorTextColor': '#1e3a8a', 'signalColor': '#334155', 'signalTextColor': '#0f172a', 'noteBkgColor': '#fef3c7', 'noteTextColor': '#78350f' }}}%%
 sequenceDiagram
     autonumber
     actor P as 🧑‍🤝‍🧑 Pasien
@@ -190,14 +201,12 @@ sequenceDiagram
     W-->>P: Tampilkan Bukti Reservasi & Nomor Antrian Poliklinik
 ```
 
-> **💡 Deskripsi untuk Laporan:** *Sequence Diagram mengilustrasikan mekanisme asinkron dan paralel pada saat pasien melakukan konfirmasi pembayaran. Setelah database Supabase berhasil diperbarui, controller Laravel secara bersamaan memanggil layanan pengiriman pesan WhatsApp dan email SMTP untuk memberikan konfirmasi instan kepada pasien.*
-
 ---
 
 ## 5. System Architecture / Deployment Diagram (Arsitektur Cloud)
-Diagram ini memperlihatkan infrastruktur teknologi yang digunakan untuk menata aplikasi dari perangkat pengguna hingga deployment di domain kustom.
 
 ```mermaid
+%%{init: {'theme': 'default', 'themeVariables': { 'background': '#ffffff', 'primaryColor': '#f8fafc', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#64748b', 'lineColor': '#475569', 'clusterBkg': '#ffffff', 'clusterBorder': '#94a3b8' }}}%%
 flowchart TB
     subgraph Klien["📱 Perangkat Pengguna"]
         B["🌐 Browser Pasien / Dokter / Admin (HP / Tablet / PC)"]
@@ -228,30 +237,9 @@ flowchart TB
     CT <-->|"SQL Connection / REST API"| SB
     SVR -->|"Trigger Pesan WA"| WA
     SVR -->|"Kirim Bukti Email"| SMTP
+
+    style Klien fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
+    style Hosting fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a
+    style Backend fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#14532d
+    style Eksternal fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#78350f
 ```
-
-> **💡 Deskripsi untuk Laporan:** *Arsitektur sistem SIMRS dibangun dengan pendekatan moderncloud-native. Aplikasi berbasis Laravel 13 dipasang pada lingkungan serverless Vercel dengan domain kustom `wonkbrebes.web.id`. Penyimpanan data dipercayakan pada cloud database Supabase PostgreSQL, dan terhubung dengan gateway notifikasi eksternal.*
-
----
-
-## 🛠️ Panduan Mengubah Diagram Menjadi Gambar (PNG / JPG) untuk Word
-
-Agar Anda dapat dengan mudah memasukkan diagram di atas ke dalam file **Microsoft Word** atau **Google Docs**, pilih salah satu dari 3 cara termudah berikut:
-
-### Cara 1: Menggunakan Mermaid Live Editor (Paling Mudah & Rekomendasi)
-1. Buka situs web resmi Mermaid Editor: **[https://mermaid.live](https://mermaid.live)**
-2. Salin (*copy*) kode diagram di atas (hanya bagian teks di dalam blok ````mermaid ... ````, tanpa tanda backtick ````).
-3. Tempel (*paste*) kode tersebut di kotak kolom sebelah kiri situs Mermaid Live.
-4. Diagram akan langsung otomatis tergambar di kolom sebelah kanan!
-5. Klik tombol **Actions** (di sudut kanan atas) -> pilih **Export PNG** atau **Export SVG**.
-6. Simpan gambar di laptop Anda, lalu tinggal *Insert -> Picture* di Microsoft Word!
-
-### Cara 2: Menggunakan Visual Studio Code (VS Code)
-1. Jika Anda membuka file markdown ini di VS Code, install ekstensi gratis bernama **"Markdown Preview Mermaid Support"** atau **"Mermaid Export"**.
-2. Klik kanan pada blok diagram Mermaid -> pilih **"Export Diagram as PNG"**.
-3. Gambar siap disalin ke laporan Anda.
-
-### Cara 3: Screenshot Langsung dari Layar
-1. Karena diagram di atas akan dirender secara visual dalam antarmuka obrolan ini (atau di preview Markdown GitHub/VS Code), Anda dapat langsung membesarkan tampilan layar.
-2. Gunakan **Snipping Tool** (Windows + Shift + S) di Windows Anda untuk memotong gambar diagram dengan rapi.
-3. Tempel (*Paste* / Ctrl + V) langsung ke dokumen Word laporan praktikum Anda.
