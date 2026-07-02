@@ -1,4 +1,56 @@
 <?php
+require_once __DIR__ . '/config.php';
+
+$msg_success = '';
+$msg_error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    $action = $_POST['action'];
+    if ($action === 'register_pasien') {
+        try {
+            $no_rm = 'RM-' . date('Y') . '-' . sprintf('%04d', rand(1, 9999));
+            // Sanitasi Integer / Angka
+            $nik_raw = !empty($_POST['nik']) ? $_POST['nik'] : '0000000000000000';
+            $nik = preg_replace('/[^0-9]/', '', $nik_raw);
+            if (empty($nik)) $nik = '0000000000000000';
+
+            $bpjs_raw = !empty($_POST['no_bpjs']) ? $_POST['no_bpjs'] : null;
+            $no_bpjs = $bpjs_raw ? preg_replace('/[^0-9]/', '', $bpjs_raw) : null;
+
+            $phone_raw = !empty($_POST['no_telepon']) ? $_POST['no_telepon'] : '-';
+            $phone = preg_replace('/[^0-9+]/', '', $phone_raw);
+            if (empty($phone)) $phone = '-';
+
+            // Sanitasi String / Teks
+            $nama = !empty($_POST['nama_lengkap']) ? trim($_POST['nama_lengkap']) : 'Pasien Baru';
+            $tgl_lahir = !empty($_POST['tanggal_lahir']) ? $_POST['tanggal_lahir'] : '2000-01-01';
+            $jk_input = !empty($_POST['jenis_kelamin']) ? $_POST['jenis_kelamin'] : 'Laki-laki';
+            $jk = ($jk_input === 'P' || strcasecmp($jk_input, 'perempuan') === 0) ? 'Perempuan' : 'Laki-laki';
+            $alamat = !empty($_POST['alamat']) ? trim($_POST['alamat']) : '-';
+            
+            db_insert('patients', [
+                'no_rm' => $no_rm,
+                'nik' => $nik,
+                'nama_lengkap' => $nama,
+                'tanggal_lahir' => $tgl_lahir,
+                'jenis_kelamin' => $jk,
+                'no_telepon' => $phone,
+                'alamat' => $alamat,
+                'no_bpjs' => !empty($no_bpjs) ? $no_bpjs : null,
+                'gol_darah' => !empty($_POST['golongan_darah']) ? $_POST['golongan_darah'] : null
+            ]);
+            $msg_success = "Pendaftaran pasien berhasil disimpan ke Supabase! (No. RM: $no_rm - $nama)";
+        } catch (Exception $e) {
+            $err = $e->getMessage();
+            if (strpos($err, 'patients_nik_key') !== false || strpos($err, '23505') !== false || strpos($err, 'Unique violation') !== false) {
+                $msg_error = "Gagal menyimpan: Nomor KTP / NIK tersebut sudah terdaftar di database Supabase! Silakan gunakan NIK yang berbeda.";
+            } else {
+                $msg_error = "Gagal menyimpan ke database Supabase: " . $err;
+            }
+        }
+    }
+}
+
 // ============================================================
 // 1. AMBIL PARAMETER HALAMAN
 // ============================================================
@@ -76,17 +128,35 @@ $status_poli = [
 // 5. DATA UNTUK HALAMAN PENDAFTARAN
 // ============================================================
 $info_hari_ini = [
-    ['label' => 'Total Pendaftaran', 'value' => '56 Pasien'],
-    ['label' => 'Pendaftaran Hari Ini', 'value' => '18 Pasien'],
-    ['label' => 'Rujukan',           'value' => '7 Pasien'],
-    ['label' => 'Pasien Baru',       'value' => '11 Pasien'],
+    ['label' => 'Total Pasien Terdaftar', 'value' => '0 Pasien'],
+    ['label' => 'Pendaftaran Hari Ini',   'value' => '0 Pasien'],
+    ['label' => 'Rujukan Internal',       'value' => '0 Pasien'],
+    ['label' => 'Pasien Baru (Bulan Ini)', 'value' => '0 Pasien'],
 ];
 
 $riwayat_pendaftaran = [
-    ['no' => 'A-024', 'nama' => 'Budiman Setiawan', 'poli' => 'Poli Jantung', 'waktu' => '09:10 WIB'],
-    ['no' => 'A-023', 'nama' => 'Siti Rahayu',      'poli' => 'Poli Umum',    'waktu' => '09:05 WIB'],
-    ['no' => 'A-022', 'nama' => 'Lestari Putri',    'poli' => 'Poli Anak',    'waktu' => '09:00 WIB'],
+    ['no' => 'RM-2026-0001', 'nama' => 'Belum ada data pasien', 'poli' => 'Poli Umum', 'waktu' => '-'],
 ];
+
+// Sinkronisasi data real-time dari tabel patients di Supabase PostgreSQL
+try {
+    if (function_exists('get_db_connection') && get_db_connection()) {
+        $cnt_total = db_select_one("SELECT COUNT(*) as total FROM patients")['total'] ?? 0;
+        $cnt_today = db_select_one("SELECT COUNT(*) as total FROM patients WHERE DATE(created_at) = CURRENT_DATE")['total'] ?? 0;
+        if ($cnt_total > 0) {
+            $info_hari_ini = [
+                ['label' => 'Total Pasien Terdaftar', 'value' => $cnt_total . ' Pasien'],
+                ['label' => 'Pendaftaran Hari Ini',   'value' => $cnt_today . ' Pasien'],
+                ['label' => 'Rujukan Internal',       'value' => '0 Pasien'],
+                ['label' => 'Pasien Baru (Bulan Ini)', 'value' => $cnt_total . ' Pasien'],
+            ];
+        }
+        $rows_riw = db_select("SELECT no_rm as no, nama_lengkap as nama, COALESCE(jenis_pasien, 'Poli Umum') as poli, TO_CHAR(created_at, 'HH24:MI WIB') as waktu FROM patients ORDER BY id DESC LIMIT 6");
+        if (!empty($rows_riw)) {
+            $riwayat_pendaftaran = $rows_riw;
+        }
+    }
+} catch (Exception $e) {}
 
 // ============================================================
 // 6. FUNGSI RENDER KONTEN
@@ -403,11 +473,12 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             <h2>Formulir Pendaftaran Pasien</h2>
                             <p>Lengkapi data pasien dengan benar</p>
                         </div>
-                        <button class="btn-reset">
+                        <button type="button" class="btn-reset" onclick="this.closest('.card').querySelector('form').reset()">
                             <i class="fa-solid fa-rotate-right"></i> Reset Form
                         </button>
                     </div>
-                    <form action="" method="POST">
+                    <form action="?page=pendaftaran" method="POST">
+                        <input type="hidden" name="action" value="register_pasien">
                         <div class="form-body">
                             <!-- Data Pasien -->
                             <div class="form-section-title">
@@ -416,19 +487,19 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             <div class="form-row-3">
                                 <div class="form-group">
                                     <label>No. Rekam Medis</label>
-                                    <input type="text" class="form-input form-input-locked" value="RM-2025-05-0001" readonly>
+                                    <input type="text" class="form-input form-input-locked" value="RM-2026-07-<?= rand(1000,9999) ?>" readonly>
                                     <i class="fa-solid fa-lock lock-icon"></i>
                                 </div>
                                 <div class="form-group">
                                     <label>Nama Lengkap<span>*</span></label>
-                                    <input type="text" class="form-input" placeholder="Masukkan nama lengkap pasien" required>
+                                    <input type="text" name="nama_lengkap" class="form-input" placeholder="Masukkan nama lengkap (Hanya huruf)" oninput="this.value = this.value.replace(/[^a-zA-Z\s\.,']/g, '')" required>
                                 </div>
                                 <div class="form-group">
                                     <label>Jenis Kelamin<span>*</span></label>
-                                    <select class="form-select" required>
+                                    <select name="jenis_kelamin" class="form-select" required>
                                         <option value="" disabled selected>Pilih jenis kelamin</option>
-                                        <option value="L">Laki-laki</option>
-                                        <option value="P">Perempuan</option>
+                                        <option value="Laki-laki">Laki-laki</option>
+                                        <option value="Perempuan">Perempuan</option>
                                     </select>
                                 </div>
                             </div>
@@ -436,15 +507,15 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             <div class="form-row-3">
                                 <div class="form-group">
                                     <label>Tempat Lahir<span>*</span></label>
-                                    <input type="text" class="form-input" placeholder="Masukkan tempat lahir" required>
+                                    <input type="text" name="tempat_lahir" class="form-input" placeholder="Masukkan tempat lahir (Hanya huruf)" oninput="this.value = this.value.replace(/[^a-zA-Z\s\.,'-]/g, '')" required>
                                 </div>
                                 <div class="form-group">
                                     <label>Tanggal Lahir<span>*</span></label>
-                                    <input type="date" class="form-input" required>
+                                    <input type="date" name="tanggal_lahir" class="form-input" required>
                                 </div>
                                 <div class="form-group">
                                     <label>Status Perkawinan</label>
-                                    <select class="form-select">
+                                    <select name="status_perkawinan" class="form-select">
                                         <option value="" disabled selected>Pilih status</option>
                                         <option value="Belum Kawin">Belum Kawin</option>
                                         <option value="Kawin">Kawin</option>
@@ -455,16 +526,16 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
 
                             <div class="form-row-3">
                                 <div class="form-group">
-                                    <label>No. KTP / NIK<span>*</span></label>
-                                    <input type="text" class="form-input" placeholder="Masukkan nomor KTP / NIK" maxlength="16" required>
+                                    <label>No. KTP / NIK<span>*</span> (16 Angka)</label>
+                                    <input type="text" name="nik" class="form-input" placeholder="16 digit angka NIK" maxlength="16" pattern="[0-9]{16}" title="NIK wajib 16 digit angka" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
                                 </div>
                                 <div class="form-group">
-                                    <label>No. BPJS (Jika ada)</label>
-                                    <input type="text" class="form-input" placeholder="Masukkan nomor BPJS">
+                                    <label>No. BPJS (Jika ada - Angka)</label>
+                                    <input type="text" name="no_bpjs" class="form-input" placeholder="13 digit angka BPJS" maxlength="13" pattern="[0-9]*" title="No BPJS hanya boleh angka" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                                 </div>
                                 <div class="form-group">
                                     <label>Golongan Darah</label>
-                                    <select class="form-select">
+                                    <select name="golongan_darah" class="form-select">
                                         <option value="" disabled selected>Pilih golongan darah</option>
                                         <option value="A">A</option>
                                         <option value="B">B</option>
@@ -481,17 +552,17 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
 
                             <div class="form-group">
                                 <label>Alamat Lengkap<span>*</span></label>
-                                <textarea class="form-textarea" placeholder="Masukkan alamat lengkap pasien" required></textarea>
+                                <textarea name="alamat" class="form-textarea" placeholder="Masukkan alamat lengkap pasien" required></textarea>
                             </div>
 
                             <div class="form-row-2">
                                 <div class="form-group">
-                                    <label>No. Telepon<span>*</span></label>
-                                    <input type="tel" class="form-input" placeholder="Masukkan nomor telepon" required>
+                                    <label>No. Telepon<span>*</span> (Angka / HP)</label>
+                                    <input type="tel" name="no_telepon" class="form-input" placeholder="08xxxxxxxxxx" maxlength="15" pattern="[\+0-9]*" title="No Telepon hanya boleh angka" oninput="this.value = this.value.replace(/[^0-9+]/g, '')" required>
                                 </div>
                                 <div class="form-group">
                                     <label>Email</label>
-                                    <input type="email" class="form-input" placeholder="Masukkan email (opsional)">
+                                    <input type="email" name="email" class="form-input" placeholder="Masukkan email (opsional)">
                                 </div>
                             </div>
 
@@ -502,12 +573,12 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
 
                             <div class="form-row-3">
                                 <div class="form-group">
-                                    <label>Nama Lengkap</label>
-                                    <input type="text" class="form-input" placeholder="Masukkan nama penanggung jawab">
+                                    <label>Nama Lengkap (Hanya huruf)</label>
+                                    <input type="text" name="pj_nama" class="form-input" placeholder="Nama penanggung jawab" oninput="this.value = this.value.replace(/[^a-zA-Z\s\.,']/g, '')">
                                 </div>
                                 <div class="form-group">
                                     <label>Hubungan</label>
-                                    <select class="form-select">
+                                    <select name="pj_hubungan" class="form-select">
                                         <option value="" disabled selected>Pilih hubungan</option>
                                         <option value="Orang Tua">Orang Tua</option>
                                         <option value="Suami/Istri">Suami/Istri</option>
@@ -516,14 +587,14 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>No. Telepon</label>
-                                    <input type="tel" class="form-input" placeholder="Masukkan nomor telepon">
+                                    <label>No. Telepon (Angka / HP)</label>
+                                    <input type="tel" name="pj_telepon" class="form-input" placeholder="08xxxxxxxxxx" maxlength="15" pattern="[\+0-9]*" oninput="this.value = this.value.replace(/[^0-9+]/g, '')">
                                 </div>
                             </div>
                         </div>
 
                         <div class="form-actions">
-                            <button type="button" class="btn-cancel">Batal</button>
+                            <button type="button" class="btn-cancel" onclick="window.location.href='?page=dashboard'">Batal</button>
                             <button type="submit" class="btn-submit">
                                 <i class="fa-solid fa-floppy-disk"></i> Simpan Pendaftaran
                             </button>
@@ -1255,6 +1326,18 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
     </header>
 
     <main class="content">
+        <?php if (!empty($msg_success)): ?>
+        <div style="background: #dcfce7; color: #15803d; padding: 14px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #16a34a; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-circle-check" style="font-size: 18px;"></i>
+            <?= $msg_success ?>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($msg_error)): ?>
+        <div style="background: #fee2e2; color: #b91c1c; padding: 14px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #dc2626; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-circle-exclamation" style="font-size: 18px;"></i>
+            <?= $msg_error ?>
+        </div>
+        <?php endif; ?>
         <?php renderContent(
             $page,
             $stats_dashboard,

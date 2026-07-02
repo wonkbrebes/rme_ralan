@@ -1,40 +1,24 @@
 <?php
-
+/**
+ * File Konfigurasi SIMRS & RME
+ * Terhubung otomatis ke Supabase PostgreSQL (wonkbrebes.web.id)
+ */
 date_default_timezone_set('Asia/Jakarta');
 
-// Konfigurasi Database
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'simrs_db');
+// Memanggil helper database Supabase
+require_once __DIR__ . '/db_helper.php';
 
-// Membuat koneksi
-$koneksi = new mysqli(
-    DB_HOST,
-    DB_USER,
-    DB_PASS,
-    DB_NAME,
-
-);
-
-// Cek koneksi
-if ($koneksi->connect_errno) {
-    die("Koneksi database gagal: " . $koneksi->connect_error);
+$db_conn_error = '';
+try {
+    $pdo_koneksi = get_db_connection();
+} catch (Exception $e) {
+    $db_conn_error = $e->getMessage();
 }
 
-// Menggunakan UTF-8
-$koneksi->set_charset("utf8");
-
-// Fungsi bantu
-function query($sql)
+/**
+ * Fungsi bantu kompatibilitas query lama
+ */
+function query($sql, $params = [])
 {
-    global $koneksi;
-
-    $result = $koneksi->query($sql);
-
-    if (!$result) {
-        die("Query Error: " . $koneksi->error);
-    }
-
-    return $result;
+    return db_query($sql, $params);
 }
