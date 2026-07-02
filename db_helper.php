@@ -15,11 +15,23 @@ function get_db_connection() {
             $last_error = "Ekstensi PDO PostgreSQL (pdo_pgsql) belum aktif di PHP Anda. Gunakan perintah terminal: php -d extension=pdo_pgsql -d extension=pgsql -S localhost:8000";
             throw new Exception($last_error);
         }
-        $host = 'aws-1-ap-southeast-1.pooler.supabase.com';
-        $port = '6543';
-        $db   = 'postgres';
-        $user = 'postgres.hzewijlfggyghkaqfqrc';
-        $pass = 'rme_ralan.123';
+        // Coba load file .env jika ada (untuk fleksibilitas lokal & Vercel)
+        if (file_exists(__DIR__ . '/.env')) {
+            $lines = file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                if (strpos(trim($line), '#') === 0) continue;
+                list($key, $val) = explode('=', $line, 2) + [null, null];
+                if ($key && $val !== null) {
+                    putenv(trim($key) . "=" . trim($val));
+                    $_ENV[trim($key)] = trim($val);
+                }
+            }
+        }
+        $host = getenv('DB_HOST') ?: (isset($_ENV['DB_HOST']) ? $_ENV['DB_HOST'] : 'aws-0-ap-southeast-1.pooler.supabase.com');
+        $port = getenv('DB_PORT') ?: (isset($_ENV['DB_PORT']) ? $_ENV['DB_PORT'] : '6543');
+        $db   = getenv('DB_DATABASE') ?: (isset($_ENV['DB_DATABASE']) ? $_ENV['DB_DATABASE'] : 'postgres');
+        $user = getenv('DB_USERNAME') ?: (isset($_ENV['DB_USERNAME']) ? $_ENV['DB_USERNAME'] : 'postgres.hzewijlfggyghkaqfqrc');
+        $pass = getenv('DB_PASSWORD') ?: (isset($_ENV['DB_PASSWORD']) ? $_ENV['DB_PASSWORD'] : 'rme_ralan.123');
         
         $dsn = "pgsql:host=$host;port=$port;dbname=$db;sslmode=require";
         try {
