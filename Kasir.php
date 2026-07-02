@@ -89,12 +89,12 @@ if (isset($_POST['cari_pasien'])) {
 
 // Navigasi Menu
 $nav_items = [
-    ['label' => 'Dashboard',   'icon' => 'fa-chart-pie'],
-    ['label' => 'Antrian Pasien', 'icon' => 'fa-clipboard-list'],
-    ['label' => 'Daftar Pasien', 'icon' => 'fa-user-plus'],
-    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical'],
-    ['label' => 'Farmasi',     'icon' => 'fa-prescription-bottle-medical'],
-    ['label' => 'Kasir',       'icon' => 'fa-credit-card', 'active' => true],
+    ['label' => 'Dashboard',   'icon' => 'fa-chart-pie',      'page' => 'dashboard'],
+    ['label' => 'Antrian Pasien', 'icon' => 'fa-clipboard-list', 'page' => 'antrian'],
+    ['label' => 'Daftar Pasien', 'icon' => 'fa-user-plus',      'page' => 'pendaftaran'],
+    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical',   'page' => 'emr_dokter'],
+    ['label' => 'Farmasi',     'icon' => 'fa-prescription-bottle-medical', 'page' => 'farmasi'],
+    ['label' => 'Kasir',       'icon' => 'fa-credit-card',    'page' => 'kasir', 'active' => true],
 ];
 
 // Rincian Layanan & Tindakan Lengkap
@@ -220,7 +220,7 @@ $nominal_cepat = ['580.000', '600.000', '1.000.000', 'Pas Tagihan'];
     </div>
     <ul class="nav-list">
         <?php foreach ($nav_items as $item): ?>
-            <li><a href="#" class="<?= !empty($item['active']) ? 'active':'' ?>"><i class="fa-solid <?= $item['icon'] ?>"></i> <?= $item['label'] ?></a></li>
+            <li><a href="?page=<?= isset($item['page']) ? $item['page'] : 'dashboard' ?>" class="<?= !empty($item['active']) ? 'active':'' ?>"><i class="fa-solid <?= $item['icon'] ?>"></i> <?= $item['label'] ?></a></li>
         <?php endforeach; ?>
     </ul>
 </aside>
@@ -370,6 +370,39 @@ function updatePaymentIcon() {
         icon.className = 'fa-solid fa-hospital';
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const moneyInput = document.querySelector('.money-input');
+    const changeVal = document.querySelector('.change-box strong');
+    const nomBtns = document.querySelectorAll('.btn-nom');
+    const totalTagihan = 580000;
+
+    function calcChange(val) {
+        let numericVal = parseInt(val.replace(/\D/g, '')) || 0;
+        let kembalian = numericVal - totalTagihan;
+        if (kembalian < 0) kembalian = 0;
+        if (changeVal) changeVal.textContent = 'Rp ' + kembalian.toLocaleString('id-ID');
+    }
+
+    nomBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            let txt = this.textContent.trim();
+            if (txt === 'Pas Tagihan') {
+                moneyInput.value = '580.000';
+                calcChange('580000');
+            } else {
+                moneyInput.value = txt;
+                calcChange(txt);
+            }
+        });
+    });
+
+    if (moneyInput) {
+        moneyInput.addEventListener('input', function() {
+            calcChange(this.value);
+        });
+    }
+});
 </script>
 
 </body>

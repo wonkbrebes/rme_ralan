@@ -19,6 +19,36 @@ $antrian = [
 
 $sedang_dilayani = $antrian[0];
 
+// PERBAIKAN & INTEGRASI SUPABASE: Ambil data pasien antrian langsung dari database Supabase
+if (file_exists(__DIR__ . '/db_helper.php')) {
+    require_once __DIR__ . '/db_helper.php';
+}
+if (function_exists('db_select')) {
+    try {
+        $db_antrian = db_select("SELECT no_rm as no, nama_lengkap as nama, COALESCE(jenis_pasien, 'Poli Umum') as poli, COALESCE(TO_CHAR(created_at, 'HH24:MI'), '10:30') as estimasi FROM patients ORDER BY id DESC");
+        if (!empty($db_antrian) && is_array($db_antrian)) {
+            $antrian = [];
+            foreach ($db_antrian as $idx => $row) {
+                $no_antrian = 'A-' . str_pad($idx + 1, 3, '0', STR_PAD_LEFT);
+                $status_antrian = ($idx === 0) ? 'dilayani' : 'menunggu';
+                $antrian[] = [
+                    'no' => $no_antrian,
+                    'nama' => $row['nama'],
+                    'poli' => (strpos(strtolower($row['poli']), 'poli') !== false) ? $row['poli'] : 'Poli ' . $row['poli'],
+                    'estimasi' => $row['estimasi'],
+                    'status' => $status_antrian
+                ];
+            }
+            $stats['total'] = count($antrian);
+            $stats['dilayani'] = 1;
+            $stats['selesai'] = max(0, $stats['total'] - 1);
+            $sedang_dilayani = $antrian[0];
+        }
+    } catch (Exception $e) {
+        // Fallback ke data simulasi jika query gagal
+    }
+}
+
 $status_poli = [
     ['nama' => 'Poli Jantung', 'sekarang' => 2,  'total' => 15, 'icon' => 'fa-heart'],
     ['nama' => 'Poli Umum',    'sekarang' => 4,  'total' => 12, 'icon' => 'fa-user'],
@@ -643,5 +673,51 @@ $nav_items = [
             </div></div></main>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('.search-input');
+    const filterSelects = document.querySelectorAll('.filter-select');
+    const tableRows = document.querySelectorAll('table tbody tr');
+    const pageBtns = document.querySelectorAll('.page-btn');
+
+    function filterTable() {
+        const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const poliFilter = (filterSelects.length > 0 && filterSelects[0].value !== 'Semua Poli') ? filterSelects[0].value.toLowerCase() : '';
+        const statusFilter = (filterSelects.length > 1 && filterSelects[1].value !== 'Semua Status') ? filterSelects[1].value.toLowerCase() : '';
+
+        tableRows.forEach(row => {
+            const noAntrian = row.cells[0] ? row.cells[0].textContent.toLowerCase() : '';
+            const nama = row.cells[1] ? row.cells[1].textContent.toLowerCase() : '';
+            const poli = row.cells[2] ? row.cells[2].textContent.toLowerCase() : '';
+            const status = row.cells[4] ? row.cells[4].textContent.toLowerCase() : '';
+
+            const matchQuery = !query || noAntrian.includes(query) || nama.includes(query);
+            const matchPoli = !poliFilter || poli.includes(poliFilter);
+            const matchStatus = !statusFilter || status.includes(statusFilter);
+
+            if (matchQuery && matchPoli && matchStatus) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', filterTable);
+    }
+    filterSelects.forEach(select => {
+        select.addEventListener('change', filterTable);
+    });
+
+    pageBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (this.textContent.trim() === '...' || this.querySelector('i')) return;
+            pageBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+});
+</script>
 </body>
 </html>

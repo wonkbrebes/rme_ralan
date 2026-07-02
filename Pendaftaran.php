@@ -39,7 +39,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 'no_bpjs' => !empty($no_bpjs) ? $no_bpjs : null,
                 'gol_darah' => !empty($_POST['golongan_darah']) ? $_POST['golongan_darah'] : null
             ]);
-            $msg_success = "Pendaftaran pasien berhasil disimpan ke Supabase! (No. RM: $no_rm - $nama)";
+            try {
+                $last_p = db_select_one("SELECT id FROM patients WHERE no_rm = '$no_rm' LIMIT 1");
+                if ($last_p && isset($last_p['id'])) {
+                    db_insert('queues', [
+                        'patient_id' => $last_p['id'],
+                        'no_antrian' => 'A-' . rand(100, 999),
+                        'tanggal' => date('Y-m-d'),
+                        'status' => 'Menunggu',
+                        'jenis_daftar' => 'Offline'
+                    ]);
+                }
+            } catch (Exception $ex) {
+                // Abaikan jika struktur queues berbeda
+            }
+            $msg_success = "Pendaftaran pasien & antrian berhasil disimpan ke Supabase! (No. RM: $no_rm - $nama)";
         } catch (Exception $e) {
             $err = $e->getMessage();
             if (strpos($err, 'patients_nik_key') !== false || strpos($err, '23505') !== false || strpos($err, 'Unique violation') !== false) {

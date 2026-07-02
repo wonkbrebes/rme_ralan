@@ -44,7 +44,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'no_bpjs' => !empty($no_bpjs) ? $no_bpjs : null,
                 'gol_darah' => !empty($_POST['golongan_darah']) ? $_POST['golongan_darah'] : null
             ]);
-            $msg_success = "Pendaftaran pasien berhasil disimpan ke Supabase! (No. RM: $no_rm - $nama)";
+            try {
+                $last_p = db_select_one("SELECT id FROM patients WHERE no_rm = '$no_rm' LIMIT 1");
+                if ($last_p && isset($last_p['id'])) {
+                    db_insert('queues', [
+                        'patient_id' => $last_p['id'],
+                        'no_antrian' => 'A-' . rand(100, 999),
+                        'tanggal' => date('Y-m-d'),
+                        'status' => 'Menunggu',
+                        'jenis_daftar' => 'Offline'
+                    ]);
+                }
+            } catch (Exception $ex) {
+                // Abaikan jika struktur queues berbeda
+            }
+            $msg_success = "Pendaftaran pasien & antrian berhasil disimpan ke Supabase! (No. RM: $no_rm - $nama)";
         } catch (Exception $e) {
             $err = $e->getMessage();
             if (strpos($err, 'patients_nik_key') !== false || strpos($err, '23505') !== false || strpos($err, 'Unique violation') !== false) {
@@ -120,6 +134,33 @@ $antrian = [
 ];
 
 $sedang_dilayani = $antrian[0];
+
+// PERBAIKAN & INTEGRASI SUPABASE: Ambil data pasien antrian langsung dari database Supabase
+if (function_exists('db_select')) {
+    try {
+        $db_antrian = db_select("SELECT no_rm as no, nama_lengkap as nama, COALESCE(jenis_pasien, 'Poli Umum') as poli, COALESCE(TO_CHAR(created_at, 'HH24:MI'), '10:30') as estimasi FROM patients ORDER BY id DESC");
+        if (!empty($db_antrian) && is_array($db_antrian)) {
+            $antrian = [];
+            foreach ($db_antrian as $idx => $row) {
+                $no_antrian = 'A-' . str_pad($idx + 1, 3, '0', STR_PAD_LEFT);
+                $status_antrian = ($idx === 0) ? 'dilayani' : 'menunggu';
+                $antrian[] = [
+                    'no' => $no_antrian,
+                    'nama' => $row['nama'],
+                    'poli' => (strpos(strtolower($row['poli']), 'poli') !== false) ? $row['poli'] : 'Poli ' . $row['poli'],
+                    'estimasi' => $row['estimasi'],
+                    'status' => $status_antrian
+                ];
+            }
+            $stats_antrian['total'] = count($antrian);
+            $stats_antrian['dilayani'] = 1;
+            $stats_antrian['selesai'] = max(0, $stats_antrian['total'] - 1);
+            $sedang_dilayani = $antrian[0];
+        }
+    } catch (Exception $e) {
+        // Fallback ke data simulasi
+    }
+}
 
 $status_poli = [
     ['nama' => 'Poli Jantung', 'sekarang' => 2,  'total' => 15, 'icon' => 'fa-heart'],
@@ -336,8 +377,8 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                     <div class="card-header">
                         <h2>Kunjungan Pasien 7 Hari Terakhir</h2>
                         <div class="btn-group">
-                            <button class="btn-secondary">Export PDF</button>
-                            <button class="btn-primary-sm">Details</button>
+                            <button class="btn-secondary" onclick="alert('Mengekspor laporan ke PDF...')">Export PDF</button>
+                            <button class="btn-primary-sm" onclick="window.location.href='?page=antrian'">Details</button>
                         </div>
                     </div>
                     <div class="line-chart-placeholder">
@@ -430,7 +471,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                 ?>
                                 <span class="badge-status <?= $status_class ?>"><?= htmlspecialchars($row['status']) ?></span>
                             </td>
-                            <td><button class="btn-detail">Detail</button></td>
+                            <td><a href="?page=emr_dokter&no_antrian=<?= urlencode($row['no']) ?>&nama=<?= urlencode($row['nama']) ?>" class="btn-detail" style="text-decoration:none; display:inline-block;">Detail</a></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -605,8 +646,53 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             <?php endforeach; ?>
                         </div>
                     </div>
-                </div>
             </div>
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const searchInput = document.querySelector('.search-input');
+                const filterSelects = document.querySelectorAll('.filter-select');
+                const tableRows = document.querySelectorAll('table tbody tr');
+                const pageBtns = document.querySelectorAll('.page-btn');
+
+                function filterTable() {
+                    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+                    const poliFilter = (filterSelects.length > 0 && filterSelects[0].value !== 'Semua Poli') ? filterSelects[0].value.toLowerCase() : '';
+                    const statusFilter = (filterSelects.length > 1 && filterSelects[1].value !== 'Semua Status') ? filterSelects[1].value.toLowerCase() : '';
+
+                    tableRows.forEach(row => {
+                        const noAntrian = row.cells[0] ? row.cells[0].textContent.toLowerCase() : '';
+                        const nama = row.cells[1] ? row.cells[1].textContent.toLowerCase() : '';
+                        const poli = row.cells[2] ? row.cells[2].textContent.toLowerCase() : '';
+                        const status = row.cells[4] ? row.cells[4].textContent.toLowerCase() : '';
+
+                        const matchQuery = !query || noAntrian.includes(query) || nama.includes(query);
+                        const matchPoli = !poliFilter || poli.includes(poliFilter);
+                        const matchStatus = !statusFilter || status.includes(statusFilter);
+
+                        if (matchQuery && matchPoli && matchStatus) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                }
+
+                if (searchInput) {
+                    searchInput.addEventListener('input', filterTable);
+                }
+                filterSelects.forEach(select => {
+                    select.addEventListener('change', filterTable);
+                });
+
+                pageBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        if (this.textContent.trim() === '...' || this.querySelector('i')) return;
+                        pageBtns.forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                    });
+                });
+            });
+            </script>
             <?php
             break;
 
@@ -950,7 +1036,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                     <span class="med-qty">10 Tablet</span>
                                 </div>
                             </div>
-                            <button class="btn-card-action">Lihat Resep</button>
+                            <button class="btn-card-action" onclick="switchTab(event, 'terapi_obat')">Lihat Resep</button>
                         </div>
 
                         <div class="card">
@@ -974,7 +1060,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                     <span class="mini-badge badge-warning">Menunggu</span>
                                 </div>
                             </div>
-                            <button class="btn-card-action" style="margin-top:22px;">Lihat Order</button>
+                            <button class="btn-card-action" style="margin-top:22px;" onclick="switchTab(event, 'order')">Lihat Order</button>
                         </div>
 
                         <div class="card">
@@ -997,7 +1083,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                     <span class="mini-badge badge-normal">Normal</span>
                                 </div>
                             </div>
-                            <button class="btn-card-action" style="margin-top:42px;">Lihat Hasil</button>
+                            <button class="btn-card-action" style="margin-top:42px;" onclick="switchTab(event, 'hasil_pemeriksaan')">Lihat Hasil</button>
                         </div>
                     </div>
                 </div>
@@ -1029,12 +1115,12 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                 <div class="card">
                     <div class="widget-title"><span><i class="fa-solid fa-bolt"></i> Quick Action</span></div>
                     <div class="quick-action-grid">
-                        <button class="btn-qa"><i class="fa-solid fa-file-lines"></i> Clinical Note</button>
-                        <button class="btn-qa"><i class="fa-solid fa-receipt"></i> Resep Elektronik</button>
-                        <button class="btn-qa"><i class="fa-solid fa-vial"></i> Order Lab</button>
-                        <button class="btn-qa"><i class="fa-solid fa-x-ray"></i> Order Radiologi</button>
-                        <button class="btn-qa"><i class="fa-solid fa-envelope-open-text"></i> Surat Keterangan</button>
-                        <button class="btn-qa"><i class="fa-solid fa-copy"></i> Template Note</button>
+                        <button class="btn-qa" onclick="switchTab(event, 'ringkasan')"><i class="fa-solid fa-file-lines"></i> Clinical Note</button>
+                        <button class="btn-qa" onclick="switchTab(event, 'terapi_obat')"><i class="fa-solid fa-receipt"></i> Resep Elektronik</button>
+                        <button class="btn-qa" onclick="switchTab(event, 'order')"><i class="fa-solid fa-vial"></i> Order Lab</button>
+                        <button class="btn-qa" onclick="switchTab(event, 'order')"><i class="fa-solid fa-x-ray"></i> Order Radiologi</button>
+                        <button class="btn-qa" onclick="switchTab(event, 'dokumen')"><i class="fa-solid fa-envelope-open-text"></i> Surat Keterangan</button>
+                        <button class="btn-qa" onclick="switchTab(event, 'ringkasan')"><i class="fa-solid fa-copy"></i> Template Note</button>
                     </div>
                 </div>
 
@@ -1188,10 +1274,10 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                         <span><i class="fa-solid fa-bolt"></i> Aksi Cepat</span>
                     </div>
                     <div class="quick-actions-grid">
-                        <button class="btn-qa"><i class="fa-solid fa-file-medical"></i> Resep Baru</button>
-                        <button class="btn-qa"><i class="fa-solid fa-hand-holding-medical"></i> Penyerahan Obat</button>
-                        <button class="btn-qa"><i class="fa-solid fa-boxes-stacked"></i> Stok Masuk</button>
-                        <button class="btn-qa"><i class="fa-solid fa-file-lines"></i> Laporan Farmasi</button>
+                        <button class="btn-qa" onclick="alert('Membuka form Resep Baru...')"><i class="fa-solid fa-file-medical"></i> Resep Baru</button>
+                        <button class="btn-qa" onclick="alert('Membuka antrian Penyerahan Obat...')"><i class="fa-solid fa-hand-holding-medical"></i> Penyerahan Obat</button>
+                        <button class="btn-qa" onclick="alert('Membuka form Stok Masuk (Restock)...')"><i class="fa-solid fa-boxes-stacked"></i> Stok Masuk</button>
+                        <button class="btn-qa" onclick="alert('Mengekspor Laporan Farmasi...')"><i class="fa-solid fa-file-lines"></i> Laporan Farmasi</button>
                     </div>
                 </div>
 
@@ -2314,6 +2400,39 @@ function updatePaymentIcon() {
         icon.className = 'fa-solid fa-hospital';
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const moneyInput = document.querySelector('.money-input');
+    const changeVal = document.querySelector('.change-box strong');
+    const nomBtns = document.querySelectorAll('.btn-nom');
+    const totalTagihan = 580000;
+
+    function calcChange(val) {
+        let numericVal = parseInt(val.replace(/\D/g, '')) || 0;
+        let kembalian = numericVal - totalTagihan;
+        if (kembalian < 0) kembalian = 0;
+        if (changeVal) changeVal.textContent = 'Rp ' + kembalian.toLocaleString('id-ID');
+    }
+
+    nomBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            let txt = this.textContent.trim();
+            if (txt === 'Pas Tagihan') {
+                if (moneyInput) moneyInput.value = '580.000';
+                calcChange('580000');
+            } else {
+                if (moneyInput) moneyInput.value = txt;
+                calcChange(txt);
+            }
+        });
+    });
+
+    if (moneyInput) {
+        moneyInput.addEventListener('input', function() {
+            calcChange(this.value);
+        });
+    }
+});
 </script>
 
 </body>

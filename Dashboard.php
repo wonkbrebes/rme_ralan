@@ -1,12 +1,12 @@
 <?php
 // Data navigasi disamakan persis dengan halaman antrian
 $nav_items = [
-    ['label' => 'Dashboard',   'icon' => 'fa-chart-pie',      'active' => true],
-    ['label' => 'Antrian',     'icon' => 'fa-clipboard-list'],
-    ['label' => 'Pendaftaran', 'icon' => 'fa-user-plus'],
-    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical'],
-    ['label' => 'Farmasi',     'icon' => 'fa-prescription-bottle-medical'],
-    ['label' => 'Kasir',       'icon' => 'fa-credit-card'],
+    ['label' => 'Dashboard',   'icon' => 'fa-chart-pie',      'page' => 'dashboard', 'active' => true],
+    ['label' => 'Antrian',     'icon' => 'fa-clipboard-list', 'page' => 'antrian'],
+    ['label' => 'Pendaftaran', 'icon' => 'fa-user-plus',      'page' => 'pendaftaran'],
+    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical',   'page' => 'emr_dokter'],
+    ['label' => 'Farmasi',     'icon' => 'fa-prescription-bottle-medical', 'page' => 'farmasi'],
+    ['label' => 'Kasir',       'icon' => 'fa-credit-card',    'page' => 'kasir'],
 ];
 
 // Simulasi data statistik atas (sesuai gambar mockup)
@@ -333,7 +333,7 @@ $distribusi = [
     <ul class="nav-list">
         <?php foreach ($nav_items as $item): ?>
         <li>
-            <a href="#" <?= !empty($item['active']) ? 'class="active"' : '' ?>>
+            <a href="?page=<?= isset($item['page']) ? $item['page'] : 'dashboard' ?>" <?= !empty($item['active']) ? 'class="active"' : '' ?>>
                 <i class="fa-solid <?= htmlspecialchars($item['icon']) ?>"></i>
                 <?= htmlspecialchars($item['label']) ?>
             </a>
@@ -341,7 +341,7 @@ $distribusi = [
         <?php endforeach; ?>
     </ul>
 
-    <button class="btn-quick">
+    <button class="btn-quick" onclick="window.location.href='?page=pendaftaran'">
         <i class="fa-solid fa-plus"></i> Quick Admission
     </button>
 
@@ -492,7 +492,7 @@ $distribusi = [
                             ?>
                             <span class="badge-status <?= $status_class ?>"><?= htmlspecialchars($row['status']) ?></span>
                         </td>
-                        <td><button class="btn-detail">Detail</button></td>
+                        <td><a href="?page=emr_dokter&no_antrian=<?= urlencode($row['no']) ?>&nama=<?= urlencode($row['nama']) ?>" class="btn-detail" style="text-decoration:none; display:inline-block;">Detail</a></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>

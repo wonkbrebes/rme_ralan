@@ -2,12 +2,12 @@
 // Menu navigasi disamakan 100% persis urutan dan strukturnya
 // Status 'active' dipindahkan ke menu Farmasi
 $nav_items = [
-    ['label' => 'Dashboard',   'icon' => 'fa-chart-pie'],
-    ['label' => 'Antrian',     'icon' => 'fa-clipboard-list'],
-    ['label' => 'Pendaftaran', 'icon' => 'fa-user-plus'],
-    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical'],
-    ['label' => 'Farmasi',     'icon' => 'fa-prescription-bottle-medical', 'active' => true],
-    ['label' => 'Kasir',       'icon' => 'fa-credit-card'],
+    ['label' => 'Dashboard',   'icon' => 'fa-chart-pie',      'page' => 'dashboard'],
+    ['label' => 'Antrian',     'icon' => 'fa-clipboard-list', 'page' => 'antrian'],
+    ['label' => 'Pendaftaran', 'icon' => 'fa-user-plus',      'page' => 'pendaftaran'],
+    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical',   'page' => 'emr_dokter'],
+    ['label' => 'Farmasi',     'icon' => 'fa-prescription-bottle-medical', 'page' => 'farmasi', 'active' => true],
+    ['label' => 'Kasir',       'icon' => 'fa-credit-card',    'page' => 'kasir'],
 ];
 
 // Data 4 Card Statistik Atas
@@ -345,7 +345,7 @@ $resep_terbaru = [
     <ul class="nav-list">
         <?php foreach ($nav_items as $item): ?>
         <li>
-            <a href="#" <?= !empty($item['active']) ? 'class="active"' : '' ?>>
+            <a href="?page=<?= isset($item['page']) ? $item['page'] : 'dashboard' ?>" <?= !empty($item['active']) ? 'class="active"' : '' ?>>
                 <i class="fa-solid <?= htmlspecialchars($item['icon']) ?>"></i>
                 <?= htmlspecialchars($item['label']) ?>
             </a>
@@ -353,7 +353,7 @@ $resep_terbaru = [
         <?php endforeach; ?>
     </ul>
 
-    <button class="btn-quick">
+    <button class="btn-quick" onclick="window.location.href='?page=pendaftaran'">
         <i class="fa-solid fa-plus"></i> Quick Admission
     </button>
 
