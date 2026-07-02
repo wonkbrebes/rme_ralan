@@ -2232,15 +2232,12 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
         /* ===== FOOTER ===== */
         footer { font-size: 11px; color: var(--gray-400); text-align: center; margin-top: 10px; padding-bottom: 10px; }
 
-        /* ===== RESPONSIF ===== */
+        /* ===== RESPONSIF TOTAL (DESKTOP, TABLET, MOBILE) ===== */
         @media (max-width: 1024px) {
             .stat-grid { grid-template-columns: repeat(2, 1fr); }
-            .chart-grid { grid-template-columns: 1fr; }
-            .lower-grid { grid-template-columns: 1fr; }
-            .pendaftaran-grid { grid-template-columns: 1fr; }
+            .chart-grid, .lower-grid, .pendaftaran-grid, .triple-grid, .poli-grid { grid-template-columns: 1fr; gap: 16px; }
             .right-col { order: -1; }
-            .triple-grid { grid-template-columns: 1fr; }
-            .patient-card { flex-direction: column; }
+            .patient-card { flex-direction: column; gap: 16px; }
             .patient-right { flex-wrap: wrap; }
             .patient-details-grid { grid-template-columns: repeat(2, 1fr); }
             .search-form-flex { width: 100%; }
@@ -2248,16 +2245,39 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
         @media (max-width: 768px) {
             .sidebar { width: 60px; }
             .sidebar-brand .brand-text, .nav-list li a span, .btn-quick span, .sidebar-footer a span { display: none; }
+            .sidebar-brand { justify-content: center; padding: 16px 0; }
+            .nav-list li a { justify-content: center; padding: 12px 0; }
+            .nav-list li a i { font-size: 18px; }
             .main { margin-left: 60px; }
-            .stat-grid { grid-template-columns: 1fr; }
-            .topbar { padding: 0 16px; }
+            .topbar { padding: 12px 16px; height: auto; flex-wrap: wrap; gap: 10px; }
+            .topbar-left h1 { font-size: 16px; }
+            .user-profile span { display: none; }
+            .search-wrap { width: 100%; order: 3; min-width: 100%; margin-top: 4px; }
             .content { padding: 16px; }
-            .table-filters { flex-direction: column; align-items: stretch; }
-            .search-wrap { min-width: unset; }
-            .form-row-3, .form-row-2 { grid-template-columns: 1fr; }
-            .patient-details-grid { grid-template-columns: 1fr; }
-            .patient-left { flex-wrap: wrap; }
-            .search-form-flex { flex-direction: column; }
+            .stat-grid { grid-template-columns: 1fr; }
+            .form-row-3, .form-row-2, .patient-details-grid { grid-template-columns: 1fr; }
+            .table-filter-bar, .table-filters, .search-form-flex { flex-direction: column; align-items: stretch; gap: 10px; }
+            .filter-left { flex-direction: column; width: 100%; gap: 10px; }
+            .select-filter, .search-container, .input-money-container, .select-container { width: 100%; min-width: 100%; }
+            .search-container input, .select-filter { width: 100%; }
+            .btn-add-obat, .btn-submit, .btn-cancel, .btn-submit-pay { width: 100%; justify-content: center; }
+            .form-actions { flex-direction: column; gap: 10px; }
+            table { display: block; overflow-x: auto; white-space: nowrap; width: 100%; -webkit-overflow-scrolling: touch; }
+            .patient-left { flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+            .patient-right { width: 100%; justify-content: center; }
+            .vitals-box { flex: 1 1 40%; min-width: 130px; }
+            .emr-nav-bar { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+            .emr-tab-btn { flex-shrink: 0; }
+            .note-row, .info-grid-inline { flex-direction: column; gap: 8px; }
+        }
+        @media (max-width: 480px) {
+            .sidebar { width: 50px; }
+            .main { margin-left: 50px; }
+            .topbar { padding: 10px 12px; }
+            .content { padding: 12px; }
+            .quick-action-grid, .nominal-grid { grid-template-columns: 1fr; }
+            .vitals-box { flex: 1 1 100%; }
+            .modal-content { width: 95%; margin: 10px; }
         }
     </style>
 </head>
