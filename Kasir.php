@@ -3,33 +3,8 @@
 // DATA STATIS (DUMMY) - TIDAK PERLU DATABASE
 // ===================================================
 
-// 1. Daftar pasien statis
-$daftar_pasien_statis = [
-    '1' => [
-        'nama_pasien'  => 'Bani Santoso',
-        'no_rm'        => 'RM-001',
-        'nik'          => '3301234567890001',
-        'tgl_lahir'    => '12 Mei 1995',
-        'alamat'       => 'Jl. Merdeka No. 10, Semarang',
-        'telepon'      => '08123456789',
-        'penjamin'     => 'BPJS Kesehatan',
-        'nama_dokter'  => 'dr. Ahmad Spesialis Mata',
-        'nama_poli'    => 'Poli Mata',
-        'jenis_pasien' => 'Rawat Jalan (BPJS)'
-    ],
-    '2' => [
-        'nama_pasien'  => 'Siti Aminah',
-        'no_rm'        => 'RM-002',
-        'nik'          => '3301234567890002',
-        'tgl_lahir'    => '23 November 1998',
-        'alamat'       => 'Jl. Mawar No. 45, Semarang',
-        'telepon'      => '08571234567',
-        'penjamin'     => 'Mandiri Inhealth',
-        'nama_dokter'  => 'dr. Indah Spesialis Anak',
-        'nama_poli'    => 'Poli Anak',
-        'jenis_pasien' => 'Rawat Jalan (Asuransi)'
-    ]
-];
+// Memuat sumber data terpusat (Single Source of Truth)
+require_once __DIR__ . '/simrs_data.php';
 
 // 2. Set variabel default (Kondisi Kosong)
 $nama_pasien   = "Belum Memilih Pasien";
@@ -87,26 +62,13 @@ if (isset($_POST['cari_pasien'])) {
     }
 }
 
-// Navigasi Menu
-$nav_items = [
-    ['label' => 'Dashboard',   'icon' => 'fa-chart-pie',      'page' => 'dashboard'],
-    ['label' => 'Antrian Pasien', 'icon' => 'fa-clipboard-list', 'page' => 'antrian'],
-    ['label' => 'Daftar Pasien', 'icon' => 'fa-user-plus',      'page' => 'pendaftaran'],
-    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical',   'page' => 'emr_dokter'],
-    ['label' => 'Farmasi',     'icon' => 'fa-prescription-bottle-medical', 'page' => 'farmasi'],
-    ['label' => 'Kasir',       'icon' => 'fa-credit-card',    'page' => 'kasir', 'active' => true],
-];
-
-// Rincian Layanan & Tindakan Lengkap
-$detail_transaksi = [
-    ['no' => 1, 'deskripsi' => 'Konsultasi Dokter Spesialis', 'kategori' => 'Jasa Medis',   'qty' => 1,  'harga' => '150.000', 'total' => '150.000'],
-    ['no' => 2, 'deskripsi' => 'Pemeriksaan Darah Rutin',     'kategori' => 'Laboratorium', 'qty' => 1,  'harga' => '125.000', 'total' => '125.000'],
-    ['no' => 3, 'deskripsi' => 'Rontgen Thorax',              'kategori' => 'Radiologi',    'qty' => 1,  'harga' => '250.000', 'total' => '250.000'],
-    ['no' => 4, 'deskripsi' => 'Paracetamol 500 mg',          'kategori' => 'Farmasi',      'qty' => 10, 'harga' => '2.500',   'total' => '25.000'],
-    ['no' => 5, 'deskripsi' => 'Vitamin C 500 mg',            'kategori' => 'Farmasi',      'qty' => 10, 'harga' => '3.000',   'total' => '30.000'],
-];
-
-$nominal_cepat = ['580.000', '600.000', '1.000.000', 'Pas Tagihan'];
+// Menyesuaikan active nav untuk Kasir
+foreach ($nav_items as &$item) {
+    if ($item['page'] === 'kasir') {
+        $item['active'] = true;
+    }
+}
+unset($item);
 ?>
 <!DOCTYPE html>
 <html lang="id">

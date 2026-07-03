@@ -22,3 +22,6 @@ function query($sql, $params = [])
 {
     return db_query($sql, $params);
 }
+
+// Memuat sumber data terpusat (Single Source of Truth)
+require_once __DIR__ . '/simrs_data.php';

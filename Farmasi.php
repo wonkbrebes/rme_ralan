@@ -1,49 +1,14 @@
 <?php
-// Menu navigasi disamakan 100% persis urutan dan strukturnya
-// Status 'active' dipindahkan ke menu Farmasi
-$nav_items = [
-    ['label' => 'Dashboard',   'icon' => 'fa-chart-pie',      'page' => 'dashboard'],
-    ['label' => 'Antrian',     'icon' => 'fa-clipboard-list', 'page' => 'antrian'],
-    ['label' => 'Pendaftaran', 'icon' => 'fa-user-plus',      'page' => 'pendaftaran'],
-    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical',   'page' => 'emr_dokter'],
-    ['label' => 'Farmasi',     'icon' => 'fa-prescription-bottle-medical', 'page' => 'farmasi', 'active' => true],
-    ['label' => 'Kasir',       'icon' => 'fa-credit-card',    'page' => 'kasir'],
-];
+// Memuat sumber data terpusat (Single Source of Truth)
+require_once __DIR__ . '/simrs_data.php';
 
-// Data 4 Card Statistik Atas
-$stats_farmasi = [
-    ['label' => 'TOTAL OBAT',    'value' => '1.245', 'sub' => 'Jenis Obat', 'icon' => 'fa-box-tissue'],
-    ['label' => 'STOK AMAN',     'value' => '982',   'sub' => 'Obat',       'icon' => 'fa-cart-shopping'],
-    ['label' => 'STOK MENIPIS',  'value' => '18',    'sub' => 'Obat',       'icon' => 'fa-triangle-exclamation', 'warning' => true],
-    ['label' => 'RESEP HARI INI', 'value' => '56',    'sub' => 'Resep',      'icon' => 'fa-calendar-check'],
-];
-
-// Data Tabel Daftar Obat
-$daftar_obat = [
-    ['kode' => 'OBT-001', 'nama' => 'Paracetamol 500 mg', 'kategori' => 'Analgesik',       'satuan' => 'Tablet', 'stok' => '1.250', 'status' => 'Aman'],
-    ['kode' => 'OBT-002', 'nama' => 'Amoxicillin 500 mg', 'kategori' => 'Antibiotik',      'satuan' => 'Kapsul', 'stok' => '320',   'status' => 'Aman'],
-    ['kode' => 'OBT-003', 'nama' => 'Ranitidine 150 mg',  'kategori' => 'Gastrointestinal','satuan' => 'Tablet', 'stok' => '45',    'status' => 'Menipis'],
-    ['kode' => 'OBT-004', 'nama' => 'CTM 4 mg',           'kategori' => 'Antihistamin',    'satuan' => 'Tablet', 'stok' => '30',    'status' => 'Menipis'],
-    ['kode' => 'OBT-005', 'nama' => 'Vitamin C 500 mg',   'kategori' => 'Vitamin',         'satuan' => 'Tablet', 'stok' => '850',   'status' => 'Aman'],
-    ['kode' => 'OBT-006', 'nama' => 'Ibuprofen 400 mg',   'kategori' => 'Analgesik',       'satuan' => 'Tablet', 'stok' => '120',   'status' => 'Menipis'],
-    ['kode' => 'OBT-007', 'nama' => 'Salbutamol Inhaler', 'kategori' => 'Respirasi',       'satuan' => 'Puff',   'stok' => '25',    'status' => 'Habis'],
-    ['kode' => 'OBT-008', 'nama' => 'Omeprazole 20 mg',   'kategori' => 'Gastrointestinal','satuan' => 'Kapsul', 'stok' => '200',   'status' => 'Aman'],
-];
-
-// Data Widget Samping: Stok Menipis
-$stok_menipis = [
-    ['nama' => 'Salbutamol Inhaler', 'detail' => 'Stok tersisa: 25 Puff', 'status' => 'Habis'],
-    ['nama' => 'CTM 4 mg',           'detail' => 'Stok tersisa: 30 Tablet', 'status' => 'Menipis'],
-    ['nama' => 'Ranitidine 150 mg',  'detail' => 'Stok tersisa: 45 Tablet', 'status' => 'Menipis'],
-    ['nama' => 'Ibuprofen 400 mg',   'detail' => 'Stok tersisa: 120 Tablet', 'status' => 'Menipis'],
-];
-
-// Data Widget Samping: Resep Terbaru
-$resep_terbaru = [
-    ['no' => '#R-2025-00056', 'nama' => 'Siti Rahayu',    'waktu' => '10:15 WIB', 'status' => 'Selesai'],
-    ['no' => '#R-2025-00055', 'nama' => 'Budiman Setiawan','waktu' => '09:50 WIB', 'status' => 'Selesai'],
-    ['no' => '#R-2025-00054', 'nama' => 'Lestari Putri',   'waktu' => '09:30 WIB', 'status' => 'Selesai'],
-];
+// Menyesuaikan active nav untuk Farmasi
+foreach ($nav_items as &$item) {
+    if ($item['page'] === 'farmasi') {
+        $item['active'] = true;
+    }
+}
+unset($item);
 ?>
 <!DOCTYPE html>
 <html lang="id">

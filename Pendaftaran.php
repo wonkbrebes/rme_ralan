@@ -73,107 +73,8 @@ if ($page === 'emr') {
     $page = 'emr_dokter';
 }
 
-// ============================================================
-// 2. DATA NAVIGASI (dengan key 'page' untuk identifikasi)
-// ============================================================
-$nav_items = [
-    ['label' => 'Dashboard',   'icon' => 'fa-chart-pie',                     'page' => 'dashboard'],
-    ['label' => 'Antrian',     'icon' => 'fa-clipboard-list',                'page' => 'antrian'],
-    ['label' => 'Pendaftaran', 'icon' => 'fa-user-plus',                     'page' => 'pendaftaran'],
-    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical',                  'page' => 'emr_dokter'],
-    ['label' => 'Farmasi',     'icon' => 'fa-prescription-bottle-medical',   'page' => 'farmasi'],
-    ['label' => 'Kasir',       'icon' => 'fa-credit-card',                   'page' => 'kasir'],
-];
-
-// ============================================================
-// 3. DATA UNTUK DASHBOARD
-// ============================================================
-$stats_dashboard = [
-    ['label' => 'Total Pasien Hari Ini', 'value' => '128', 'trend' => '+ 12%', 'trend_type' => 'up',   'icon' => 'fa-users'],
-    ['label' => 'Antrian Aktif',         'value' => '14',  'trend' => '- 5%',  'trend_type' => 'down', 'icon' => 'fa-hourglass-half'],
-    ['label' => 'Pasien Rawat Inap',     'value' => '42',  'trend' => '+ 3%',  'trend_type' => 'up',   'icon' => 'fa-bed'],
-    ['label' => 'Pasien IGD',            'value' => '9',   'trend' => '0%',    'trend_type' => 'neutral', 'icon' => 'fa-truck-medical'],
-];
-
-$antrian_terkini = [
-    ['no' => 'A-024', 'nama' => 'Budiman Setiawan', 'poli' => 'Poli Jantung', 'dokter' => 'Dr. Sarah Wijaya, Sp.JP', 'status' => 'Dipanggil'],
-    ['no' => 'A-025', 'nama' => 'Siti Rahayu',      'poli' => 'Poli Umum',    'dokter' => 'Dr. Anton Subekti',        'status' => 'Menunggu'],
-    ['no' => 'A-021', 'nama' => 'Lestari Putri',    'poli' => 'Poli Anak',    'dokter' => 'Dr. Budi Santoso, Sp.A',   'status' => 'Selesai'],
-    ['no' => 'A-026', 'nama' => 'Ahmad Fauzi',      'poli' => 'Poli Mata',    'dokter' => 'Dr. Yeni Amalia, Sp.M',    'status' => 'Menunggu'],
-    ['no' => 'A-022', 'nama' => 'Rizky Ramadhan',   'poli' => 'Poli Gigi',    'dokter' => 'Drg. Melati Sukma',        'status' => 'Selesai'],
-];
-
-$distribusi = [
-    ['label' => 'Rawat Jalan', 'jumlah' => 72, 'persen' => '56%', 'color' => '#2e7d32'],
-    ['label' => 'Rawat Inap',   'jumlah' => 31, 'persen' => '24%', 'color' => '#4caf50'],
-    ['label' => 'IGD',         'jumlah' => 25, 'persen' => '20%', 'color' => '#a5d6a7'],
-];
-
-// ============================================================
-// 4. DATA UNTUK HALAMAN ANTRIAN
-// ============================================================
-$stats_antrian = [
-    'total'        => 56,
-    'dilayani'     => 14,
-    'rata_tunggu'  => 32,
-    'selesai'      => 42,
-];
-
-$antrian = [
-    ['no' => 'A-024', 'nama' => 'Budiman Setiawan', 'poli' => 'Poli Jantung',  'estimasi' => '10:30', 'status' => 'dilayani'],
-    ['no' => 'A-025', 'nama' => 'Siti Rahayu',      'poli' => 'Poli Umum',    'estimasi' => '10:45', 'status' => 'menunggu'],
-    ['no' => 'A-026', 'nama' => 'Lestari Putri',    'poli' => 'Poli Anak',    'estimasi' => '11:00', 'status' => 'menunggu'],
-    ['no' => 'A-027', 'nama' => 'Ahmad Fauzi',      'poli' => 'Poli Mata',    'estimasi' => '11:15', 'status' => 'menunggu'],
-    ['no' => 'A-028', 'nama' => 'Rizky Ramadhan',   'poli' => 'Poli Gigi',    'estimasi' => '11:30', 'status' => 'menunggu'],
-    ['no' => 'A-029', 'nama' => 'Dewi Lestari',     'poli' => 'Poli Kulit',   'estimasi' => '11:45', 'status' => 'menunggu'],
-    ['no' => 'A-030', 'nama' => 'Fajar Nugroho',    'poli' => 'Poli THT',     'estimasi' => '12:00', 'status' => 'menunggu'],
-];
-
-$sedang_dilayani = $antrian[0];
-
-$status_poli = [
-    ['nama' => 'Poli Jantung', 'sekarang' => 2,  'total' => 15, 'icon' => 'fa-heart'],
-    ['nama' => 'Poli Umum',    'sekarang' => 4,  'total' => 12, 'icon' => 'fa-user'],
-    ['nama' => 'Poli Anak',    'sekarang' => 3,  'total' => 10, 'icon' => 'fa-child'],
-    ['nama' => 'Poli Mata',    'sekarang' => 1,  'total' => 8,  'icon' => 'fa-eye'],
-    ['nama' => 'Poli Gigi',    'sekarang' => 2,  'total' => 7,  'icon' => 'fa-tooth'],
-    ['nama' => 'Poli Kulit',   'sekarang' => 1,  'total' => 6,  'icon' => 'fa-spa'],
-    ['nama' => 'Poli THT',     'sekarang' => 1,  'total' => 5,  'icon' => 'fa-head-side-cough'],
-];
-
-// ============================================================
-// 5. DATA UNTUK HALAMAN PENDAFTARAN
-// ============================================================
-$info_hari_ini = [
-    ['label' => 'Total Pasien Terdaftar', 'value' => '0 Pasien'],
-    ['label' => 'Pendaftaran Hari Ini',   'value' => '0 Pasien'],
-    ['label' => 'Rujukan Internal',       'value' => '0 Pasien'],
-    ['label' => 'Pasien Baru (Bulan Ini)', 'value' => '0 Pasien'],
-];
-
-$riwayat_pendaftaran = [
-    ['no' => 'RM-2026-0001', 'nama' => 'Belum ada data pasien', 'poli' => 'Poli Umum', 'waktu' => '-'],
-];
-
-// Sinkronisasi data real-time dari tabel patients di Supabase PostgreSQL
-try {
-    if (function_exists('get_db_connection') && get_db_connection()) {
-        $cnt_total = db_select_one("SELECT COUNT(*) as total FROM patients")['total'] ?? 0;
-        $cnt_today = db_select_one("SELECT COUNT(*) as total FROM patients WHERE DATE(created_at) = CURRENT_DATE")['total'] ?? 0;
-        if ($cnt_total > 0) {
-            $info_hari_ini = [
-                ['label' => 'Total Pasien Terdaftar', 'value' => $cnt_total . ' Pasien'],
-                ['label' => 'Pendaftaran Hari Ini',   'value' => $cnt_today . ' Pasien'],
-                ['label' => 'Rujukan Internal',       'value' => '0 Pasien'],
-                ['label' => 'Pasien Baru (Bulan Ini)', 'value' => $cnt_total . ' Pasien'],
-            ];
-        }
-        $rows_riw = db_select("SELECT no_rm as no, nama_lengkap as nama, COALESCE(jenis_pasien, 'Poli Umum') as poli, TO_CHAR(created_at, 'HH24:MI WIB') as waktu FROM patients ORDER BY id DESC LIMIT 6");
-        if (!empty($rows_riw)) {
-            $riwayat_pendaftaran = $rows_riw;
-        }
-    }
-} catch (Exception $e) {}
+// Memuat semua data dan sinkronisasi real-time database terpusat
+require_once __DIR__ . '/simrs_data.php';
 
 // ============================================================
 // 6. FUNGSI RENDER KONTEN
@@ -468,7 +369,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                     </div>
                                 </div>
                                 <div class="progress-bar">
-                                    <div class="progress-fill" style="width:<?= round($poli['sekarang']/$poli['total']*100) ?>%"></div>
+                                    <div class="progress-fill" style="width:<?= round($poli['sekarang']/max(1, $poli['total'])*100) ?>%"></div>
                                 </div>
                             </div>
                             <?php endforeach; ?>

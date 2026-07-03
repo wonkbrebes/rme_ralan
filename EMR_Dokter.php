@@ -1,25 +1,14 @@
 <?php
-// Menu navigasi disamakan 100% persis dengan halaman antrian awal
-$nav_items = [
-    ['label' => 'Dashboard',   'icon' => 'fa-chart-pie',      'page' => 'dashboard'],
-    ['label' => 'Antrian',     'icon' => 'fa-clipboard-list', 'page' => 'antrian'],
-    ['label' => 'Pendaftaran', 'icon' => 'fa-user-plus',      'page' => 'pendaftaran'],
-    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical',   'page' => 'emr_dokter', 'active' => true],
-    ['label' => 'Farmasi',     'icon' => 'fa-prescription-bottle-medical', 'page' => 'farmasi'],
-    ['label' => 'Kasir',       'icon' => 'fa-credit-card',    'page' => 'kasir'],
-];
+// Memuat sumber data terpusat (Single Source of Truth)
+require_once __DIR__ . '/simrs_data.php';
 
-// Data Tab Navigasi Internal EMR Dokter
-$emr_tabs = [
-    ['id' => 'ringkasan',        'label' => 'Ringkasan', 'active' => true],
-    ['id' => 'riwayat_kunjungan', 'label' => 'Riwayat Kunjungan'],
-    ['id' => 'pemeriksaan',      'label' => 'Pemeriksaan'],
-    ['id' => 'diagnosa',         'label' => 'Diagnosa'],
-    ['id' => 'terapi_obat',      'label' => 'Terapi & Obat'],
-    ['id' => 'order',            'label' => 'Order'],
-    ['id' => 'hasil_pemeriksaan','label' => 'Hasil Pemeriksaan'],
-    ['id' => 'dokumen',          'label' => 'Dokumen'],
-];
+// Menyesuaikan active nav untuk EMR Dokter
+foreach ($nav_items as &$item) {
+    if ($item['page'] === 'emr_dokter') {
+        $item['active'] = true;
+    }
+}
+unset($item);
 ?>
 <!DOCTYPE html>
 <html lang="id">

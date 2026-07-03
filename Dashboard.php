@@ -1,37 +1,14 @@
 <?php
-// Data navigasi disamakan persis dengan halaman antrian
-$nav_items = [
-    ['label' => 'Dashboard',   'icon' => 'fa-chart-pie',      'page' => 'dashboard', 'active' => true],
-    ['label' => 'Antrian',     'icon' => 'fa-clipboard-list', 'page' => 'antrian'],
-    ['label' => 'Pendaftaran', 'icon' => 'fa-user-plus',      'page' => 'pendaftaran'],
-    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical',   'page' => 'emr_dokter'],
-    ['label' => 'Farmasi',     'icon' => 'fa-prescription-bottle-medical', 'page' => 'farmasi'],
-    ['label' => 'Kasir',       'icon' => 'fa-credit-card',    'page' => 'kasir'],
-];
+// Memuat sumber data terpusat (Single Source of Truth)
+require_once __DIR__ . '/simrs_data.php';
 
-// Simulasi data statistik atas (sesuai gambar mockup)
-$stats_dashboard = [
-    ['label' => 'Total Pasien Hari Ini', 'value' => '128', 'trend' => '+ 12%', 'trend_type' => 'up',   'icon' => 'fa-users'],
-    ['label' => 'Antrian Aktif',         'value' => '14',  'trend' => '- 5%',  'trend_type' => 'down', 'icon' => 'fa-hourglass-half'],
-    ['label' => 'Pasien Rawat Inap',     'value' => '42',  'trend' => '+ 3%',  'trend_type' => 'up',   'icon' => 'fa-bed'],
-    ['label' => 'Pasien IGD',            'value' => '9',   'trend' => '0%',    'trend_type' => 'neutral', 'icon' => 'fa-truck-medical'],
-];
-
-// Data tabel Antrian Terkini (sesuai gambar mockup)
-$antrian_terkini = [
-    ['no' => 'A-024', 'nama' => 'Budiman Setiawan', 'poli' => 'Poli Jantung', 'dokter' => 'Dr. Sarah Wijaya, Sp.JP', 'status' => 'Dipanggil'],
-    ['no' => 'A-025', 'nama' => 'Siti Rahayu',      'poli' => 'Poli Umum',    'dokter' => 'Dr. Anton Subekti',       'status' => 'Menunggu'],
-    ['no' => 'A-021', 'nama' => 'Lestari Putri',    'poli' => 'Poli Anak',    'dokter' => 'Dr. Budi Santoso, Sp.A',   'status' => 'Selesai'],
-    ['no' => 'A-026', 'nama' => 'Ahmad Fauzi',      'poli' => 'Poli Mata',    'dokter' => 'Dr. Yeni Amalia, Sp.M',    'status' => 'Menunggu'],
-    ['no' => 'A-022', 'nama' => 'Rizky Ramadhan',   'poli' => 'Poli Gigi',    'dokter' => 'Drg. Melati Sukma',       'status' => 'Selesai'],
-];
-
-// Data chart lingkaran Distribusi Kunjungan
-$distribusi = [
-    ['label' => 'Rawat Jalan', 'jumlah' => 72, 'persen' => '56%', 'color' => '#2e7d32'],
-    ['label' => 'Rawat Inap',  'jumlah' => 31, 'persen' => '24%', 'color' => '#4caf50'],
-    ['label' => 'IGD',         'jumlah' => 25, 'persen' => '20%', 'color' => '#a5d6a7'],
-];
+// Menyesuaikan active nav untuk Dashboard
+foreach ($nav_items as &$item) {
+    if ($item['page'] === 'dashboard') {
+        $item['active'] = true;
+    }
+}
+unset($item);
 ?>
 <!DOCTYPE html>
 <html lang="id">

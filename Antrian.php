@@ -1,73 +1,15 @@
 <?php
-// Simulasi data antrian (dalam implementasi nyata, ini dari database)
-$stats = [
-    'total'        => 56,
-    'dilayani'     => 14,
-    'rata_tunggu'  => 32,
-    'selesai'      => 42,
-];
+// Memuat sumber data terpusat (Single Source of Truth)
+require_once __DIR__ . '/simrs_data.php';
 
-$antrian = [
-    ['no' => 'A-024', 'nama' => 'Budiman Setiawan', 'poli' => 'Poli Jantung',  'estimasi' => '10:30', 'status' => 'dilayani'],
-    ['no' => 'A-025', 'nama' => 'Siti Rahayu',      'poli' => 'Poli Umum',    'estimasi' => '10:45', 'status' => 'menunggu'],
-    ['no' => 'A-026', 'nama' => 'Lestari Putri',    'poli' => 'Poli Anak',    'estimasi' => '11:00', 'status' => 'menunggu'],
-    ['no' => 'A-027', 'nama' => 'Ahmad Fauzi',      'poli' => 'Poli Mata',    'estimasi' => '11:15', 'status' => 'menunggu'],
-    ['no' => 'A-028', 'nama' => 'Rizky Ramadhan',   'poli' => 'Poli Gigi',    'estimasi' => '11:30', 'status' => 'menunggu'],
-    ['no' => 'A-029', 'nama' => 'Dewi Lestari',     'poli' => 'Poli Kulit',   'estimasi' => '11:45', 'status' => 'menunggu'],
-    ['no' => 'A-030', 'nama' => 'Fajar Nugroho',    'poli' => 'Poli THT',     'estimasi' => '12:00', 'status' => 'menunggu'],
-];
-
-$sedang_dilayani = $antrian[0];
-
-// PERBAIKAN & INTEGRASI SUPABASE: Ambil data pasien antrian langsung dari database Supabase
-if (file_exists(__DIR__ . '/db_helper.php')) {
-    require_once __DIR__ . '/db_helper.php';
-}
-if (function_exists('db_select')) {
-    try {
-        $db_antrian = db_select("SELECT no_rm as no, nama_lengkap as nama, COALESCE(jenis_pasien, 'Poli Umum') as poli, COALESCE(TO_CHAR(created_at, 'HH24:MI'), '10:30') as estimasi FROM patients ORDER BY id DESC");
-        if (!empty($db_antrian) && is_array($db_antrian)) {
-            $antrian = [];
-            foreach ($db_antrian as $idx => $row) {
-                $no_antrian = 'A-' . str_pad($idx + 1, 3, '0', STR_PAD_LEFT);
-                $status_antrian = ($idx === 0) ? 'dilayani' : 'menunggu';
-                $antrian[] = [
-                    'no' => $no_antrian,
-                    'nama' => $row['nama'],
-                    'poli' => (strpos(strtolower($row['poli']), 'poli') !== false) ? $row['poli'] : 'Poli ' . $row['poli'],
-                    'estimasi' => $row['estimasi'],
-                    'status' => $status_antrian
-                ];
-            }
-            $stats['total'] = count($antrian);
-            $stats['dilayani'] = 1;
-            $stats['selesai'] = max(0, $stats['total'] - 1);
-            $sedang_dilayani = $antrian[0];
-        }
-    } catch (Exception $e) {
-        // Fallback ke data simulasi jika query gagal
+// Menyesuaikan variabel untuk kompatibilitas tampilan halaman Antrian
+$stats = $stats_antrian;
+foreach ($nav_items as &$item) {
+    if ($item['page'] === 'antrian') {
+        $item['active'] = true;
     }
 }
-
-$status_poli = [
-    ['nama' => 'Poli Jantung', 'sekarang' => 2,  'total' => 15, 'icon' => 'fa-heart'],
-    ['nama' => 'Poli Umum',    'sekarang' => 4,  'total' => 12, 'icon' => 'fa-user'],
-    ['nama' => 'Poli Anak',    'sekarang' => 3,  'total' => 10, 'icon' => 'fa-child'],
-    ['nama' => 'Poli Mata',    'sekarang' => 1,  'total' => 8,  'icon' => 'fa-eye'],
-    ['nama' => 'Poli Gigi',    'sekarang' => 2,  'total' => 7,  'icon' => 'fa-tooth'],
-    ['nama' => 'Poli Kulit',   'sekarang' => 1,  'total' => 6,  'icon' => 'fa-spa'],
-    ['nama' => 'Poli THT',     'sekarang' => 1,  'total' => 5,  'icon' => 'fa-head-side-cough'],
-];
-
-// PERBAIKAN: Menggunakan class icon Font Awesome v6 yang valid
-$nav_items = [
-    ['label' => 'Dashboard',   'icon' => 'fa-chart-pie',      'page' => 'dashboard'],
-    ['label' => 'Antrian',     'icon' => 'fa-clipboard-list', 'page' => 'antrian', 'active' => true],
-    ['label' => 'Pendaftaran', 'icon' => 'fa-user-plus',      'page' => 'pendaftaran'],
-    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical',   'page' => 'emr_dokter'],
-    ['label' => 'Farmasi',     'icon' => 'fa-prescription-bottle-medical', 'page' => 'farmasi'],
-    ['label' => 'Kasir',       'icon' => 'fa-credit-card',    'page' => 'kasir'],
-];
+unset($item);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -711,7 +653,7 @@ $nav_items = [
                                 </div>
                             </div>
                             <div class="progress-bar">
-                                <div class="progress-fill" style="width:<?= round($poli['sekarang']/$poli['total']*100) ?>%"></div>
+                                <div class="progress-fill" style="width:<?= round($poli['sekarang']/max(1, $poli['total'])*100) ?>%"></div>
                             </div>
                         </div>
                         <?php endforeach; ?>
