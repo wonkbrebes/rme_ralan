@@ -285,7 +285,8 @@ $resep_terbaru = [
         .page-btn.active { background: var(--green-primary); color: var(--white); border-color: var(--green-primary); font-weight: 600; }
 
         /* ── RIGHT COLUMN WIDGETS ── */
-        .right-column { display: flex; flex-direction: column; gap: 16px; }
+        .farmasi-grid-container { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+        .right-column { display: flex; flex-direction: column; gap: 16px; width: 100%; min-width: 0; }
         .widget-title {
             display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 700;
             color: var(--gray-800); padding: 14px 16px; border-bottom: 1px solid var(--gray-200);
@@ -333,8 +334,8 @@ $resep_terbaru = [
         /* ===== RESPONSIF TOTAL (DESKTOP, TABLET, MOBILE) ===== */
         @media (max-width: 1024px) {
             .stat-grid { grid-template-columns: repeat(2, 1fr); }
-            .chart-grid, .lower-grid, .pendaftaran-grid, .triple-grid, .poli-grid { grid-template-columns: 1fr; gap: 16px; }
-            .right-col { order: -1; }
+            .chart-grid, .lower-grid, .pendaftaran-grid, .triple-grid, .poli-grid, .farmasi-grid-container { grid-template-columns: 1fr; gap: 16px; }
+            .right-col, .right-column { order: -1; }
             .patient-card { flex-direction: column; gap: 16px; }
             .patient-right { flex-wrap: wrap; }
             .patient-details-grid { grid-template-columns: repeat(2, 1fr); }
@@ -451,6 +452,7 @@ $resep_terbaru = [
             <?php endforeach; ?>
         </div>
 
+        <div class="farmasi-grid-container">
         <div class="card">
             <div class="card-header">
                 <h2>Daftar Obat</h2>
@@ -585,6 +587,7 @@ $resep_terbaru = [
                 </div>
             </div>
 
+        </div>
         </div><footer>
             &copy; 2026 SIMRS. All rights reserved.
         </footer>

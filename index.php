@@ -5,6 +5,9 @@
 require_once __DIR__ . '/config.php';
 
 $page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
+if ($page === 'emr') {
+    $page = 'emr_dokter';
+}
 $msg_success = '';
 $msg_error = '';
 
@@ -84,7 +87,7 @@ $nav_items = [
     ['label' => 'Dashboard',   'icon' => 'fa-chart-pie',                     'page' => 'dashboard'],
     ['label' => 'Antrian',     'icon' => 'fa-clipboard-list',                'page' => 'antrian'],
     ['label' => 'Pendaftaran', 'icon' => 'fa-user-plus',                     'page' => 'pendaftaran'],
-    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical',                  'page' => 'emr'],
+    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical',                  'page' => 'emr_dokter'],
     ['label' => 'Farmasi',     'icon' => 'fa-prescription-bottle-medical',   'page' => 'farmasi'],
     ['label' => 'Kasir',       'icon' => 'fa-credit-card',                   'page' => 'kasir'],
 ];
@@ -397,14 +400,9 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                 <circle cx="570" cy="70" r="5" fill="#2e7d32"/>
                                 <circle cx="680" cy="15" r="5" fill="#2e7d32"/>
                             </svg>
+                        <div style="position: absolute; bottom: 15px; left: 24px; right: 24px; display: flex; justify-content: space-between; font-size: 11px; color: #9ca3af; font-weight: 600; pointer-events: none;">
+                            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
                         </div>
-                        <span style="font-size: 11px; color:#9ca3af; position:absolute; bottom:15px; left:35px;">Mon</span>
-                        <span style="font-size: 11px; color:#9ca3af; position:absolute; bottom:15px; left:145px;">Tue</span>
-                        <span style="font-size: 11px; color:#9ca3af; position:absolute; bottom:15px; left:255px;">Wed</span>
-                        <span style="font-size: 11px; color:#9ca3af; position:absolute; bottom:15px; left:365px;">Thu</span>
-                        <span style="font-size: 11px; color:#9ca3af; position:absolute; bottom:15px; left:475px;">Fri</span>
-                        <span style="font-size: 11px; color:#9ca3af; position:absolute; bottom:15px; left:585px;">Sat</span>
-                        <span style="font-size: 11px; color:#9ca3af; position:absolute; bottom:15px; right:35px;">Sun</span>
                     </div>
                 </div>
 
@@ -901,18 +899,21 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
             break;
 
         case 'emr':
+        case 'emr_dokter':
             // ---------- HALAMAN EMR DOKTER ----------
+            $emr_nama = !empty($_GET['nama']) ? htmlspecialchars($_GET['nama']) : 'Budi Santoso';
+            $emr_no   = !empty($_GET['no_antrian']) ? htmlspecialchars($_GET['no_antrian']) : 'RM00012345';
             ?>
             <section class="patient-card">
                 <div class="patient-left">
                     <div class="patient-avatar" style="background: #e2e8f0; display:flex; align-items:center; justify-content:center; font-size:32px; color:#94a3b8;"><i class="fa-solid fa-user"></i></div>
                     <div class="patient-meta">
                         <div class="patient-name-box">
-                            <h2>Budi Santoso</h2>
+                            <h2><?= $emr_nama ?></h2>
                             <span class="gender-badge">Laki-laki</span>
                         </div>
                         <div class="info-grid-inline">
-                            <span>No. RM: <strong>RM00012345</strong></span>
+                            <span>No. RM / Antrian: <strong><?= $emr_no ?></strong></span>
                             <span>Tanggal Lahir: <strong>12 Mei 1990 (34 th)</strong></span>
                             <span>No. Identitas: <strong>3275011205900001</strong></span>
                         </div>
@@ -957,6 +958,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                 <?php endforeach; ?>
             </nav>
 
+            <div class="emr-grid-container">
             <div class="left-column-panels">
                 <div id="ringkasan" class="tab-panel active">
                     <div class="card">
@@ -1173,6 +1175,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                     </div>
                 </div>
             </div>
+            </div>
             <?php
             break;
 
@@ -1194,6 +1197,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                 <?php endforeach; ?>
             </div>
 
+            <div class="farmasi-grid-container">
             <div class="card">
                 <div class="card-header">
                     <h2>Daftar Obat</h2>
@@ -1324,6 +1328,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                     </div>
                 </div>
             </div>
+            </div>
             <?php
             break;
 
@@ -1359,6 +1364,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                 </div>
             </section>
 
+            <div class="kasir-grid-container">
             <div class="left-column">
                 <div class="card">
                     <div class="card-header"><h2>Rincian Transaksi Tindakan & Obat</h2></div>
@@ -1447,6 +1453,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                         <i class="fa-solid fa-print"></i> Proses & Cetak Struk
                     </button>
                 </div>
+            </div>
             </div>
             <?php
             break;
@@ -1662,7 +1669,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
         .trend-neutral { background: var(--gray-100); color: var(--gray-600); }
 
         /* ===== CHART (Dashboard) ===== */
-        .chart-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+        .chart-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; }
         .card {
             background: var(--white);
             border-radius: 12px;
@@ -1829,11 +1836,15 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
         /* ===== KOMPONEN ANTRIAN ===== */
         .lower-grid {
             display: grid;
-            grid-template-columns: 1fr 320px;
+            grid-template-columns: minmax(0, 1fr) 320px;
             gap: 20px;
             align-items: start;
         }
-        .right-col { display: flex; flex-direction: column; gap: 16px; }
+        .right-col, .right-column { display: flex; flex-direction: column; gap: 16px; width: 100%; min-width: 0; }
+        .emr-grid-container { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+        .farmasi-grid-container { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+        .kasir-grid-container { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; align-items: start; }
+        .left-column, .left-column-panels { width: 100%; min-width: 0; }
 
         .dilayani-card {
             background: var(--green-primary);
@@ -2059,7 +2070,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
         .tab-panel.active { display: block; }
 
         .left-column-panels {
-            grid-column: 1 / -1;
+            width: 100%; min-width: 0;
         }
 
         .note-body { padding: 18px; display: flex; flex-direction: column; gap: 16px; }
@@ -2076,7 +2087,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
         .vital-tag { background: var(--gray-100); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--gray-600); }
         .vital-tag.success { background: #dcfce7; color: #15803d; }
 
-        .triple-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .triple-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
         .med-list, .order-list { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
         .med-item { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; border-bottom: 1px dashed var(--gray-200); }
         .med-item:last-child { border-bottom: none; padding-bottom: 0; }
@@ -2235,8 +2246,8 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
         /* ===== RESPONSIF TOTAL (DESKTOP, TABLET, MOBILE) ===== */
         @media (max-width: 1024px) {
             .stat-grid { grid-template-columns: repeat(2, 1fr); }
-            .chart-grid, .lower-grid, .pendaftaran-grid, .triple-grid, .poli-grid { grid-template-columns: 1fr; gap: 16px; }
-            .right-col { order: -1; }
+            .chart-grid, .lower-grid, .pendaftaran-grid, .triple-grid, .poli-grid, .emr-grid-container, .farmasi-grid-container, .kasir-grid-container { grid-template-columns: 1fr; gap: 16px; }
+            .right-col, .right-column { order: -1; }
             .patient-card { flex-direction: column; gap: 16px; }
             .patient-right { flex-wrap: wrap; }
             .patient-details-grid { grid-template-columns: repeat(2, 1fr); }
@@ -2319,8 +2330,14 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
 
     <header class="topbar">
         <div class="topbar-left">
-            <h1><?= ucfirst($page) ?></h1>
-            <p class="breadcrumb">Front Office &rsaquo; <span><?= ucfirst($page) ?></span></p>
+            <?php
+            $page_title = ucfirst($page);
+            if ($page === 'emr_dokter' || $page === 'emr') {
+                $page_title = 'EMR Dokter';
+            }
+            ?>
+            <h1><?= htmlspecialchars($page_title) ?></h1>
+            <p class="breadcrumb">Front Office &rsaquo; <span><?= htmlspecialchars($page_title) ?></span></p>
         </div>
         <div class="topbar-right">
             <button class="icon-btn">

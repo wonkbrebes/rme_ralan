@@ -69,6 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 // 1. AMBIL PARAMETER HALAMAN
 // ============================================================
 $page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
+if ($page === 'emr') {
+    $page = 'emr_dokter';
+}
 
 // ============================================================
 // 2. DATA NAVIGASI (dengan key 'page' untuk identifikasi)
@@ -77,7 +80,7 @@ $nav_items = [
     ['label' => 'Dashboard',   'icon' => 'fa-chart-pie',                     'page' => 'dashboard'],
     ['label' => 'Antrian',     'icon' => 'fa-clipboard-list',                'page' => 'antrian'],
     ['label' => 'Pendaftaran', 'icon' => 'fa-user-plus',                     'page' => 'pendaftaran'],
-    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical',                  'page' => 'emr'],
+    ['label' => 'EMR Dokter',  'icon' => 'fa-file-medical',                  'page' => 'emr_dokter'],
     ['label' => 'Farmasi',     'icon' => 'fa-prescription-bottle-medical',   'page' => 'farmasi'],
     ['label' => 'Kasir',       'icon' => 'fa-credit-card',                   'page' => 'kasir'],
 ];
@@ -690,6 +693,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
 
         // ---------- HALAMAN LAIN (placeholder) ----------
         case 'emr':
+        case 'emr_dokter':
             echo '<h2 style="margin: 20px 0;">Halaman EMR Dokter</h2>';
             echo '<p>Rekam medis elektronik.</p>';
             break;
@@ -1348,8 +1352,14 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
 
     <header class="topbar">
         <div class="topbar-left">
-            <h1><?= ucfirst($page) ?></h1>
-            <p class="breadcrumb">Front Office &rsaquo; <span><?= ucfirst($page) ?></span></p>
+            <?php
+            $page_title = ucfirst($page);
+            if ($page === 'emr_dokter' || $page === 'emr') {
+                $page_title = 'EMR Dokter';
+            }
+            ?>
+            <h1><?= htmlspecialchars($page_title) ?></h1>
+            <p class="breadcrumb">Front Office &rsaquo; <span><?= htmlspecialchars($page_title) ?></span></p>
         </div>
         <div class="topbar-right">
             <button class="icon-btn">

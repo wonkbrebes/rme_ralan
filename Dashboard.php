@@ -210,7 +210,7 @@ $distribusi = [
         .trend-neutral { background: var(--gray-100); color: var(--gray-600); }
 
         /* ── DASHBOARD CHARTS GRID ── */
-        .chart-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+        .chart-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; }
         .card {
             background: var(--white); border-radius: 12px;
             box-shadow: 0 1px 4px rgba(0,0,0,.06); overflow: hidden;
@@ -465,14 +465,9 @@ $distribusi = [
                             <circle cx="570" cy="70" r="5" fill="#2e7d32"/>
                             <circle cx="680" cy="15" r="5" fill="#2e7d32"/>
                         </svg>
+                    <div style="position: absolute; bottom: 15px; left: 24px; right: 24px; display: flex; justify-content: space-between; font-size: 11px; color: #9ca3af; font-weight: 600; pointer-events: none;">
+                        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
                     </div>
-                    <span style="font-size: 11px; color:#9ca3af; position:absolute; bottom:15px; left:35px;">Mon</span>
-                    <span style="font-size: 11px; color:#9ca3af; position:absolute; bottom:15px; left:145px;">Tue</span>
-                    <span style="font-size: 11px; color:#9ca3af; position:absolute; bottom:15px; left:255px;">Wed</span>
-                    <span style="font-size: 11px; color:#9ca3af; position:absolute; bottom:15px; left:365px;">Thu</span>
-                    <span style="font-size: 11px; color:#9ca3af; position:absolute; bottom:15px; left:475px;">Fri</span>
-                    <span style="font-size: 11px; color:#9ca3af; position:absolute; bottom:15px; left:585px;">Sat</span>
-                    <span style="font-size: 11px; color:#9ca3af; position:absolute; bottom:15px; right:35px;">Sun</span>
                 </div>
             </div>
 

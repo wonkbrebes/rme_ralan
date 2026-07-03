@@ -212,6 +212,8 @@ $emr_tabs = [
         .tab-panel.active { display: block; }
 
         /* ── CARDS & BLOCKS ── */
+        .emr-grid-container { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+        .left-column-panels { width: 100%; min-width: 0; }
         .card { background: var(--white); border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06); overflow: hidden; margin-bottom: 16px; }
         .card-header { padding: 14px 18px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; }
         .card-header h3 { font-size: 14px; font-weight: 700; color: var(--gray-800); }
@@ -233,7 +235,7 @@ $emr_tabs = [
         .vital-tag.success { background: #dcfce7; color: #15803d; }
 
         /* Triple Card Grid di Bagian Bawah */
-        .triple-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .triple-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
         .med-list, .order-list { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
         .med-item { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; border-bottom: 1px dashed var(--gray-200); }
         .med-item:last-child { border-bottom: none; padding-bottom: 0; }
@@ -288,8 +290,8 @@ $emr_tabs = [
         /* ===== RESPONSIF TOTAL (DESKTOP, TABLET, MOBILE) ===== */
         @media (max-width: 1024px) {
             .stat-grid { grid-template-columns: repeat(2, 1fr); }
-            .chart-grid, .lower-grid, .pendaftaran-grid, .triple-grid, .poli-grid { grid-template-columns: 1fr; gap: 16px; }
-            .right-col { order: -1; }
+            .chart-grid, .lower-grid, .pendaftaran-grid, .triple-grid, .poli-grid, .emr-grid-container { grid-template-columns: 1fr; gap: 16px; }
+            .right-col, .right-column { order: -1; }
             .patient-card { flex-direction: column; gap: 16px; }
             .patient-right { flex-wrap: wrap; }
             .patient-details-grid { grid-template-columns: repeat(2, 1fr); }
@@ -445,6 +447,7 @@ $emr_tabs = [
             <?php endforeach; ?>
         </nav>
 
+        <div class="emr-grid-container">
         <div class="left-column-panels">
 
             <div id="ringkasan" class="tab-panel active">
@@ -666,6 +669,7 @@ $emr_tabs = [
                 </div>
             </div>
 
+        </div>
         </div></main>
 </div>
 

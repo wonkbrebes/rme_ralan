@@ -179,7 +179,9 @@ $nominal_cepat = ['580.000', '600.000', '1.000.000', 'Pas Tagihan'];
         td { padding: 12px 20px; font-size: 12px; border-bottom: 1px solid var(--gray-100); color: var(--gray-800); }
 
         /* COLUMN KANAN - PEMBAYARAN */
-        .right-column { display: flex; flex-direction: column; gap: 16px; }
+        .kasir-grid-container { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; align-items: start; }
+        .left-column { width: 100%; min-width: 0; }
+        .right-column { display: flex; flex-direction: column; gap: 16px; width: 100%; min-width: 0; }
         .billing-summary-list { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
         .summary-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--gray-600); }
         
@@ -213,8 +215,8 @@ $nominal_cepat = ['580.000', '600.000', '1.000.000', 'Pas Tagihan'];
         /* ===== RESPONSIF TOTAL (DESKTOP, TABLET, MOBILE) ===== */
         @media (max-width: 1024px) {
             .stat-grid { grid-template-columns: repeat(2, 1fr); }
-            .chart-grid, .lower-grid, .pendaftaran-grid, .triple-grid, .poli-grid { grid-template-columns: 1fr; gap: 16px; }
-            .right-col { order: -1; }
+            .chart-grid, .lower-grid, .pendaftaran-grid, .triple-grid, .poli-grid, .kasir-grid-container { grid-template-columns: 1fr; gap: 16px; }
+            .right-col, .right-column { order: -1; }
             .patient-card { flex-direction: column; gap: 16px; }
             .patient-right { flex-wrap: wrap; }
             .patient-details-grid { grid-template-columns: repeat(2, 1fr); }
@@ -309,6 +311,7 @@ $nominal_cepat = ['580.000', '600.000', '1.000.000', 'Pas Tagihan'];
             </div>
         </section>
 
+        <div class="kasir-grid-container">
         <div class="left-column">
             <div class="card">
                 <div class="card-header"><h2>Rincian Transaksi Tindakan & Obat</h2></div>
@@ -397,6 +400,7 @@ $nominal_cepat = ['580.000', '600.000', '1.000.000', 'Pas Tagihan'];
                     <i class="fa-solid fa-print"></i> Proses & Cetak Struk
                 </button>
             </div>
+        </div>
         </div>
 
     </main>
