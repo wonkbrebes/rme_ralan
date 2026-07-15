@@ -1,5 +1,6 @@
 <?php
-// Memuat sumber data terpusat (Single Source of Truth)
+// Memuat koneksi database & sumber data terpusat
+require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/simrs_data.php';
 
 // Menyesuaikan active nav untuk Dashboard

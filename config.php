@@ -23,5 +23,6 @@ function query($sql, $params = [])
     return db_query($sql, $params);
 }
 
-// Memuat sumber data terpusat (Single Source of Truth)
-require_once __DIR__ . '/simrs_data.php';
+// Catatan: simrs_data.php TIDAK di-include di sini.
+// Setiap halaman memiliki require_once simrs_data.php sendiri,
+// ditempatkan SETELAH POST handler agar data selalu fresh.

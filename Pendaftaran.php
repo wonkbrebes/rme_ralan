@@ -27,7 +27,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $jk_input = !empty($_POST['jenis_kelamin']) ? $_POST['jenis_kelamin'] : 'Laki-laki';
             $jk = ($jk_input === 'P' || strcasecmp($jk_input, 'perempuan') === 0) ? 'Perempuan' : 'Laki-laki';
             $alamat = !empty($_POST['alamat']) ? trim($_POST['alamat']) : '-';
-            
+
+            // Jenis pasien / penjamin (sesuai enum: Umum, BPJS, Asuransi Lain, Gratis)
+            $jenis_pasien_valid = ['Umum', 'BPJS', 'Asuransi Lain', 'Gratis'];
+            $jenis_pasien = (!empty($_POST['jenis_pasien']) && in_array($_POST['jenis_pasien'], $jenis_pasien_valid)) ? $_POST['jenis_pasien'] : 'Umum';
+
+            // Poliklinik tujuan (wajib diisi)
+            $polyclinic_id = !empty($_POST['polyclinic_id']) ? intval($_POST['polyclinic_id']) : 0;
+            if ($polyclinic_id <= 0) {
+                throw new Exception('Poliklinik tujuan wajib dipilih!');
+            }
+
             db_insert('patients', [
                 'no_rm' => $no_rm,
                 'nik' => $nik,
@@ -37,23 +47,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 'no_telepon' => $phone,
                 'alamat' => $alamat,
                 'no_bpjs' => !empty($no_bpjs) ? $no_bpjs : null,
-                'gol_darah' => !empty($_POST['golongan_darah']) ? $_POST['golongan_darah'] : null
+                'gol_darah' => !empty($_POST['golongan_darah']) ? $_POST['golongan_darah'] : null,
+                'jenis_pasien' => $jenis_pasien
             ]);
-            try {
-                $last_p = db_select_one("SELECT id FROM patients WHERE no_rm = '$no_rm' LIMIT 1");
-                if ($last_p && isset($last_p['id'])) {
-                    db_insert('queues', [
-                        'patient_id' => $last_p['id'],
-                        'no_antrian' => 'A-' . rand(100, 999),
-                        'tanggal' => date('Y-m-d'),
-                        'status' => 'Menunggu',
-                        'jenis_daftar' => 'Offline'
-                    ]);
-                }
-            } catch (Exception $ex) {
-                // Abaikan jika struktur queues berbeda
+
+            // Generate nomor antrian berurutan per hari
+            $last_p = db_select_one("SELECT id FROM patients WHERE no_rm = '" . addslashes($no_rm) . "' LIMIT 1");
+            if ($last_p && isset($last_p['id'])) {
+                $count_row = db_select_one("SELECT COUNT(*) as cnt FROM queues WHERE tanggal = CURRENT_DATE");
+                $next_num = ($count_row ? intval($count_row['cnt']) : 0) + 1;
+                $no_antrian_gen = 'A-' . str_pad($next_num, 3, '0', STR_PAD_LEFT);
+
+                db_insert('queues', [
+                    'patient_id' => $last_p['id'],
+                    'polyclinic_id' => $polyclinic_id,
+                    'no_antrian' => $no_antrian_gen,
+                    'tanggal' => date('Y-m-d'),
+                    'status' => 'Menunggu',
+                    'jenis_daftar' => 'Offline'
+                ]);
             }
-            $msg_success = "Pendaftaran pasien & antrian berhasil disimpan ke Supabase! (No. RM: $no_rm - $nama)";
+            $msg_success = "Pendaftaran pasien & antrian berhasil disimpan! (No. RM: $no_rm - $nama, Antrian: " . ($no_antrian_gen ?? '-') . ")";
         } catch (Exception $e) {
             $err = $e->getMessage();
             if (strpos($err, 'patients_nik_key') !== false || strpos($err, '23505') !== false || strpos($err, 'Unique violation') !== false) {
@@ -459,6 +473,44 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                         <option value="B">B</option>
                                         <option value="AB">AB</option>
                                         <option value="O">O</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Pendaftaran Pelayanan -->
+                            <div class="form-section-title">
+                                <i class="fa-solid fa-hospital"></i> Pendaftaran Pelayanan
+                            </div>
+                            <div class="form-row-2">
+                                <div class="form-group">
+                                    <label>Poliklinik Tujuan<span>*</span></label>
+                                    <select name="polyclinic_id" class="form-select" required>
+                                        <option value="" disabled selected>Pilih poliklinik tujuan</option>
+                                        <?php
+                                        if (!empty($daftar_polyclinics)) {
+                                            foreach ($daftar_polyclinics as $poli_opt) {
+                                                echo '<option value="' . htmlspecialchars($poli_opt['id']) . '">' . htmlspecialchars($poli_opt['nama_poli']) . '</option>';
+                                            }
+                                        } else {
+                                            // Fallback statis jika query gagal
+                                            echo '<option value="1">Poli Umum</option>';
+                                            echo '<option value="2">Poli Gigi</option>';
+                                            echo '<option value="3">Poli Anak</option>';
+                                            echo '<option value="6">Poli Mata</option>';
+                                            echo '<option value="7">Poli THT</option>';
+                                            echo '<option value="8">Poli Kulit</option>';
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Jenis Pasien / Penjamin<span>*</span></label>
+                                    <select name="jenis_pasien" class="form-select" required>
+                                        <option value="" disabled selected>Pilih jenis pasien</option>
+                                        <option value="Umum">Umum / Pribadi</option>
+                                        <option value="BPJS">BPJS Kesehatan</option>
+                                        <option value="Asuransi Lain">Asuransi Lain</option>
+                                        <option value="Gratis">Gratis</option>
                                     </select>
                                 </div>
                             </div>

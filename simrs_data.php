@@ -214,97 +214,133 @@ $detail_transaksi = [
 $nominal_cepat = ['580.000', '600.000', '1.000.000', 'Pas Tagihan'];
 
 // 4. SINKRONISASI REAL-TIME DATABASE SUPABASE POSTGRESQL (SINGLE SOURCE OF TRUTH)
+// 4a. Load daftar poliklinik aktif untuk dropdown form pendaftaran
+$daftar_polyclinics = [];
 if (function_exists('db_select')) {
     try {
-        $rows_db = db_select("SELECT no_rm, nama_lengkap, COALESCE(jenis_pasien, 'Poli Umum') as poli, COALESCE(TO_CHAR(created_at, 'HH24:MI'), '10:30') as estimasi, TO_CHAR(created_at, 'HH24:MI WIB') as waktu, DATE(created_at) as tgl FROM patients ORDER BY id DESC");
-        if (!empty($rows_db) && is_array($rows_db)) {
-            $antrian = [];
-            $riwayat_pendaftaran = [];
-            $antrian_terkini = [];
-            
-            $cnt_today = 0;
-            $cnt_total = count($rows_db);
-            $today_str = date('Y-m-d');
+        $daftar_polyclinics = db_select("SELECT id, kode_poli, nama_poli FROM polyclinics WHERE is_active = true ORDER BY nama_poli");
+    } catch (Exception $e) {
+        // Fallback: kosong, form akan tampil tanpa data dinamis
+    }
 
-            $poli_counts = [
-                'Poli Jantung' => 0, 'Poli Umum' => 0, 'Poli Anak' => 0,
-                'Poli Mata' => 0, 'Poli Gigi' => 0, 'Poli Kulit' => 0, 'Poli THT' => 0
+    // 4b. Sinkronisasi data antrian dari tabel queues + patients + polyclinics
+    try {
+        // Query antrian hari ini dari tabel queues (sumber data yang benar)
+        $rows_antrian = db_select("SELECT q.no_antrian, q.status as q_status, q.jenis_daftar, p.no_rm, p.nama_lengkap, pol.nama_poli, COALESCE(TO_CHAR(q.created_at, 'HH24:MI'), '10:30') as estimasi, TO_CHAR(q.created_at, 'HH24:MI WIB') as waktu FROM queues q JOIN patients p ON q.patient_id = p.id JOIN polyclinics pol ON q.polyclinic_id = pol.id WHERE q.tanggal = CURRENT_DATE ORDER BY q.id ASC");
+
+        // Query riwayat pendaftaran pasien terbaru (terlepas dari antrian)
+        $rows_riwayat = db_select("SELECT p.no_rm, p.nama_lengkap, COALESCE(pol.nama_poli, 'Poli Umum') as nama_poli, TO_CHAR(q.created_at, 'HH24:MI WIB') as waktu FROM queues q JOIN patients p ON q.patient_id = p.id LEFT JOIN polyclinics pol ON q.polyclinic_id = pol.id ORDER BY q.id DESC LIMIT 6");
+
+        // Query total pasien terdaftar
+        $cnt_total_row = db_select_one("SELECT COUNT(*) as total FROM patients");
+        $cnt_total = $cnt_total_row ? intval($cnt_total_row['total']) : 0;
+
+        if (is_array($rows_antrian)) {
+            $antrian = [];
+            $antrian_terkini = [];
+
+            $poli_counts = [];
+            $status_counts = ['Menunggu' => 0, 'Dipanggil' => 0, 'Dalam Pemeriksaan' => 0, 'Selesai' => 0, 'Batal' => 0];
+
+            $dokter_map = [
+                'Poli Jantung' => 'Dr. Sarah Wijaya, Sp.JP', 'Poli Umum' => 'Dr. Anton Subekti',
+                'Poli Anak' => 'Dr. Budi Santoso, Sp.A', 'Poli Mata' => 'Dr. Yeni Amalia, Sp.M',
+                'Poli Gigi' => 'Drg. Melati Sukma', 'Poli Kulit' => 'Dr. Rina Handayani, Sp.KK',
+                'Poli THT' => 'Dr. Fajar Nugroho, Sp.THT', 'Poli Kebidanan' => 'Dr. Ratna, Sp.OG',
+                'Poli Bedah' => 'Dr. Agus, Sp.B', 'Poli Paru' => 'Dr. Hendra, Sp.P',
+                'Poli Saraf' => 'Dr. Dewi, Sp.S'
             ];
 
-            foreach ($rows_db as $idx => $row) {
-                if (($row['tgl'] ?? '') === $today_str) {
-                    $cnt_today++;
+            foreach ($rows_antrian as $idx => $row) {
+                $poli_name = $row['nama_poli'];
+                // Hitung per poli
+                if (!isset($poli_counts[$poli_name])) {
+                    $poli_counts[$poli_name] = ['menunggu' => 0, 'dilayani' => 0, 'selesai' => 0, 'total' => 0];
                 }
-                
-                $poli_name = (strpos(strtolower($row['poli']), 'poli') !== false) ? $row['poli'] : 'Poli ' . $row['poli'];
-                if (isset($poli_counts[$poli_name])) {
-                    $poli_counts[$poli_name]++;
-                } else {
-                    $poli_name = 'Poli Umum';
-                    $poli_counts['Poli Umum']++;
+                $poli_counts[$poli_name]['total']++;
+
+                // Map status dari database enum ke tampilan
+                $db_status = $row['q_status'];
+                if (isset($status_counts[$db_status])) {
+                    $status_counts[$db_status]++;
                 }
 
-                $no_antrian = 'A-' . str_pad($idx + 1, 3, '0', STR_PAD_LEFT);
-                
-                if ($idx === 0) {
-                    $status_antrian = 'dilayani';
-                } elseif ($idx < 3) {
-                    $status_antrian = 'menunggu';
+                if ($db_status === 'Menunggu') {
+                    $status_display = 'menunggu';
+                    $poli_counts[$poli_name]['menunggu']++;
+                } elseif ($db_status === 'Dipanggil' || $db_status === 'Dalam Pemeriksaan') {
+                    $status_display = 'dilayani';
+                    $poli_counts[$poli_name]['dilayani']++;
+                } elseif ($db_status === 'Selesai') {
+                    $status_display = 'selesai';
+                    $poli_counts[$poli_name]['selesai']++;
                 } else {
-                    $status_antrian = 'selesai';
+                    $status_display = 'batal';
                 }
 
                 $antrian[] = [
-                    'no'       => $no_antrian,
+                    'no'       => $row['no_antrian'],
                     'nama'     => $row['nama_lengkap'],
                     'poli'     => $poli_name,
                     'estimasi' => $row['estimasi'],
-                    'status'   => $status_antrian
+                    'status'   => $status_display
                 ];
 
-                if (count($riwayat_pendaftaran) < 6) {
-                    $riwayat_pendaftaran[] = [
-                        'no'    => $row['no_rm'],
-                        'nama'  => $row['nama_lengkap'],
-                        'poli'  => $poli_name,
-                        'waktu' => $row['waktu'] ?: '-'
-                    ];
-                }
-
                 if (count($antrian_terkini) < 5) {
-                    $dokter_map = [
-                        'Poli Jantung' => 'Dr. Sarah Wijaya, Sp.JP', 'Poli Umum' => 'Dr. Anton Subekti',
-                        'Poli Anak' => 'Dr. Budi Santoso, Sp.A', 'Poli Mata' => 'Dr. Yeni Amalia, Sp.M',
-                        'Poli Gigi' => 'Drg. Melati Sukma', 'Poli Kulit' => 'Dr. Rina Handayani, Sp.KK',
-                        'Poli THT' => 'Dr. Fajar Nugroho, Sp.THT'
-                    ];
                     $antrian_terkini[] = [
-                        'no'     => $no_antrian,
+                        'no'     => $row['no_antrian'],
                         'nama'   => $row['nama_lengkap'],
                         'poli'   => $poli_name,
                         'dokter' => $dokter_map[$poli_name] ?? 'Dr. Dokter Jaga',
-                        'status' => ucfirst($status_antrian)
+                        'status' => ucfirst($status_display)
                     ];
                 }
             }
 
-            // Gunakan jumlah hari ini jika ada, jika belum ada pasien hari ini tampilkan total
+            // Riwayat pendaftaran dari query terpisah
+            if (!empty($rows_riwayat) && is_array($rows_riwayat)) {
+                $riwayat_pendaftaran = [];
+                foreach ($rows_riwayat as $riw) {
+                    $riwayat_pendaftaran[] = [
+                        'no'    => $riw['no_rm'],
+                        'nama'  => $riw['nama_lengkap'],
+                        'poli'  => $riw['nama_poli'],
+                        'waktu' => $riw['waktu'] ?: '-'
+                    ];
+                }
+            }
+
+            $cnt_today = count($rows_antrian);
             $display_today = ($cnt_today > 0) ? $cnt_today : $cnt_total;
 
-            $status_poli = [
-                ['nama' => 'Poli Jantung', 'sekarang' => min($poli_counts['Poli Jantung'], 1), 'total' => max(1, $poli_counts['Poli Jantung']), 'icon' => 'fa-heart'],
-                ['nama' => 'Poli Umum',    'sekarang' => min($poli_counts['Poli Umum'], 1),    'total' => max(1, $poli_counts['Poli Umum']),    'icon' => 'fa-user'],
-                ['nama' => 'Poli Anak',    'sekarang' => min($poli_counts['Poli Anak'], 1),    'total' => max(1, $poli_counts['Poli Anak']),    'icon' => 'fa-child'],
-                ['nama' => 'Poli Mata',    'sekarang' => min($poli_counts['Poli Mata'], 1),    'total' => max(1, $poli_counts['Poli Mata']),    'icon' => 'fa-eye'],
-                ['nama' => 'Poli Gigi',    'sekarang' => min($poli_counts['Poli Gigi'], 1),    'total' => max(1, $poli_counts['Poli Gigi']),    'icon' => 'fa-tooth'],
-                ['nama' => 'Poli Kulit',   'sekarang' => min($poli_counts['Poli Kulit'], 1),   'total' => max(1, $poli_counts['Poli Kulit']),   'icon' => 'fa-spa'],
-                ['nama' => 'Poli THT',     'sekarang' => min($poli_counts['Poli THT'], 1),     'total' => max(1, $poli_counts['Poli THT']),     'icon' => 'fa-head-side-cough'],
-            ];
+            $dilayani_cnt = $status_counts['Dipanggil'] + $status_counts['Dalam Pemeriksaan'];
+            $menunggu_cnt = $status_counts['Menunggu'];
+            $selesai_cnt  = $status_counts['Selesai'];
 
-            $total_antrian = count($antrian);
-            $dilayani_cnt  = ($total_antrian > 0) ? 1 : 0;
-            $menunggu_cnt  = ($total_antrian > 1) ? min(2, $total_antrian - 1) : 0;
-            $selesai_cnt   = max(0, $total_antrian - $dilayani_cnt - $menunggu_cnt);
+            // Build status poli dari data riil
+            $poli_icon_map = [
+                'Poli Jantung' => 'fa-heart', 'Poli Umum' => 'fa-user', 'Poli Anak' => 'fa-child',
+                'Poli Mata' => 'fa-eye', 'Poli Gigi' => 'fa-tooth', 'Poli Kulit' => 'fa-spa',
+                'Poli THT' => 'fa-head-side-cough', 'Poli Kebidanan' => 'fa-baby',
+                'Poli Bedah' => 'fa-scissors', 'Poli Paru' => 'fa-lungs', 'Poli Saraf' => 'fa-brain'
+            ];
+            $status_poli = [];
+            foreach ($poli_counts as $pname => $pcounts) {
+                $status_poli[] = [
+                    'nama'     => $pname,
+                    'sekarang' => $pcounts['dilayani'],
+                    'total'    => $pcounts['total'],
+                    'icon'     => $poli_icon_map[$pname] ?? 'fa-hospital'
+                ];
+            }
+            // Jika tidak ada poli yang terpakai, tampilkan default
+            if (empty($status_poli)) {
+                $status_poli = [
+                    ['nama' => 'Poli Umum',    'sekarang' => 0, 'total' => 1, 'icon' => 'fa-user'],
+                    ['nama' => 'Poli Gigi',    'sekarang' => 0, 'total' => 1, 'icon' => 'fa-tooth'],
+                    ['nama' => 'Poli Anak',    'sekarang' => 0, 'total' => 1, 'icon' => 'fa-child'],
+                ];
+            }
 
             $stats_antrian = [
                 'total'       => $display_today,
@@ -313,11 +349,20 @@ if (function_exists('db_select')) {
                 'selesai'     => $selesai_cnt,
             ];
 
-            $sedang_dilayani = $antrian[0] ?? $antrian_terkini[0];
+            if (!empty($antrian)) {
+                // Cari pasien yang sedang dilayani, fallback ke antrian pertama
+                $sedang_dilayani = $antrian[0];
+                foreach ($antrian as $a) {
+                    if ($a['status'] === 'dilayani') {
+                        $sedang_dilayani = $a;
+                        break;
+                    }
+                }
+            }
 
             $info_hari_ini = [
                 ['label' => 'Total Pasien Terdaftar',  'value' => $cnt_total . ' Pasien'],
-                ['label' => 'Pendaftaran Hari Ini',    'value' => $display_today . ' Pasien'],
+                ['label' => 'Pendaftaran Hari Ini',    'value' => $cnt_today . ' Pasien'],
                 ['label' => 'Rujukan Internal',        'value' => '1 Pasien'],
                 ['label' => 'Pasien Baru (Bulan Ini)', 'value' => $cnt_total . ' Pasien'],
             ];
