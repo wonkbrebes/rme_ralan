@@ -27,8 +27,11 @@ try {
 
 echo "[2/3] Mempersiapkan skema tabel (15 Tabel RME)...\n";
 
-// Membersihkan tabel kosong yang strukturnya lama/konflik agar bisa dibentuk ulang dengan sempurna
-$pdo->exec("DROP TABLE IF EXISTS visits, antrian, bpjs_sep, rekam_medis, rm_diagnoses, resep, resep_items, order_lab, order_lab_hasil, order_radiologi, surat_rujukan, tagihan CASCADE;");
+// Membersihkan tabel yang strukturnya lama/konflik agar bisa dibentuk ulang dengan sempurna
+// CATATAN: Tabel lama 'poliklinik' dan 'antrian' diganti → 'polyclinics' dan 'queues'
+$pdo->exec("DROP TABLE IF EXISTS visits, antrian, queues, bpjs_sep, rekam_medis, rm_diagnoses, resep, resep_items, order_lab, order_lab_hasil, order_radiologi, surat_rujukan, tagihan CASCADE;");
+$pdo->exec("DROP TABLE IF EXISTS jadwal_dokter CASCADE;");
+$pdo->exec("DROP TABLE IF EXISTS poliklinik CASCADE;");
 
 $queries = [
     "Tabel users" => "
@@ -44,11 +47,11 @@ $queries = [
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
     ",
-    "Tabel poliklinik" => "
-        CREATE TABLE IF NOT EXISTS poliklinik (
-            poliklinik_id BIGSERIAL PRIMARY KEY,
+    "Tabel polyclinics" => "
+        CREATE TABLE IF NOT EXISTS polyclinics (
+            id BIGSERIAL PRIMARY KEY,
             kode_poli VARCHAR(10) UNIQUE NOT NULL,
-            nama_poliklinik VARCHAR(100) NOT NULL,
+            nama_poli VARCHAR(100) NOT NULL,
             kode_bpjs_poli VARCHAR(20) NULL,
             satusehat_location_id VARCHAR(100) NULL,
             is_active BOOLEAN DEFAULT TRUE,
@@ -73,7 +76,7 @@ $queries = [
         CREATE TABLE IF NOT EXISTS jadwal_dokter (
             jadwal_id BIGSERIAL PRIMARY KEY,
             dokter_id BIGINT NOT NULL REFERENCES dokter(dokter_id) ON DELETE CASCADE,
-            poliklinik_id BIGINT NOT NULL REFERENCES poliklinik(poliklinik_id) ON DELETE CASCADE,
+            polyclinic_id BIGINT NOT NULL REFERENCES polyclinics(id) ON DELETE CASCADE,
             hari VARCHAR(20) NOT NULL,
             jam_mulai TIME NOT NULL,
             jam_selesai TIME NOT NULL,
@@ -127,14 +130,33 @@ $queries = [
         );
         CREATE INDEX IF NOT EXISTS idx_patients_no_bpjs ON patients(no_bpjs);
     ",
-    "Tabel visits" => "
+    "Tabel queues (antrian)" => "
+        CREATE TABLE IF NOT EXISTS queues (
+            id BIGSERIAL PRIMARY KEY,
+            patient_id BIGINT NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+            polyclinic_id BIGINT NOT NULL REFERENCES polyclinics(id) ON DELETE CASCADE,
+            no_antrian VARCHAR(10) NOT NULL,
+            tanggal DATE NOT NULL DEFAULT CURRENT_DATE,
+            status VARCHAR(30) NOT NULL DEFAULT 'Menunggu',
+            jenis_daftar VARCHAR(20) DEFAULT 'Offline',
+            dipanggil_at TIMESTAMP WITH TIME ZONE NULL,
+            mulai_at TIMESTAMP WITH TIME ZONE NULL,
+            selesai_at TIMESTAMP WITH TIME ZONE NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_queues_tanggal ON queues(tanggal);
+        CREATE INDEX IF NOT EXISTS idx_queues_status ON queues(status);
+    ",
+    "Tabel visits (kunjungan)" => "
         CREATE TABLE IF NOT EXISTS visits (
             kunjungan_id BIGSERIAL PRIMARY KEY,
             no_kunjungan VARCHAR(30) UNIQUE NOT NULL,
             pasien_id BIGINT NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
-            poliklinik_id BIGINT NOT NULL REFERENCES poliklinik(poliklinik_id) ON DELETE CASCADE,
+            polyclinic_id BIGINT NOT NULL REFERENCES polyclinics(id) ON DELETE CASCADE,
             dokter_id BIGINT NOT NULL REFERENCES dokter(dokter_id) ON DELETE CASCADE,
             jadwal_id BIGINT NULL REFERENCES jadwal_dokter(jadwal_id) ON DELETE SET NULL,
+            queue_id BIGINT NULL REFERENCES queues(id) ON DELETE SET NULL,
             no_antrian VARCHAR(10) NOT NULL,
             tanggal_kunjungan DATE NOT NULL,
             status VARCHAR(30) DEFAULT 'MENUNGGU',
@@ -149,25 +171,10 @@ $queries = [
         );
         CREATE INDEX IF NOT EXISTS idx_visits_no_sep ON visits(no_sep);
     ",
-    "Tabel antrian" => "
-        CREATE TABLE IF NOT EXISTS antrian (
-            id BIGSERIAL PRIMARY KEY,
-            kunjungan_id BIGINT NOT NULL REFERENCES visits(kunjungan_id) ON DELETE CASCADE,
-            poliklinik_id BIGINT NOT NULL REFERENCES poliklinik(poliklinik_id) ON DELETE CASCADE,
-            no_antrian VARCHAR(10) NOT NULL,
-            urutan INTEGER NOT NULL,
-            status VARCHAR(30) DEFAULT 'MENUNGGU',
-            dipanggil_at TIMESTAMP WITH TIME ZONE NULL,
-            mulai_at TIMESTAMP WITH TIME ZONE NULL,
-            selesai_at TIMESTAMP WITH TIME ZONE NULL,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-        );
-    ",
     "Tabel bpjs_sep" => "
         CREATE TABLE IF NOT EXISTS bpjs_sep (
             id BIGSERIAL PRIMARY KEY,
-            kunjungan_id BIGINT NOT NULL REFERENCES visits(kunjungan_id) ON DELETE CASCADE,
+            kunjungan_id BIGINT NULL REFERENCES visits(kunjungan_id) ON DELETE CASCADE,
             pasien_id BIGINT NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
             no_sep VARCHAR(50) NULL,
             tanggal_sep DATE NOT NULL,
@@ -321,5 +328,36 @@ foreach ($queries as $tableName => $sql) {
 }
 
 echo "\n=========================================================\n";
-echo "  MIGRASI SELESAI! Silakan cek Dashboard Supabase Anda.  \n";
+echo "  MIGRASI TABEL SELESAI!                                 \n";
+echo "=========================================================\n\n";
+
+// ===== SEED DATA: Polyclinics (Poliklinik) =====
+echo "[SEED] Mengisi data poliklinik awal...\n";
+$seed_polyclinics = [
+    ['POL-001', 'Poli Umum'],
+    ['POL-002', 'Poli Gigi'],
+    ['POL-003', 'Poli Anak'],
+    ['POL-004', 'Poli Jantung'],
+    ['POL-005', 'Poli Kulit'],
+    ['POL-006', 'Poli Mata'],
+    ['POL-007', 'Poli THT'],
+    ['POL-008', 'Poli Kebidanan'],
+    ['POL-009', 'Poli Bedah'],
+    ['POL-010', 'Poli Paru'],
+    ['POL-011', 'Poli Saraf'],
+];
+
+foreach ($seed_polyclinics as $poli) {
+    try {
+        $stmt = $pdo->prepare("INSERT INTO polyclinics (kode_poli, nama_poli) VALUES (:kode, :nama) ON CONFLICT (kode_poli) DO NOTHING");
+        $stmt->execute(['kode' => $poli[0], 'nama' => $poli[1]]);
+        echo " - {$poli[1]} ({$poli[0]})... OK ✓\n";
+    } catch (PDOException $e) {
+        echo " - {$poli[1]}: SKIP (" . $e->getMessage() . ")\n";
+    }
+}
+
+echo "\n=========================================================\n";
+echo "  MIGRASI + SEED DATA SELESAI!                           \n";
+echo "  Silakan cek Dashboard Supabase Anda.                   \n";
 echo "=========================================================\n";
