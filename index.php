@@ -273,7 +273,16 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                     ?>
                                     <span class="badge-status <?= $status_class ?>"><?= htmlspecialchars($status_label) ?></span>
                                 </td>
-                                <td><a href="?page=emr_dokter&no_antrian=<?= urlencode($row['no']) ?>&nama=<?= urlencode($row['nama']) ?>" class="btn-detail" style="text-decoration:none; display:inline-block;">Detail / Dilayani</a></td>
+                                <td>
+                                    <?php if ($status_key === 'menunggu'): ?>
+                                    <form method="POST" action="?page=antrian" style="display:inline; margin-right: 6px;">
+                                        <input type="hidden" name="action" value="panggil_antrian">
+                                        <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($row['no']) ?>">
+                                        <button type="submit" class="btn-detail" style="text-decoration:none; display:inline-block;">Panggil</button>
+                                    </form>
+                                    <?php endif; ?>
+                                    <a href="?page=emr_dokter&no_antrian=<?= urlencode($row['no']) ?>&nama=<?= urlencode($row['nama']) ?>" class="btn-detail" style="text-decoration:none; display:inline-block;">Detail / Dilayani</a>
+                                </td>
                             </tr>
                             <?php endforeach; ?>
                             <?php else: ?>
@@ -733,6 +742,17 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                 </div>
             </section>
 
+            <?php if (!empty($_GET['no_antrian'])): ?>
+            <div style="padding: 0 0 20px 0;">
+                <form method="POST" action="?page=emr_dokter" style="display:flex; gap: 10px; flex-wrap: wrap;">
+                    <input type="hidden" name="action" value="simpan_emr">
+                    <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($_GET['no_antrian']) ?>">
+                    <button type="submit" class="btn-submit" style="background:#2e7d32; color:#fff; border:none;">Mulai Pemeriksaan</button>
+                    <a href="?page=kasir&no_antrian=<?= urlencode($_GET['no_antrian']) ?>&nama=<?= urlencode($nama_pasien) ?>" class="btn-submit" style="background:#2563eb; color:#fff; text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Lanjut ke Kasir</a>
+                </form>
+            </div>
+            <?php endif; ?>
+
             <nav class="emr-nav-bar">
                 <?php foreach ($emr_tabs as $tab): ?>
                 <button class="emr-tab-btn <?= !empty($tab['active']) ? 'active' : '' ?>" onclick="switchTab(event, '<?= $tab['id'] ?>')">
@@ -1165,43 +1185,47 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
 
                 <div class="card">
                     <div class="card-header"><h2>Form Transaksi Pembayaran</h2></div>
-                    <div class="pay-form">
-                        <div class="form-group">
-                            <label>Metode Pembayaran</label>
-                            <div class="select-container">
-                                <i class="fa-solid fa-money-bill-wave" id="pay-icon"></i>
-                                <select class="select-pay" id="payment-method" onchange="updatePaymentIcon()">
-                                    <option value="Tunai">Tunai / Cash</option>
-                                    <option value="QRIS">QRIS / Digital Payment</option>
-                                    <option value="Debit">Debit Card / Transfer Bank</option>
-                                    <option value="BPJS">Jaminan BPJS Kesehatan</option>
-                                </select>
+                    <form action="?page=kasir" method="POST">
+                        <input type="hidden" name="action" value="bayar_kasir">
+                        <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($_GET['no_antrian'] ?? '') ?>">
+                        <div class="pay-form">
+                            <div class="form-group">
+                                <label>Metode Pembayaran</label>
+                                <div class="select-container">
+                                    <i class="fa-solid fa-money-bill-wave" id="pay-icon"></i>
+                                    <select class="select-pay" id="payment-method" name="payment_method" onchange="updatePaymentIcon()">
+                                        <option value="Tunai">Tunai / Cash</option>
+                                        <option value="QRIS">QRIS / Digital Payment</option>
+                                        <option value="Debit">Debit Card / Transfer Bank</option>
+                                        <option value="BPJS">Jaminan BPJS Kesehatan</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Jumlah Uang Diterima</label>
+                                <div class="input-money-container">
+                                    <span class="currency-prefix">Rp</span>
+                                    <input type="text" class="money-input" name="nominal" value="<?= $subtotal_fmt ?>">
+                                </div>
+                            </div>
+
+                            <div class="nominal-grid">
+                                <?php foreach ($nominal_cepat as $nom): ?>
+                                    <button type="button" class="btn-nom" onclick="document.querySelector('.money-input').value='<?= $nom ?>';"><?= $nom ?></button>
+                                <?php endforeach; ?>
+                            </div>
+
+                            <div class="change-box">
+                                <span>Uang Kembalian:</span>
+                                <strong>Rp 0</strong>
                             </div>
                         </div>
                         
-                        <div class="form-group">
-                            <label>Jumlah Uang Diterima</label>
-                            <div class="input-money-container">
-                                <span class="currency-prefix">Rp</span>
-                                <input type="text" class="money-input" value="<?= $subtotal_fmt ?>">
-                            </div>
-                        </div>
-
-                        <div class="nominal-grid">
-                            <?php foreach ($nominal_cepat as $nom): ?>
-                                <button class="btn-nom"><?= $nom ?></button>
-                            <?php endforeach; ?>
-                        </div>
-
-                        <div class="change-box">
-                            <span>Uang Kembalian:</span>
-                            <strong>Rp 0</strong>
-                        </div>
-                    </div>
-                    
-                    <button class="btn-submit-pay" onclick="alert('Transaksi Berhasil Disimpan & Struk Dicetak!')">
-                        <i class="fa-solid fa-print"></i> Proses & Cetak Struk
-                    </button>
+                        <button type="submit" class="btn-submit-pay">
+                            <i class="fa-solid fa-print"></i> Proses & Cetak Struk
+                        </button>
+                    </form>
                 </div>
             </div>
             </div>
