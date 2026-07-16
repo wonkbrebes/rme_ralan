@@ -11,6 +11,23 @@ foreach ($nav_items as &$item) {
     }
 }
 unset($item);
+
+if (is_array($antrian)) {
+    $antrian_display = [];
+    foreach ($antrian as $row) {
+        $statusKey = normalize_queue_status($row['status'] ?? '');
+        $antrian_display[] = [
+            'no' => $row['no'] ?? '-',
+            'nama' => $row['nama'] ?? '-',
+            'poli' => $row['poli'] ?? '-',
+            'estimasi' => $row['estimasi'] ?? '-',
+            'status' => $statusKey,
+            'status_label' => get_queue_status_label($statusKey),
+            'badge_class' => get_queue_badge_class($statusKey),
+        ];
+    }
+    $antrian = $antrian_display;
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -284,6 +301,7 @@ unset($item);
             font-size: 12px; font-weight: 500;
         }
         .badge-dilayani { background: #dcfce7; color: #15803d; }
+        .badge-dipanggil { background: #dcfce7; color: #15803d; }
         .badge-menunggu { background: #fef9c3; color: #a16207; }
         .badge-selesai  { background: #e0e7ff; color: #3730a3; }
 
@@ -577,6 +595,7 @@ unset($item);
                         </tr>
                     </thead>
                     <tbody>
+                        <?php if (!empty($antrian)): ?>
                         <?php foreach ($antrian as $row): ?>
                         <tr>
                             <td class="no-antrian"><?= htmlspecialchars($row['no']) ?></td>
@@ -584,29 +603,24 @@ unset($item);
                             <td><?= htmlspecialchars($row['poli']) ?></td>
                             <td><?= htmlspecialchars($row['estimasi']) ?></td>
                             <td>
-                                <?php if ($row['status'] === 'dilayani'): ?>
-                                    <span class="badge-status badge-dilayani">Sedang Dilayani</span>
-                                <?php elseif ($row['status'] === 'selesai'): ?>
-                                    <span class="badge-status badge-selesai">Selesai</span>
-                                <?php else: ?>
-                                    <span class="badge-status badge-menunggu">Menunggu</span>
-                                <?php endif; ?>
+                                <span class="badge-status <?= htmlspecialchars($row['badge_class'] ?? 'badge-menunggu') ?>">
+                                    <?= htmlspecialchars($row['status_label'] ?? 'Menunggu') ?>
+                                </span>
                             </td>
                             <td><a href="?page=emr_dokter&no_antrian=<?= urlencode($row['no']) ?>&nama=<?= urlencode($row['nama']) ?>" class="btn-detail" style="text-decoration:none; display:inline-block;">Detail / Dilayani</a></td>
                         </tr>
                         <?php endforeach; ?>
+                        <?php else: ?>
+                        <tr><td colspan="6" style="text-align: center; color: var(--gray-400); padding: 30px;">Belum ada antrian pelayanan hari ini</td></tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
 
                 <div class="table-footer">
-                    <p>Menampilkan 1 - <?= count($antrian) ?> dari <?= $stats['total'] ?> antrian</p>
+                    <p>Menampilkan <?= count($antrian) ?> dari <?= $stats['total'] ?> antrian</p>
                     <div class="pagination">
                         <button class="page-btn"><i class="fa-solid fa-chevron-left"></i></button>
                         <button class="page-btn active">1</button>
-                        <button class="page-btn">2</button>
-                        <button class="page-btn">3</button>
-                        <button class="page-btn">...</button>
-                        <button class="page-btn">8</button>
                         <button class="page-btn"><i class="fa-solid fa-chevron-right"></i></button>
                     </div>
                 </div>
@@ -617,7 +631,7 @@ unset($item);
                 <div class="dilayani-card">
                     <div class="dilayani-header">
                         <div>
-                            <h3>Sedang Dilayani</h3>
+                            <h3><?= in_array($sedang_dilayani['status_key'] ?? '', ['dipanggil', 'dalam_pemeriksaan'], true) ? 'Sedang Dilayani' : ($sedang_dilayani['status_key'] === 'selesai' ? 'Selesai' : 'Antrian Berikutnya') ?></h3>
                             <p><?= htmlspecialchars($sedang_dilayani['poli']) ?></p>
                         </div>
                         <i class="fa-solid fa-bullhorn"></i>
@@ -631,8 +645,8 @@ unset($item);
 
                     <div class="dilayani-meta">
                         <div class="meta-row">
-                            <span>Dipanggil pada</span>
-                            <span>10:15</span>
+                            <span>Status</span>
+                            <span style="font-weight: 600; text-transform: uppercase;"><?= htmlspecialchars($sedang_dilayani['status']) ?></span>
                         </div>
                         <div class="meta-row">
                             <span>Estimasi selesai</span>

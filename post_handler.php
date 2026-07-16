@@ -47,32 +47,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('Poliklinik tujuan wajib dipilih!');
             }
 
-            db_insert('patients', [
-                'no_rm' => $no_rm,
-                'nik' => $nik,
-                'nama_lengkap' => $nama,
-                'tanggal_lahir' => $tgl_lahir,
-                'jenis_kelamin' => $jk,
-                'no_telepon' => $phone,
-                'alamat' => $alamat,
-                'no_bpjs' => !empty($no_bpjs) ? $no_bpjs : null,
-                'gol_darah' => !empty($_POST['golongan_darah']) ? $_POST['golongan_darah'] : null,
-                'jenis_pasien' => $jenis_pasien
-            ]);
+            $existing_id = !empty($_POST['existing_patient_id']) ? intval($_POST['existing_patient_id']) : 0;
+            $patient_id = 0;
 
-            // Generate nomor antrian berurutan per hari
-            $last_p = db_select_one("SELECT id FROM patients WHERE no_rm = '" . addslashes($no_rm) . "' LIMIT 1");
-            if ($last_p && isset($last_p['id'])) {
-                $count_row = db_select_one("SELECT COUNT(*) as cnt FROM queues WHERE tanggal = CURRENT_DATE");
+            if ($existing_id > 0) {
+                $exist_p = db_select_one("SELECT id, no_rm FROM patients WHERE id = :id LIMIT 1", ['id' => $existing_id]);
+                if ($exist_p && isset($exist_p['id'])) {
+                    $patient_id = $exist_p['id'];
+                    $no_rm = $exist_p['no_rm'];
+                    db_query("UPDATE patients SET nama_lengkap = :nama, no_telepon = :hp, alamat = :alamat, jenis_pasien = :jp, gol_darah = :gd WHERE id = :id", [
+                        'nama' => $nama, 'hp' => $phone, 'alamat' => $alamat, 'jp' => $jenis_pasien, 'gd' => !empty($_POST['golongan_darah']) ? $_POST['golongan_darah'] : null, 'id' => $patient_id
+                    ]);
+                }
+            }
+
+            if ($patient_id <= 0 && !empty($nik) && $nik !== '0000000000000000') {
+                $exist_nik = db_select_one("SELECT id, no_rm FROM patients WHERE nik = :nik LIMIT 1", ['nik' => $nik]);
+                if ($exist_nik && isset($exist_nik['id'])) {
+                    $patient_id = $exist_nik['id'];
+                    $no_rm = $exist_nik['no_rm'];
+                    db_query("UPDATE patients SET nama_lengkap = :nama, no_telepon = :hp, alamat = :alamat, jenis_pasien = :jp, gol_darah = :gd WHERE id = :id", [
+                        'nama' => $nama, 'hp' => $phone, 'alamat' => $alamat, 'jp' => $jenis_pasien, 'gd' => !empty($_POST['golongan_darah']) ? $_POST['golongan_darah'] : null, 'id' => $patient_id
+                    ]);
+                }
+            }
+
+            if ($patient_id <= 0) {
+                db_insert('patients', [
+                    'no_rm' => $no_rm,
+                    'nik' => $nik,
+                    'nama_lengkap' => $nama,
+                    'tanggal_lahir' => $tgl_lahir,
+                    'jenis_kelamin' => $jk,
+                    'no_telepon' => $phone,
+                    'alamat' => $alamat,
+                    'no_bpjs' => !empty($no_bpjs) ? $no_bpjs : null,
+                    'gol_darah' => !empty($_POST['golongan_darah']) ? $_POST['golongan_darah'] : null,
+                    'jenis_pasien' => $jenis_pasien
+                ]);
+
+                $last_p = db_select_one("SELECT id FROM patients WHERE no_rm = '" . addslashes($no_rm) . "' LIMIT 1");
+                if ($last_p && isset($last_p['id'])) {
+                    $patient_id = $last_p['id'];
+                }
+            }
+
+            if ($patient_id > 0) {
+                $count_row = db_select_one("SELECT COUNT(*) as cnt FROM queues WHERE tanggal = :today", ['today' => date('Y-m-d')]);
                 $next_num = ($count_row ? intval($count_row['cnt']) : 0) + 1;
                 $no_antrian_gen = 'A-' . str_pad($next_num, 3, '0', STR_PAD_LEFT);
 
                 db_insert('queues', [
-                    'patient_id' => $last_p['id'],
+                    'patient_id' => $patient_id,
                     'polyclinic_id' => $polyclinic_id,
                     'no_antrian' => $no_antrian_gen,
                     'tanggal' => date('Y-m-d'),
-                    'status' => 'Menunggu',
+                    'status' => 'menunggu',
                     'jenis_daftar' => 'Offline'
                 ]);
             }
@@ -86,10 +116,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     } elseif ($action === 'panggil_antrian') {
-        $msg_success = "Antrian nomor " . htmlspecialchars($_POST['no_antrian'] ?? '') . " sedang dipanggil ke poli!";
+        $no_antrian = trim($_POST['no_antrian'] ?? '');
+        if (!empty($no_antrian)) {
+            db_query("UPDATE queues SET status = :status WHERE no_antrian = :no_antrian", [
+                'status' => 'dipanggil',
+                'no_antrian' => $no_antrian,
+            ]);
+        }
+        $msg_success = "Antrian nomor " . htmlspecialchars($no_antrian) . " sedang dipanggil ke poli!";
     } elseif ($action === 'simpan_emr') {
+        $no_antrian = trim($_POST['no_antrian'] ?? '');
+        if (!empty($no_antrian)) {
+            db_query("UPDATE queues SET status = :status WHERE no_antrian = :no_antrian", [
+                'status' => 'dalam_pemeriksaan',
+                'no_antrian' => $no_antrian,
+            ]);
+        }
         $msg_success = "Catatan EMR / SOAP untuk pasien berhasil disimpan!";
     } elseif ($action === 'bayar_kasir') {
+        $no_antrian = trim($_POST['no_antrian'] ?? '');
+        if (!empty($no_antrian)) {
+            db_query("UPDATE queues SET status = :status WHERE no_antrian = :no_antrian", [
+                'status' => 'selesai',
+                'no_antrian' => $no_antrian,
+            ]);
+        }
         $msg_success = "Pembayaran sebesar Rp " . htmlspecialchars($_POST['nominal'] ?? '0') . " berhasil diproses!";
     }
 }

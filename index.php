@@ -22,6 +22,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
     switch ($page) {
         case 'dashboard':
             // ---------- DASHBOARD ----------
+            global $grafik_7_hari, $grafik_7_labels, $cnt_total;
             ?>
             <div class="stat-grid">
                 <?php foreach ($stats_dashboard as $st): ?>
@@ -54,19 +55,42 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             <div></div><div></div><div></div><div></div><div></div>
                         </div>
                         <div class="svg-chart-container">
-                            <svg width="100%" height="100%" viewBox="0 0 700 200" preserveAspectRatio="none">
-                                <path d="M 20 150 L 130 90 L 240 120 L 350 80 L 460 30 L 570 70 L 680 15" 
+                            <?php
+                            // Hitung koordinat SVG dari data $grafik_7_hari
+                            $max_val = max(1, max($grafik_7_hari));
+                            $chart_w = 700;
+                            $chart_h = 200;
+                            $padding_x = 20;
+                            $padding_y = 15;
+                            $usable_w = $chart_w - ($padding_x * 2);
+                            $usable_h = $chart_h - ($padding_y * 2);
+                            $step_x = $usable_w / 6; // 7 points = 6 gaps
+                            
+                            $points = [];
+                            foreach ($grafik_7_hari as $i => $val) {
+                                $x = $padding_x + ($i * $step_x);
+                                $y = $padding_y + $usable_h - (($val / $max_val) * $usable_h);
+                                $points[] = ['x' => round($x), 'y' => round($y)];
+                            }
+                            
+                            // Build SVG path
+                            $path_parts = [];
+                            foreach ($points as $i => $pt) {
+                                $path_parts[] = ($i === 0 ? 'M' : 'L') . " {$pt['x']} {$pt['y']}";
+                            }
+                            $path_d = implode(' ', $path_parts);
+                            ?>
+                            <svg width="100%" height="100%" viewBox="0 0 <?= $chart_w ?> <?= $chart_h ?>" preserveAspectRatio="none">
+                                <path d="<?= $path_d ?>" 
                                       fill="none" stroke="#2e7d32" stroke-width="3" stroke-linecap="round"/>
-                                <circle cx="20" cy="150" r="5" fill="#2e7d32"/>
-                                <circle cx="130" cy="90" r="5" fill="#2e7d32"/>
-                                <circle cx="240" cy="120" r="5" fill="#2e7d32"/>
-                                <circle cx="350" cy="80" r="5" fill="#2e7d32"/>
-                                <circle cx="460" cy="30" r="5" fill="#2e7d32"/>
-                                <circle cx="570" cy="70" r="5" fill="#2e7d32"/>
-                                <circle cx="680" cy="15" r="5" fill="#2e7d32"/>
+                                <?php foreach ($points as $pt): ?>
+                                <circle cx="<?= $pt['x'] ?>" cy="<?= $pt['y'] ?>" r="5" fill="#2e7d32"/>
+                                <?php endforeach; ?>
                             </svg>
                         <div style="position: absolute; bottom: 15px; left: 24px; right: 24px; display: flex; justify-content: space-between; font-size: 11px; color: #9ca3af; font-weight: 600; pointer-events: none;">
-                            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                            <?php foreach ($grafik_7_labels as $lbl): ?>
+                            <span><?= $lbl ?></span>
+                            <?php endforeach; ?>
                         </div>
                     </div>
                 </div>
@@ -78,7 +102,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                     <div class="donut-wrapper">
                         <div class="donut-chart">
                             <div class="donut-center">
-                                <strong>128</strong>
+                                <strong><?= $cnt_total ?></strong>
                                 <span>PASIEN</span>
                             </div>
                         </div>
@@ -120,6 +144,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                         </tr>
                     </thead>
                     <tbody>
+                        <?php if (!empty($antrian_terkini)): ?>
                         <?php foreach ($antrian_terkini as $row): ?>
                         <tr>
                             <td class="no-antrian"><?= htmlspecialchars($row['no']) ?></td>
@@ -127,20 +152,23 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             <td><?= htmlspecialchars($row['poli']) ?></td>
                             <td><?= htmlspecialchars($row['dokter']) ?></td>
                             <td>
-                                <?php 
-                                $status_class = 'badge-menunggu';
-                                if (strtolower($row['status']) === 'dipanggil') $status_class = 'badge-dipanggil';
-                                if (strtolower($row['status']) === 'selesai') $status_class = 'badge-selesai';
+                                <?php
+                                $status_key = normalize_queue_status($row['status'] ?? '');
+                                $status_label = get_queue_status_label($status_key);
+                                $status_class = get_queue_badge_class($status_key);
                                 ?>
-                                <span class="badge-status <?= $status_class ?>"><?= htmlspecialchars($row['status']) ?></span>
+                                <span class="badge-status <?= $status_class ?>"><?= htmlspecialchars($status_label) ?></span>
                             </td>
                             <td><a href="?page=emr_dokter&no_antrian=<?= urlencode($row['no']) ?>&nama=<?= urlencode($row['nama']) ?>" class="btn-detail" style="text-decoration:none; display:inline-block;">Detail</a></td>
                         </tr>
                         <?php endforeach; ?>
+                        <?php else: ?>
+                        <tr><td colspan="6" style="text-align: center; color: var(--gray-400); padding: 30px;">Belum ada antrian hari ini</td></tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
                 <div class="table-footer">
-                    <p>Menampilkan 5 dari 14 antrian aktif</p>
+                    <p>Menampilkan <?= count($antrian_terkini) ?> dari <?= $stats_antrian['total'] ?> antrian aktif</p>
                     <div class="pagination-nav">
                         <button class="nav-btn"><i class="fa-solid fa-chevron-left"></i></button>
                         <button class="nav-btn"><i class="fa-solid fa-chevron-right"></i></button>
@@ -230,6 +258,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             </tr>
                         </thead>
                         <tbody>
+                            <?php if (!empty($antrian)): ?>
                             <?php foreach ($antrian as $row): ?>
                             <tr>
                                 <td class="no-antrian"><?= htmlspecialchars($row['no']) ?></td>
@@ -237,28 +266,26 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                 <td><?= htmlspecialchars($row['poli']) ?></td>
                                 <td><?= htmlspecialchars($row['estimasi']) ?></td>
                                 <td>
-                                    <?php if ($row['status'] === 'dilayani'): ?>
-                                        <span class="badge-status badge-dilayani">Sedang Dilayani</span>
-                                    <?php elseif ($row['status'] === 'selesai'): ?>
-                                        <span class="badge-status badge-selesai">Selesai</span>
-                                    <?php else: ?>
-                                        <span class="badge-status badge-menunggu">Menunggu</span>
-                                    <?php endif; ?>
+                                    <?php
+                                    $status_key = normalize_queue_status($row['status'] ?? '');
+                                    $status_label = get_queue_status_label($status_key);
+                                    $status_class = get_queue_badge_class($status_key);
+                                    ?>
+                                    <span class="badge-status <?= $status_class ?>"><?= htmlspecialchars($status_label) ?></span>
                                 </td>
                                 <td><a href="?page=emr_dokter&no_antrian=<?= urlencode($row['no']) ?>&nama=<?= urlencode($row['nama']) ?>" class="btn-detail" style="text-decoration:none; display:inline-block;">Detail / Dilayani</a></td>
                             </tr>
                             <?php endforeach; ?>
+                            <?php else: ?>
+                            <tr><td colspan="6" style="text-align: center; color: var(--gray-400); padding: 30px;">Belum ada antrian pelayanan hari ini</td></tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                     <div class="table-footer">
-                        <p>Menampilkan 1 - <?= count($antrian) ?> dari <?= $stats_antrian['total'] ?> antrian</p>
+                        <p>Menampilkan <?= count($antrian) ?> dari <?= $stats_antrian['total'] ?> antrian</p>
                         <div class="pagination">
                             <button class="page-btn"><i class="fa-solid fa-chevron-left"></i></button>
                             <button class="page-btn active">1</button>
-                            <button class="page-btn">2</button>
-                            <button class="page-btn">3</button>
-                            <button class="page-btn">...</button>
-                            <button class="page-btn">8</button>
                             <button class="page-btn"><i class="fa-solid fa-chevron-right"></i></button>
                         </div>
                     </div>
@@ -280,8 +307,8 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                         </div>
                         <div class="dilayani-meta">
                             <div class="meta-row">
-                                <span>Dipanggil pada</span>
-                                <span>10:15</span>
+                                <span>Status</span>
+                                <span style="font-weight: 600; text-transform: uppercase;"><?= htmlspecialchars($sedang_dilayani['status']) ?></span>
                             </div>
                             <div class="meta-row">
                                 <span>Estimasi selesai</span>
@@ -373,9 +400,34 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             <i class="fa-solid fa-rotate-right"></i> Reset Form
                         </button>
                     </div>
-                    <form action="?page=pendaftaran" method="POST">
+                    <form action="?page=pendaftaran" method="POST" id="form-pendaftaran">
                         <input type="hidden" name="action" value="register_pasien">
+                        <input type="hidden" name="existing_patient_id" id="existing_patient_id" value="">
                         <div class="form-body">
+                            <!-- Dropdown Pilih Pasien Lama -->
+                            <div class="form-section-title" style="background: #f0fdf4; color: #166534; padding: 12px 16px; border: 1px dashed #22c55e; border-radius: 8px; margin-bottom: 20px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; width: 100%;">
+                                    <div style="flex: 1; min-width: 220px;">
+                                        <i class="fa-solid fa-user-check"></i> <b>Pilih dari Pasien Terdaftar (Pasien Lama)</b>
+                                        <div style="font-size: 12px; font-weight: normal; color: #15803d; margin-top: 4px;">Pilih pasien yang sudah pernah terdaftar agar data otomatis terisi & dibuatkan antrian hari ini.</div>
+                                    </div>
+                                    <div style="flex: 1; min-width: 260px;">
+                                        <select id="select-pasien-lama" class="form-select" style="border-color: #22c55e; font-weight: 600;" onchange="pilihPasienLama(this)">
+                                            <option value="">-- Pilih Pasien Terdaftar --</option>
+                                            <?php 
+                                            global $daftar_pasien_master;
+                                            if (!empty($daftar_pasien_master)) {
+                                                foreach ($daftar_pasien_master as $pm) {
+                                                    $data_json = htmlspecialchars(json_encode($pm), ENT_QUOTES, 'UTF-8');
+                                                    echo '<option value="' . $pm['id'] . '" data-pasien="' . $data_json . '">' . htmlspecialchars($pm['no_rm'] . ' - ' . $pm['nama_lengkap'] . ' (NIK: ' . ($pm['nik'] ?? '-') . ')') . '</option>';
+                                                }
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="form-section-title">
                                 <i class="fa-solid fa-user"></i> Data Pasien
                             </div>
@@ -531,6 +583,34 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             </button>
                         </div>
                     </form>
+                    <script>
+                    function pilihPasienLama(selectObj) {
+                        const opt = selectObj.options[selectObj.selectedIndex];
+                        if (!opt || !opt.value) {
+                            document.getElementById('existing_patient_id').value = '';
+                            document.getElementById('form-pendaftaran').reset();
+                            return;
+                        }
+                        const dataStr = opt.getAttribute('data-pasien');
+                        if (dataStr) {
+                            const p = JSON.parse(dataStr);
+                            document.getElementById('existing_patient_id').value = p.id || '';
+                            if (document.querySelector('#form-pendaftaran input[name="nama_lengkap"]')) document.querySelector('#form-pendaftaran input[name="nama_lengkap"]').value = p.nama_lengkap || '';
+                            if (document.querySelector('#form-pendaftaran input[name="nik"]')) document.querySelector('#form-pendaftaran input[name="nik"]').value = p.nik || '';
+                            if (document.querySelector('#form-pendaftaran input[name="tanggal_lahir"]')) document.querySelector('#form-pendaftaran input[name="tanggal_lahir"]').value = p.tanggal_lahir || '';
+                            if (document.querySelector('#form-pendaftaran input[name="tempat_lahir"]')) document.querySelector('#form-pendaftaran input[name="tempat_lahir"]').value = p.tempat_lahir || '';
+                            if (document.querySelector('#form-pendaftaran select[name="jenis_kelamin"]')) document.querySelector('#form-pendaftaran select[name="jenis_kelamin"]').value = p.jenis_kelamin || 'Laki-laki';
+                            if (document.querySelector('#form-pendaftaran input[name="no_telepon"]')) document.querySelector('#form-pendaftaran input[name="no_telepon"]').value = p.no_telepon || '';
+                            if (document.querySelector('#form-pendaftaran input[name="no_bpjs"]')) document.querySelector('#form-pendaftaran input[name="no_bpjs"]').value = p.no_bpjs || '';
+                            if (document.querySelector('#form-pendaftaran select[name="golongan_darah"]')) document.querySelector('#form-pendaftaran select[name="golongan_darah"]').value = p.gol_darah || '';
+                            if (document.querySelector('#form-pendaftaran select[name="jenis_pasien"]')) document.querySelector('#form-pendaftaran select[name="jenis_pasien"]').value = p.jenis_pasien || 'Umum';
+                            if (document.querySelector('#form-pendaftaran textarea[name="alamat"]') || document.querySelector('#form-pendaftaran input[name="alamat"]')) {
+                                const el = document.querySelector('#form-pendaftaran textarea[name="alamat"]') || document.querySelector('#form-pendaftaran input[name="alamat"]');
+                                el.value = p.alamat || '';
+                            }
+                        }
+                    }
+                    </script>
                 </div>
 
                 <div class="right-column">
@@ -539,8 +619,12 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             <i class="fa-solid fa-calendar-days"></i> Informasi Hari Ini
                         </div>
                         <div class="info-header">
-                            <span class="info-date">Kamis, 29 Mei 2025</span>
-                            <span class="info-time">09:15 WIB</span>
+                            <span class="info-date"><?php
+                                $hari_map = ['Sunday'=>'Minggu','Monday'=>'Senin','Tuesday'=>'Selasa','Wednesday'=>'Rabu','Thursday'=>'Kamis','Friday'=>'Jumat','Saturday'=>'Sabtu'];
+                                $bulan_map = [1=>'Januari',2=>'Februari',3=>'Maret',4=>'April',5=>'Mei',6=>'Juni',7=>'Juli',8=>'Agustus',9=>'September',10=>'Oktober',11=>'November',12=>'Desember'];
+                                echo $hari_map[date('l')] . ', ' . date('d') . ' ' . $bulan_map[(int)date('m')] . ' ' . date('Y');
+                            ?></span>
+                            <span class="info-time"><?= date('H:i') ?> WIB</span>
                         </div>
                         <div class="info-list">
                             <?php foreach ($info_hari_ini as $inf): ?>
@@ -593,7 +677,6 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                 </div>
                             </div>
                             <?php endforeach; ?>
-                        </div>
                         <button class="btn-view-all">Lihat Semua</button>
                     </div>
                 </div>
@@ -603,52 +686,49 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
 
         case 'emr':
         case 'emr_dokter':
-            // ---------- HALAMAN EMR DOKTER ----------
-            $emr_nama = !empty($_GET['nama']) ? htmlspecialchars($_GET['nama']) : 'Budi Santoso';
-            $emr_no   = !empty($_GET['no_antrian']) ? htmlspecialchars($_GET['no_antrian']) : 'RM00012345';
+            // ---------- HALAMAN EMR DOKTER (100% DINAMIS SUPABASE) ----------
             ?>
             <section class="patient-card">
                 <div class="patient-left">
                     <div class="patient-avatar" style="background: #e2e8f0; display:flex; align-items:center; justify-content:center; font-size:32px; color:#94a3b8;"><i class="fa-solid fa-user"></i></div>
                     <div class="patient-meta">
                         <div class="patient-name-box">
-                            <h2><?= $emr_nama ?></h2>
-                            <span class="gender-badge">Laki-laki</span>
+                            <h2><?= htmlspecialchars($nama_pasien) ?></h2>
+                            <span class="gender-badge"><?= htmlspecialchars($jenis_pasien !== '-' ? $jenis_pasien : 'Umum') ?></span>
                         </div>
                         <div class="info-grid-inline">
-                            <span>No. RM / Antrian: <strong><?= $emr_no ?></strong></span>
-                            <span>Tanggal Lahir: <strong>12 Mei 1990 (34 th)</strong></span>
-                            <span>No. Identitas: <strong>3275011205900001</strong></span>
+                            <span>No. RM / Antrian: <strong><?= htmlspecialchars($no_rm) ?></strong></span>
+                            <span>Tanggal Lahir: <strong><?= htmlspecialchars($tgl_lahir) ?></strong></span>
+                            <span>No. Identitas: <strong><?= htmlspecialchars($nik) ?></strong></span>
                         </div>
                         <div class="address-box">
-                            <span>Alamat: <strong>Jl. Merdeka No. 10, Jakarta Pusat</strong></span>
+                            <span>Alamat: <strong><?= htmlspecialchars($alamat) ?></strong></span>
                             <div style="display:flex; gap:20px; margin-top:2px;">
-                                <span>Telepon: <strong>0812-3456-7890</strong></span>
-                                <span>Penjamin: <strong>BPJS Kesehatan</strong></span>
+                                <span>Telepon: <strong><?= htmlspecialchars($telepon) ?></strong></span>
+                                <span>Penjamin: <strong><?= htmlspecialchars($penjamin) ?></strong></span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="patient-right">
-                    <div class="vitals-box alert-vitals">
+                    <div class="vitals-box <?= $no_rm !== '-' ? 'alert-vitals' : '' ?>">
                         <span class="vitals-label alert-text"><i class="fa-solid fa-circle-exclamation"></i> Alergi</span>
-                        <span class="vitals-val" style="color:#b91c1c; font-size:12px;">Penisilin, Seafood</span>
-                        <span class="vitals-sub" style="color:var(--green-primary); font-weight:600; cursor:pointer;">Lihat Detail</span>
+                        <span class="vitals-val" style="color:#b91c1c; font-size:12px;"><?= $no_rm !== '-' ? 'Tidak Ada Alergi Tercatat' : '-' ?></span>
                     </div>
                     <div class="vitals-box">
                         <span class="vitals-label">Gol. Darah</span>
-                        <span class="vitals-val" style="font-size:15px; color:var(--gray-800);">O+</span>
+                        <span class="vitals-val" style="font-size:15px; color:var(--gray-800);"><?= $no_rm !== '-' ? '-' : '-' ?></span>
                     </div>
                     <div class="vitals-box">
                         <span class="vitals-label">Berat Badan</span>
-                        <span class="vitals-val">72 kg</span>
-                        <span class="vitals-sub">Terakhir: 10/05/2025</span>
+                        <span class="vitals-val"><?= $no_rm !== '-' ? '-' : '-' ?></span>
+                        <span class="vitals-sub">Belum diperiksa</span>
                     </div>
                     <div class="vitals-box">
                         <span class="vitals-label">Tinggi Badan</span>
-                        <span class="vitals-val">170 cm</span>
-                        <span class="vitals-sub">Terakhir: 10/05/2025</span>
+                        <span class="vitals-val"><?= $no_rm !== '-' ? '-' : '-' ?></span>
+                        <span class="vitals-sub">Belum diperiksa</span>
                     </div>
                 </div>
             </section>
@@ -664,129 +744,89 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
             <div class="emr-grid-container">
             <div class="left-column-panels">
                 <div id="ringkasan" class="tab-panel active">
-                    <div class="card">
+                    <?php if (!empty($emr_pasien)): ?>
+                    <?php foreach ($emr_pasien as $idx => $rm_item): ?>
+                    <div class="card" style="margin-bottom:16px;">
                         <div class="card-header">
-                            <h3>Clinical Note</h3>
-                            <span class="header-meta">10 Mei 2025 10:15 WIB &bull; Dr. Hendrawan</span>
+                            <h3>Clinical Note (SOAP)</h3>
+                            <span class="header-meta"><?= htmlspecialchars($rm_item['waktu'] ?: '-') ?> &bull; <?= htmlspecialchars($rm_item['nama_lengkap'] ?? $nama_pasien) ?></span>
                         </div>
                         <div class="note-body">
                             <div class="note-row">
                                 <div class="note-letter">S</div>
                                 <div class="note-content">
                                     <div class="note-title">Subjective</div>
-                                    <p>Keluhan utama pasien: Pasien mengeluh demam sejak 2 hari yang lalu disertai batuk kering dan nyeri tenggorokan.</p>
+                                    <p><?= nl2br(htmlspecialchars($rm_item['subjective'] ?: ($rm_item['keluhan_utama'] ?: '-'))) ?></p>
                                 </div>
                             </div>
                             <div class="note-row">
                                 <div class="note-letter">O</div>
                                 <div class="note-content">
                                     <div class="note-title">Objective</div>
-                                    <p>Keadaan umum cukup, kesadaran compos mentis, tenggorokan hiperemis, tidak ada ronki.</p>
-                                    <div class="vitals-tag-group">
-                                        <span class="vital-tag">TD: 120/80 mmHg</span>
-                                        <span class="vital-tag success">Nadi: 88 x/menit</span>
-                                        <span class="vital-tag">RR: 20 x/menit</span>
-                                        <span class="vital-tag">Suhu: 37.8 °C</span>
-                                        <span class="vital-tag">SpO2: 98%</span>
-                                    </div>
+                                    <p><?= nl2br(htmlspecialchars($rm_item['objective'] ?: '-')) ?></p>
                                 </div>
                             </div>
                             <div class="note-row">
                                 <div class="note-letter">A</div>
                                 <div class="note-content">
                                     <div class="note-title">Assessment</div>
-                                    <p><strong>Diagnosis Kerja:</strong> ISPA (Infeksi Saluran Pernapasan Akut)</p>
+                                    <p><strong>Diagnosis Kerja:</strong> <?= nl2br(htmlspecialchars($rm_item['assessment'] ?: '-')) ?></p>
                                 </div>
                             </div>
                             <div class="note-row">
                                 <div class="note-letter">P</div>
                                 <div class="note-content">
                                     <div class="note-title">Plan</div>
-                                    <p>Terapi obat, istirahat cukup, kontrol ulang 3 hari jika keluhan tidak membaik.</p>
+                                    <p><?= nl2br(htmlspecialchars($rm_item['plan'] ?: '-')) ?></p>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <?php endforeach; ?>
+                    <?php else: ?>
+                    <div class="card" style="margin-bottom:16px;">
+                        <div style="text-align:center; padding:45px 20px; color:var(--gray-400);">
+                            <i class="fa-solid fa-folder-open" style="font-size:38px; margin-bottom:12px; color:var(--gray-300);"></i>
+                            <p style="font-weight:600; font-size:14px; color:var(--gray-600);">Belum ada catatan klinis (SOAP) di database untuk pasien ini.</p>
+                            <p style="font-size:12px; margin-top:4px;">Silakan pilih pasien dari tabel Antrian dan input form pemeriksaan/SOAP untuk menyimpan rekam medis real-time ke Supabase.</p>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <div class="triple-grid">
                         <div class="card">
                             <div class="card-header"><h3>Resep Terbaru</h3></div>
                             <div class="med-list">
-                                <div style="font-size:11px; color:var(--gray-400); margin-bottom:4px; display:flex; justify-content:space-between;">
-                                    <span>Resep R/2025-00056</span>
-                                    <span>10 Mei 2025 10:15 WIB</span>
-                                </div>
+                                <?php if (!empty($resep_pasien)): ?>
+                                <?php foreach ($resep_pasien as $ri => $rsp): ?>
                                 <div class="med-item">
-                                    <span class="med-num">1</span>
+                                    <span class="med-num"><?= $ri + 1 ?></span>
                                     <div class="med-details">
-                                        <span class="med-name">Paracetamol 500 mg</span>
-                                        <span class="med-rule">3x sehari setelah makan</span>
+                                        <span class="med-name">Resep #<?= htmlspecialchars($rsp['resep_id']) ?></span>
+                                        <span class="med-rule"><?= htmlspecialchars($rsp['waktu']) ?></span>
                                     </div>
-                                    <span class="med-qty">10 Tablet</span>
+                                    <span class="mini-badge badge-normal"><?= htmlspecialchars($rsp['resep_status']) ?></span>
                                 </div>
-                                <div class="med-item">
-                                    <span class="med-num">2</span>
-                                    <div class="med-details">
-                                        <span class="med-name">Ambroxol 30 mg</span>
-                                        <span class="med-rule">3x sehari setelah makan</span>
-                                    </div>
-                                    <span class="med-qty">10 Tablet</span>
-                                </div>
-                                <div class="med-item">
-                                    <span class="med-num">3</span>
-                                    <div class="med-details">
-                                        <span class="med-name">Vitamin C 500 mg</span>
-                                        <span class="med-rule">1x sehari setelah makan</span>
-                                    </div>
-                                    <span class="med-qty">10 Tablet</span>
-                                </div>
+                                <?php endforeach; ?>
+                                <?php else: ?>
+                                <p style="text-align:center; color:var(--gray-400); font-size:12px; padding:20px 0;">Belum ada resep obat di database untuk pasien ini</p>
+                                <?php endif; ?>
                             </div>
                             <button class="btn-card-action" onclick="switchTab(event, 'terapi_obat')">Lihat Resep</button>
                         </div>
 
                         <div class="card">
                             <div class="card-header"><h3>Order Terbaru</h3></div>
-                            <div class="order-list">
-                                <div style="font-size:11px; color:var(--gray-400); margin-bottom:6px;">Order #O/2025-00089 &bull; 10 Mei 2025 10:20 WIB</div>
-                                <div class="med-item" style="border:none; align-items:center;">
-                                    <i class="fa-solid fa-square-heart" style="color:#b91c1c; font-size:16px;"></i>
-                                    <div class="med-details" style="margin-left:12px;">
-                                        <span class="med-name">Darah Rutin</span>
-                                        <span class="med-rule">Hematologi</span>
-                                    </div>
-                                    <span class="mini-badge badge-warning">Menunggu</span>
-                                </div>
-                                <div class="med-item" style="border:none; align-items:center;">
-                                    <i class="fa-solid fa-circle-radiation" style="color:#a16207; font-size:16px;"></i>
-                                    <div class="med-details" style="margin-left:12px;">
-                                        <span class="med-name">Foto Thorax</span>
-                                        <span class="med-rule">Radiologi</span>
-                                    </div>
-                                    <span class="mini-badge badge-warning">Menunggu</span>
-                                </div>
+                            <div class="order-list" style="padding:20px; text-align:center;">
+                                <p style="color:var(--gray-400); font-size:12px;">Belum ada order lab / radiologi di database</p>
                             </div>
                             <button class="btn-card-action" style="margin-top:22px;" onclick="switchTab(event, 'order')">Lihat Order</button>
                         </div>
 
                         <div class="card">
                             <div class="card-header"><h3>Hasil Pemeriksaan Terbaru</h3></div>
-                            <div class="order-list">
-                                <div class="med-item" style="border:none; align-items:center; padding-bottom:8px; border-bottom:1px solid var(--gray-100)">
-                                    <i class="fa-solid fa-file-invoice" style="color:var(--green-primary); font-size:16px;"></i>
-                                    <div class="med-details" style="margin-left:12px;">
-                                        <span class="med-name">Darah Rutin</span>
-                                        <span class="med-rule">10 Mei 2025</span>
-                                    </div>
-                                    <span class="mini-badge badge-normal">Normal</span>
-                                </div>
-                                <div class="med-item" style="border:none; align-items:center; padding-top:4px;">
-                                    <i class="fa-solid fa-file-invoice" style="color:var(--green-primary); font-size:16px;"></i>
-                                    <div class="med-details" style="margin-left:12px;">
-                                        <span class="med-name">Foto Thorax</span>
-                                        <span class="med-rule">10 Mei 2025</span>
-                                    </div>
-                                    <span class="mini-badge badge-normal">Normal</span>
-                                </div>
+                            <div class="order-list" style="padding:20px; text-align:center;">
+                                <p style="color:var(--gray-400); font-size:12px;">Belum ada hasil pemeriksaan di database</p>
                             </div>
                             <button class="btn-card-action" style="margin-top:42px;" onclick="switchTab(event, 'hasil_pemeriksaan')">Lihat Hasil</button>
                         </div>
@@ -794,7 +834,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                 </div>
 
                 <div id="riwayat_kunjungan" class="tab-panel">
-                    <div class="card"><div class="empty-tab-view"><i class="fa-solid fa-clock-rotate-left"></i>Data Riwayat Kunjungan Pasien</div></div>
+                    <div class="card"><div class="empty-tab-view"><i class="fa-solid fa-clock-rotate-left"></i>Data Riwayat Kunjungan Pasien (Dinamis dari Supabase)</div></div>
                 </div>
                 <div id="pemeriksaan" class="tab-panel">
                     <div class="card"><div class="empty-tab-view"><i class="fa-solid fa-stethoscope"></i>Form & Data Pemeriksaan Fisik</div></div>
@@ -831,50 +871,39 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
 
                 <div class="card">
                     <div class="widget-title"><span><i class="fa-solid fa-history"></i> Riwayat Kunjungan Terakhir</span> <a href="#" class="widget-link">Lihat Semua</a></div>
-                    <div class="history-box">
+                    <div class="history-box" style="padding:16px; text-align:center;">
+                        <?php if (!empty($emr_pasien)): ?>
                         <div class="history-date-row">
-                            <span>10 Mei 2025 &bull; 10:15 WIB</span>
-                            <span style="background:#dcfce7; color:#15803d; font-size:10px; padding:1px 6px; border-radius:4px;">Selesai</span>
+                            <span><?= htmlspecialchars($emr_pasien[0]['waktu']) ?></span>
+                            <span style="background:#dcfce7; color:#15803d; font-size:10px; padding:1px 6px; border-radius:4px;">Tercatat</span>
                         </div>
-                        <div class="history-item-row"><span class="history-label">Keluhan:</span><span class="history-val">Demam, batuk, nyeri tenggorokan</span></div>
-                        <div class="history-item-row"><span class="history-label">Diagnosis:</span><span class="history-val">ISPA</span></div>
-                        <div class="history-item-row"><span class="history-label">Dokter:</span><span class="history-val">Dr. Hendrawan</span></div>
-                        <button class="btn-card-action" style="border:1px solid var(--gray-200); border-radius:6px; margin-top:8px; padding:6px;">Lihat Detail</button>
+                        <div class="history-item-row"><span class="history-label">Keluhan:</span><span class="history-val"><?= htmlspecialchars($emr_pasien[0]['subjective'] ?: '-') ?></span></div>
+                        <div class="history-item-row"><span class="history-label">Diagnosis:</span><span class="history-val"><?= htmlspecialchars($emr_pasien[0]['assessment'] ?: '-') ?></span></div>
+                        <?php else: ?>
+                        <p style="color:var(--gray-400); font-size:12px;">Belum ada riwayat kunjungan di database</p>
+                        <?php endif; ?>
                     </div>
                 </div>
 
                 <div class="card">
                     <div class="widget-title"><span><i class="fa-solid fa-star-of-life"></i> Diagnosa Aktif</span> <span style="color:var(--green-primary); cursor:pointer; font-size:11px;">+ Tambah</span></div>
-                    <div style="padding:14px 16px; display:flex; align-items:center; justify-content:between; font-size:12px;">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <span style="background:var(--green-pale); color:var(--green-primary); font-weight:700; padding:3px 6px; border-radius:4px; font-size:11px;">J00</span>
-                            <div>
-                                <div style="font-weight:700; color:var(--gray-800);">Acute nasopharyngitis [common cold]</div>
-                                <div style="font-size:10px; color:var(--gray-400); margin-top:1px;">Sejak: 10 Mei 2025</div>
-                            </div>
-                        </div>
+                    <div style="padding:16px; text-align:center; font-size:12px; color:var(--gray-400);">
+                        <?php if (!empty($emr_pasien) && !empty($emr_pasien[0]['assessment'])): ?>
+                        <div style="text-align:left; font-weight:600; color:var(--gray-800);"><?= htmlspecialchars($emr_pasien[0]['assessment']) ?></div>
+                        <?php else: ?>
+                        Belum ada diagnosa aktif tercatat
+                        <?php endif; ?>
                     </div>
                 </div>
 
                 <div class="card">
                     <div class="widget-title"><span><i class="fa-solid fa-pills"></i> Terapi Aktif</span> <a href="#" class="widget-link">Lihat Semua</a></div>
-                    <div class="order-list" style="padding:12px 16px;">
-                        <div class="med-item" style="border:none; padding:4px 0;">
-                            <i class="fa-solid fa-droplet" style="color:var(--green-light); font-size:13px; margin-top:3px;"></i>
-                            <div class="med-details" style="margin-left:10px;">
-                                <span class="med-name">Paracetamol 500 mg</span>
-                                <span class="med-rule">3x sehari setelah makan</span>
-                            </div>
-                            <span class="med-qty" style="font-size:11px; color:var(--gray-400);">10 Tablet</span>
-                        </div>
-                        <div class="med-item" style="border:none; padding:4px 0;">
-                            <i class="fa-solid fa-droplet" style="color:var(--green-light); font-size:13px; margin-top:3px;"></i>
-                            <div class="med-details" style="margin-left:10px;">
-                                <span class="med-name">Ambroxol 30 mg</span>
-                                <span class="med-rule">3x sehari setelah makan</span>
-                            </div>
-                            <span class="med-qty" style="font-size:11px; color:var(--gray-400);">10 Tablet</span>
-                        </div>
+                    <div class="order-list" style="padding:16px; text-align:center; color:var(--gray-400); font-size:12px;">
+                        <?php if (!empty($resep_pasien)): ?>
+                        <div style="text-align:left; font-weight:600; color:var(--gray-800);">Resep Aktif #<?= htmlspecialchars($resep_pasien[0]['resep_id']) ?> (<?= htmlspecialchars($resep_pasien[0]['resep_status']) ?>)</div>
+                        <?php else: ?>
+                        Belum ada terapi obat aktif tercatat
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -1039,16 +1068,21 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
             // ---------- HALAMAN KASIR ----------
             ?>
             <section class="simulasi-box">
-                <span>💡 Jalur Otomatis URL:</span>
-                <a href="?page=kasir&id_antrian=1" class="btn-sim">Panggil Pasien: Budi</a>
-                <a href="?page=kasir&id_antrian=2" class="btn-sim">Panggil Pasien: Siti</a>
+                <span>💡 Pilih Pasien dari Antrian:</span>
+                <?php if (!empty($antrian)): ?>
+                <?php foreach (array_slice($antrian, 0, 3) as $qa): ?>
+                    <a href="?page=kasir&no_antrian=<?= urlencode($qa['no']) ?>&nama=<?= urlencode($qa['nama']) ?>" class="btn-sim">Pasien: <?= htmlspecialchars($qa['nama']) ?></a>
+                <?php endforeach; ?>
+                <?php else: ?>
+                    <span style="font-size:12px; color:var(--gray-600);">Belum ada pasien antrian</span>
+                <?php endif; ?>
                 <a href="?page=kasir" class="btn-sim" style="background:#6b7280;">Kosongkan Layar</a>
             </section>
 
             <section class="search-patient-card">
                 <h3>Cari Pasien (Manual):</h3>
                 <form action="" method="POST" class="search-form-flex">
-                    <input type="text" name="keyword" class="input-search-pasien" placeholder="Masukkan Nama Pasien / No. RM (Contoh: Budi)..." required autocomplete="off">
+                    <input type="text" name="keyword" class="input-search-pasien" placeholder="Masukkan Nama Pasien / No. RM..." required autocomplete="off">
                     <button type="submit" name="cari_pasien" class="btn-search-submit"><i class="fa-solid fa-magnifying-glass"></i> Cari</button>
                 </form>
             </section>
@@ -1087,6 +1121,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             </tr>
                         </thead>
                         <tbody>
+                            <?php if (!empty($detail_transaksi)): ?>
                             <?php foreach ($detail_transaksi as $row): ?>
                             <tr>
                                 <td style="text-align: center; color: var(--gray-400);"><?= $row['no'] ?></td>
@@ -1097,6 +1132,9 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                 <td style="text-align: right; font-weight: 600;">Rp <?= $row['total'] ?></td>
                             </tr>
                             <?php endforeach; ?>
+                            <?php else: ?>
+                            <tr><td colspan="6" style="text-align: center; color: var(--gray-400); padding: 30px;">Belum ada rincian transaksi di database untuk pasien ini.</td></tr>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
@@ -1105,14 +1143,23 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
             <div class="right-column">
                 <div class="card">
                     <div class="card-header"><h2>Ringkasan Biaya</h2></div>
+                    <?php
+                        $subtotal = 0;
+                        if (!empty($detail_transaksi)) {
+                            foreach ($detail_transaksi as $row) {
+                                $subtotal += intval(str_replace('.', '', $row['total'] ?? 0));
+                            }
+                        }
+                        $subtotal_fmt = number_format($subtotal, 0, ',', '.');
+                    ?>
                     <div class="billing-summary-list">
-                        <div class="summary-row"><span>Subtotal Layanan</span><strong>Rp 580.000</strong></div>
+                        <div class="summary-row"><span>Subtotal Layanan</span><strong>Rp <?= $subtotal_fmt ?></strong></div>
                         <div class="summary-row"><span>Diskon Medis</span><strong>Rp 0</strong></div>
                         <div class="summary-row"><span>Pajak / Admin RS</span><strong>Rp 0</strong></div>
                     </div>
                     <div class="total-pay-box">
                         <span>Total Tagihan:</span>
-                        <strong>Rp 580.000</strong>
+                        <strong>Rp <?= $subtotal_fmt ?></strong>
                     </div>
                 </div>
 
@@ -1136,7 +1183,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             <label>Jumlah Uang Diterima</label>
                             <div class="input-money-container">
                                 <span class="currency-prefix">Rp</span>
-                                <input type="text" class="money-input" value="580.000">
+                                <input type="text" class="money-input" value="<?= $subtotal_fmt ?>">
                             </div>
                         </div>
 
@@ -2145,7 +2192,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const moneyInput = document.querySelector('.money-input');
     const changeVal = document.querySelector('.change-box strong');
     const nomBtns = document.querySelectorAll('.btn-nom');
-    const totalTagihan = 580000;
+    <?php
+        $subtotal_js = 0;
+        if (!empty($detail_transaksi)) {
+            foreach ($detail_transaksi as $row) {
+                $subtotal_js += intval(str_replace('.', '', $row['total'] ?? 0));
+            }
+        }
+        $subtotal_js_fmt = number_format($subtotal_js, 0, ',', '.');
+    ?>
+    const totalTagihan = <?= $subtotal_js ?>;
+    const totalFmt = '<?= $subtotal_js_fmt ?>';
 
     function calcChange(val) {
         let numericVal = parseInt(val.replace(/\D/g, '')) || 0;
@@ -2158,8 +2215,8 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             let txt = this.textContent.trim();
             if (txt === 'Pas Tagihan') {
-                if (moneyInput) moneyInput.value = '580.000';
-                calcChange('580000');
+                if (moneyInput) moneyInput.value = totalFmt;
+                calcChange(String(totalTagihan));
             } else {
                 if (moneyInput) moneyInput.value = txt;
                 calcChange(txt);

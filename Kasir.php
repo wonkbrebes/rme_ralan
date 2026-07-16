@@ -1,67 +1,10 @@
 <?php
-// ===================================================
-// DATA STATIS (DUMMY) - TIDAK PERLU DATABASE
-// ===================================================
-
-// Memuat koneksi database & sumber data terpusat
+// Memuat koneksi database & sumber data terpusat (sudah dinamis)
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/simrs_data.php';
 
-// 2. Set variabel default (Kondisi Kosong)
-$nama_pasien   = "Belum Memilih Pasien";
-$no_rm         = "-";
-$nik           = "-";
-$tgl_lahir     = "-";
-$jenis_pasien  = "-";
-$alamat        = "-";
-$telepon       = "-";
-$penjamin      = "-";
-$dokter        = "-";
-$poli          = "-";
-$perusahaan    = "Umum / Pribadi";
-
-// Logika Otomatis dari URL
-if (isset($_GET['id_antrian'])) {
-    $id = $_GET['id_antrian'];
-    if (array_key_exists($id, $daftar_pasien_statis)) {
-        $data = $daftar_pasien_statis[$id];
-        $nama_pasien   = $data['nama_pasien'];
-        $no_rm         = $data['no_rm'];
-        $nik           = $data['nik'];
-        $tgl_lahir     = $data['tgl_lahir'];
-        $alamat        = $data['alamat'];
-        $telepon       = $data['telepon'];
-        $penjamin      = $data['penjamin'];
-        $dokter        = $data['nama_dokter'];
-        $poli          = $data['nama_poli'];
-        $jenis_pasien  = $data['jenis_pasien'];
-    }
-}
-
-// Logika Pencarian Manual Statis
-if (isset($_POST['cari_pasien'])) {
-    $keyword = strtolower($_POST['keyword']);
-    $ketemu  = false;
-    foreach ($daftar_pasien_statis as $id => $data) {
-        if (strtolower($data['no_rm']) == $keyword || strpos(strtolower($data['nama_pasien']), $keyword) !== false) {
-            $nama_pasien   = $data['nama_pasien'];
-            $no_rm         = $data['no_rm'];
-            $nik           = $data['nik'];
-            $tgl_lahir     = $data['tgl_lahir'];
-            $alamat        = $data['alamat'];
-            $telepon       = $data['telepon'];
-            $penjamin      = $data['penjamin'];
-            $dokter        = $data['nama_dokter'];
-            $poli          = $data['nama_poli'];
-            $jenis_pasien  = $data['jenis_pasien'];
-            $ketemu = true;
-            break;
-        }
-    }
-    if (!$ketemu) {
-        echo "<script>alert('Pasien tidak ditemukan! Coba ketik: Budi atau RM-002');</script>";
-    }
-}
+// Variabel pasien sudah di-load dari simrs_data.php (query DB)
+// Variabel: $nama_pasien, $no_rm, $nik, $tgl_lahir, $alamat, $telepon, $penjamin, $dokter, $poli, $jenis_pasien
 
 // Menyesuaikan active nav untuk Kasir
 foreach ($nav_items as &$item) {
@@ -245,17 +188,10 @@ unset($item);
 
     <main class="content">
         
-        <section class="simulasi-box">
-            <span>💡 Jalur Otomatis URL:</span>
-            <a href="Kasir.php?id_antrian=1" class="btn-sim">Panggil Pasien: Budi</a>
-            <a href="Kasir.php?id_antrian=2" class="btn-sim">Panggil Pasien: Siti</a>
-            <a href="Kasir.php" class="btn-sim" style="background:#6b7280;">Kosongkan Layar</a>
-        </section>
-
         <section class="search-patient-card">
-            <h3>Cari Pasien (Manual):</h3>
+            <h3>Cari Pasien:</h3>
             <form action="" method="POST" class="search-form-flex">
-                <input type="text" name="keyword" class="input-search-pasien" placeholder="Masukkan Nama Pasien / No. RM (Contoh: Budi)..." required autocomplete="off">
+                <input type="text" name="keyword" class="input-search-pasien" placeholder="Masukkan Nama Pasien / No. RM..." required autocomplete="off">
                 <button type="submit" name="cari_pasien" class="btn-search-submit"><i class="fa-solid fa-magnifying-glass"></i> Cari</button>
             </form>
         </section>
@@ -294,6 +230,7 @@ unset($item);
                         </tr>
                     </thead>
                     <tbody>
+                        <?php if (!empty($detail_transaksi)): ?>
                         <?php foreach ($detail_transaksi as $row): ?>
                         <tr>
                             <td style="text-align: center; color: var(--gray-400);"><?= $row['no'] ?></td>
@@ -304,6 +241,9 @@ unset($item);
                             <td style="text-align: right; font-weight: 600;">Rp <?= $row['total'] ?></td>
                         </tr>
                         <?php endforeach; ?>
+                        <?php else: ?>
+                        <tr><td colspan="6" style="text-align: center; color: var(--gray-400); padding: 30px;">Belum ada transaksi. Pilih pasien untuk melihat rincian.</td></tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
@@ -312,14 +252,21 @@ unset($item);
         <div class="right-column">
             <div class="card">
                 <div class="card-header"><h2>Ringkasan Biaya</h2></div>
+                <?php
+                    $subtotal = 0;
+                    foreach ($detail_transaksi as $row) {
+                        $subtotal += intval(str_replace('.', '', $row['total']));
+                    }
+                    $subtotal_fmt = number_format($subtotal, 0, ',', '.');
+                ?>
                 <div class="billing-summary-list">
-                    <div class="summary-row"><span>Subtotal Layanan</span><strong>Rp 580.000</strong></div>
+                    <div class="summary-row"><span>Subtotal Layanan</span><strong>Rp <?= $subtotal_fmt ?></strong></div>
                     <div class="summary-row"><span>Diskon Medis</span><strong>Rp 0</strong></div>
                     <div class="summary-row"><span>Pajak / Admin RS</span><strong>Rp 0</strong></div>
                 </div>
                 <div class="total-pay-box">
                     <span>Total Tagihan:</span>
-                    <strong>Rp 580.000</strong>
+                    <strong>Rp <?= $subtotal_fmt ?></strong>
                 </div>
             </div>
 
@@ -343,7 +290,7 @@ unset($item);
                         <label>Jumlah Uang Diterima</label>
                         <div class="input-money-container">
                             <span class="currency-prefix">Rp</span>
-                            <input type="text" class="money-input" value="580.000">
+                            <input type="text" class="money-input" value="<?= $subtotal_fmt ?>">
                         </div>
                     </div>
 
@@ -390,7 +337,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const moneyInput = document.querySelector('.money-input');
     const changeVal = document.querySelector('.change-box strong');
     const nomBtns = document.querySelectorAll('.btn-nom');
-    const totalTagihan = 580000;
+    const totalTagihan = <?= $subtotal ?>;
+    const totalFmt = '<?= $subtotal_fmt ?>';
 
     function calcChange(val) {
         let numericVal = parseInt(val.replace(/\D/g, '')) || 0;
@@ -403,8 +351,8 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             let txt = this.textContent.trim();
             if (txt === 'Pas Tagihan') {
-                moneyInput.value = '580.000';
-                calcChange('580000');
+                moneyInput.value = totalFmt;
+                calcChange(String(totalTagihan));
             } else {
                 moneyInput.value = txt;
                 calcChange(txt);

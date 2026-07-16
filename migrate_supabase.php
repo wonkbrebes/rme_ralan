@@ -358,6 +358,41 @@ foreach ($seed_polyclinics as $poli) {
 }
 
 echo "\n=========================================================\n";
-echo "  MIGRASI + SEED DATA SELESAI!                           \n";
+echo "  MIGRASI + SEED DATA POLYCLINICS SELESAI!               \n";
+echo "=========================================================\n\n";
+
+// ===== SEED DATA: Obat (Farmasi) =====
+echo "[SEED] Mengisi data obat awal...\n";
+$seed_obat = [
+    ['OBT-001', 'Paracetamol 500 mg',  'tablet', 1250],
+    ['OBT-002', 'Amoxicillin 500 mg',  'kapsul', 320],
+    ['OBT-003', 'Ranitidine 150 mg',   'tablet', 45],
+    ['OBT-004', 'CTM 4 mg',            'tablet', 30],
+    ['OBT-005', 'Omeprazole 20 mg',    'kapsul', 540],
+    ['OBT-006', 'Simvastatin 10 mg',   'tablet', 180],
+    ['OBT-007', 'Ambroxol 30 mg',      'sirup',  12],
+    ['OBT-008', 'Metformin 500 mg',    'tablet', 890],
+    ['OBT-009', 'Amlodipine 5 mg',     'tablet', 650],
+    ['OBT-010', 'Cetirizine 10 mg',    'tablet', 420],
+    ['OBT-011', 'Dexamethasone 0.5 mg','tablet', 15],
+    ['OBT-012', 'Ibuprofen 400 mg',    'tablet', 780],
+    ['OBT-013', 'Captopril 25 mg',     'tablet', 340],
+    ['OBT-014', 'Salbutamol 2 mg',     'tablet', 8],
+    ['OBT-015', 'Vitamin B Complex',   'tablet', 1500],
+];
+
+foreach ($seed_obat as $obat) {
+    try {
+        $stmt = $pdo->prepare("INSERT INTO obat (kode_obat, nama_obat, satuan, stok) VALUES (:kode, :nama, :satuan, :stok) ON CONFLICT (kode_obat) DO UPDATE SET stok = EXCLUDED.stok");
+        $stmt->execute(['kode' => $obat[0], 'nama' => $obat[1], 'satuan' => $obat[2], 'stok' => $obat[3]]);
+        echo " - {$obat[1]} ({$obat[0]}, stok: {$obat[3]})... OK ✓\n";
+    } catch (PDOException $e) {
+        echo " - {$obat[1]}: SKIP (" . $e->getMessage() . ")\n";
+    }
+}
+
+echo "\n=========================================================\n";
+echo "  SEMUA MIGRASI + SEED DATA SELESAI!                     \n";
 echo "  Silakan cek Dashboard Supabase Anda.                   \n";
 echo "=========================================================\n";
+

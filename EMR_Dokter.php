@@ -372,59 +372,47 @@ unset($item);
             </button>
             <button class="icon-btn"><i class="fa-solid fa-gear"></i></button>
             <div class="user-info">
-                <div class="user-avatar"><i class="fa-solid fa-user-doctor"></i></div>
-                <div class="user-text">
-                    <strong>Dr. Hendrawan</strong>
-                    <small>Dokter Umum</small>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <main class="content">
-
-        <section class="patient-card">
+<section class="patient-card">
             <div class="patient-left">
                 <div class="patient-avatar" style="background: #e2e8f0; display:flex; align-items:center; justify-content:center; font-size:32px; color:#94a3b8;"><i class="fa-solid fa-user"></i></div>
                 <div class="patient-meta">
                     <div class="patient-name-box">
-                        <h2>Budi Santoso</h2>
-                        <span class="gender-badge">Laki-laki</span>
+                        <h2><?= htmlspecialchars($nama_pasien) ?></h2>
+                        <span class="gender-badge"><?= htmlspecialchars($jenis_pasien !== '-' ? $jenis_pasien : 'Umum') ?></span>
                     </div>
                     <div class="info-grid-inline">
-                        <span>No. RM: <strong>RM00012345</strong></span>
-                        <span>Tanggal Lahir: <strong>12 Mei 1990 (34 th)</strong></span>
-                        <span>No. Identitas: <strong>3275011205900001</strong></span>
+                        <span>No. RM / Antrian: <strong><?= htmlspecialchars($no_rm) ?></strong></span>
+                        <span>Tanggal Lahir: <strong><?= htmlspecialchars($tgl_lahir) ?></strong></span>
+                        <span>No. Identitas: <strong><?= htmlspecialchars($nik) ?></strong></span>
                     </div>
                     <div class="address-box">
-                        <span>Alamat: <strong>Jl. Merdeka No. 10, Jakarta Pusat</strong></span>
+                        <span>Alamat: <strong><?= htmlspecialchars($alamat) ?></strong></span>
                         <div style="display:flex; gap:20px; margin-top:2px;">
-                            <span>Telepon: <strong>0812-3456-7890</strong></span>
-                            <span>Penjamin: <strong>BPJS Kesehatan</strong></span>
+                            <span>Telepon: <strong><?= htmlspecialchars($telepon) ?></strong></span>
+                            <span>Penjamin: <strong><?= htmlspecialchars($penjamin) ?></strong></span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="patient-right">
-                <div class="vitals-box alert-vitals">
+                <div class="vitals-box <?= $no_rm !== '-' ? 'alert-vitals' : '' ?>">
                     <span class="vitals-label alert-text"><i class="fa-solid fa-circle-exclamation"></i> Alergi</span>
-                    <span class="vitals-val" style="color:#b91c1c; font-size:12px;">Penisilin, Seafood</span>
-                    <span class="vitals-sub" style="color:var(--green-primary); font-weight:600; cursor:pointer;">Lihat Detail</span>
+                    <span class="vitals-val" style="color:#b91c1c; font-size:12px;"><?= $no_rm !== '-' ? 'Tidak Ada Alergi Tercatat' : '-' ?></span>
                 </div>
                 <div class="vitals-box">
                     <span class="vitals-label">Gol. Darah</span>
-                    <span class="vitals-val" style="font-size:15px; color:var(--gray-800);">O+</span>
+                    <span class="vitals-val" style="font-size:15px; color:var(--gray-800);"><?= $no_rm !== '-' ? '-' : '-' ?></span>
                 </div>
                 <div class="vitals-box">
                     <span class="vitals-label">Berat Badan</span>
-                    <span class="vitals-val">72 kg</span>
-                    <span class="vitals-sub">Terakhir: 10/05/2025</span>
+                    <span class="vitals-val"><?= $no_rm !== '-' ? '-' : '-' ?></span>
+                    <span class="vitals-sub">Belum diperiksa</span>
                 </div>
                 <div class="vitals-box">
                     <span class="vitals-label">Tinggi Badan</span>
-                    <span class="vitals-val">170 cm</span>
-                    <span class="vitals-sub">Terakhir: 10/05/2025</span>
+                    <span class="vitals-val"><?= $no_rm !== '-' ? '-' : '-' ?></span>
+                    <span class="vitals-sub">Belum diperiksa</span>
                 </div>
             </div>
         </section>
@@ -439,141 +427,98 @@ unset($item);
 
         <div class="emr-grid-container">
         <div class="left-column-panels">
-
             <div id="ringkasan" class="tab-panel active">
-                
-                <div class="card">
+                <?php if (!empty($emr_pasien)): ?>
+                <?php foreach ($emr_pasien as $idx => $rm_item): ?>
+                <div class="card" style="margin-bottom:16px;">
                     <div class="card-header">
-                        <h3>Clinical Note</h3>
-                        <span class="header-meta">10 Mei 2025 10:15 WIB &bull; Dr. Hendrawan</span>
+                        <h3>Clinical Note (SOAP)</h3>
+                        <span class="header-meta"><?= htmlspecialchars($rm_item['waktu'] ?: '-') ?> &bull; <?= htmlspecialchars($rm_item['nama_lengkap'] ?? $nama_pasien) ?></span>
                     </div>
                     <div class="note-body">
                         <div class="note-row">
                             <div class="note-letter">S</div>
                             <div class="note-content">
                                 <div class="note-title">Subjective</div>
-                                <p>Keluhan utama pasien: Pasien mengeluh demam sejak 2 hari yang lalu disertai batuk kering dan nyeri tenggorokan.</p>
+                                <p><?= nl2br(htmlspecialchars($rm_item['subjective'] ?: ($rm_item['keluhan_utama'] ?: '-'))) ?></p>
                             </div>
                         </div>
                         <div class="note-row">
                             <div class="note-letter">O</div>
                             <div class="note-content">
                                 <div class="note-title">Objective</div>
-                                <p>Keadaan umum cukup, kesadaran compos mentis, tenggorokan hiperemis, tidak ada ronki.</p>
-                                <div class="vitals-tag-group">
-                                    <span class="vital-tag">TD: 120/80 mmHg</span>
-                                    <span class="vital-tag success">Nadi: 88 x/menit</span>
-                                    <span class="vital-tag">RR: 20 x/menit</span>
-                                    <span class="vital-tag">Suhu: 37.8 °C</span>
-                                    <span class="vital-tag">SpO2: 98%</span>
-                                </div>
+                                <p><?= nl2br(htmlspecialchars($rm_item['objective'] ?: '-')) ?></p>
                             </div>
                         </div>
                         <div class="note-row">
                             <div class="note-letter">A</div>
                             <div class="note-content">
                                 <div class="note-title">Assessment</div>
-                                <p><strong>Diagnosis Kerja:</strong> ISPA (Infeksi Saluran Pernapasan Akut)</p>
+                                <p><strong>Diagnosis Kerja:</strong> <?= nl2br(htmlspecialchars($rm_item['assessment'] ?: '-')) ?></p>
                             </div>
                         </div>
                         <div class="note-row">
                             <div class="note-letter">P</div>
                             <div class="note-content">
                                 <div class="note-title">Plan</div>
-                                <p>Terapi obat, istirahat cukup, kontrol ulang 3 hari jika keluhan tidak membaik.</p>
+                                <p><?= nl2br(htmlspecialchars($rm_item['plan'] ?: '-')) ?></p>
                             </div>
                         </div>
                     </div>
                 </div>
+                <?php endforeach; ?>
+                <?php else: ?>
+                <div class="card" style="margin-bottom:16px;">
+                    <div style="text-align:center; padding:45px 20px; color:var(--gray-400);">
+                        <i class="fa-solid fa-folder-open" style="font-size:38px; margin-bottom:12px; color:var(--gray-300);"></i>
+                        <p style="font-weight:600; font-size:14px; color:var(--gray-600);">Belum ada catatan klinis (SOAP) di database untuk pasien ini.</p>
+                        <p style="font-size:12px; margin-top:4px;">Silakan pilih pasien dari tabel Antrian dan input form pemeriksaan/SOAP untuk menyimpan rekam medis real-time ke Supabase.</p>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <div class="triple-grid">
                     <div class="card">
                         <div class="card-header"><h3>Resep Terbaru</h3></div>
                         <div class="med-list">
-                            <div style="font-size:11px; color:var(--gray-400); margin-bottom:4px; display:flex; justify-content:space-between;">
-                                <span>Resep R/2025-00056</span>
-                                <span>10 Mei 2025 10:15 WIB</span>
-                            </div>
+                            <?php if (!empty($resep_pasien)): ?>
+                            <?php foreach ($resep_pasien as $ri => $rsp): ?>
                             <div class="med-item">
-                                <span class="med-num">1</span>
+                                <span class="med-num"><?= $ri + 1 ?></span>
                                 <div class="med-details">
-                                    <span class="med-name">Paracetamol 500 mg</span>
-                                    <span class="med-rule">3x sehari setelah makan</span>
+                                    <span class="med-name">Resep #<?= htmlspecialchars($rsp['resep_id']) ?></span>
+                                    <span class="med-rule"><?= htmlspecialchars($rsp['waktu']) ?></span>
                                 </div>
-                                <span class="med-qty">10 Tablet</span>
+                                <span class="mini-badge badge-normal"><?= htmlspecialchars($rsp['resep_status']) ?></span>
                             </div>
-                            <div class="med-item">
-                                <span class="med-num">2</span>
-                                <div class="med-details">
-                                    <span class="med-name">Ambroxol 30 mg</span>
-                                    <span class="med-rule">3x sehari setelah makan</span>
-                                </div>
-                                <span class="med-qty">10 Tablet</span>
-                            </div>
-                            <div class="med-item">
-                                <span class="med-num">3</span>
-                                <div class="med-details">
-                                    <span class="med-name">Vitamin C 500 mg</span>
-                                    <span class="med-rule">1x sehari setelah makan</span>
-                                </div>
-                                <span class="med-qty">10 Tablet</span>
-                            </div>
+                            <?php endforeach; ?>
+                            <?php else: ?>
+                            <p style="text-align:center; color:var(--gray-400); font-size:12px; padding:20px 0;">Belum ada resep obat di database untuk pasien ini</p>
+                            <?php endif; ?>
                         </div>
-                        <button class="btn-card-action">Lihat Resep</button>
+                        <button class="btn-card-action" onclick="switchTab(event, 'terapi_obat')">Lihat Resep</button>
                     </div>
 
                     <div class="card">
                         <div class="card-header"><h3>Order Terbaru</h3></div>
-                        <div class="order-list">
-                            <div style="font-size:11px; color:var(--gray-400); margin-bottom:6px;">Order #O/2025-00089 &bull; 10 Mei 2025 10:20 WIB</div>
-                            <div class="med-item" style="border:none; align-items:center;">
-                                <i class="fa-solid fa-square-heart" style="color:#b91c1c; font-size:16px;"></i>
-                                <div class="med-details" style="margin-left:12px;">
-                                    <span class="med-name">Darah Rutin</span>
-                                    <span class="med-rule">Hematologi</span>
-                                </div>
-                                <span class="mini-badge badge-warning">Menunggu</span>
-                            </div>
-                            <div class="med-item" style="border:none; align-items:center;">
-                                <i class="fa-solid fa-circle-radiation" style="color:#a16207; font-size:16px;"></i>
-                                <div class="med-details" style="margin-left:12px;">
-                                    <span class="med-name">Foto Thorax</span>
-                                    <span class="med-rule">Radiologi</span>
-                                </div>
-                                <span class="mini-badge badge-warning">Menunggu</span>
-                            </div>
+                        <div class="order-list" style="padding:20px; text-align:center;">
+                            <p style="color:var(--gray-400); font-size:12px;">Belum ada order lab / radiologi di database</p>
                         </div>
-                        <button class="btn-card-action" style="margin-top:22px;">Lihat Order</button>
+                        <button class="btn-card-action" style="margin-top:22px;" onclick="switchTab(event, 'order')">Lihat Order</button>
                     </div>
 
                     <div class="card">
                         <div class="card-header"><h3>Hasil Pemeriksaan Terbaru</h3></div>
-                        <div class="order-list">
-                            <div class="med-item" style="border:none; align-items:center; padding-bottom:8px; border-bottom:1px solid var(--gray-100)">
-                                <i class="fa-solid fa-file-invoice" style="color:var(--green-primary); font-size:16px;"></i>
-                                <div class="med-details" style="margin-left:12px;">
-                                    <span class="med-name">Darah Rutin</span>
-                                    <span class="med-rule">10 Mei 2025</span>
-                                </div>
-                                <span class="mini-badge badge-normal">Normal</span>
-                            </div>
-                            <div class="med-item" style="border:none; align-items:center; padding-top:4px;">
-                                <i class="fa-solid fa-file-invoice" style="color:var(--green-primary); font-size:16px;"></i>
-                                <div class="med-details" style="margin-left:12px;">
-                                    <span class="med-name">Foto Thorax</span>
-                                    <span class="med-rule">10 Mei 2025</span>
-                                </div>
-                                <span class="mini-badge badge-normal">Normal</span>
-                            </div>
+                        <div class="order-list" style="padding:20px; text-align:center;">
+                            <p style="color:var(--gray-400); font-size:12px;">Belum ada hasil pemeriksaan di database</p>
                         </div>
-                        <button class="btn-card-action" style="margin-top:42px;">Lihat Hasil</button>
+                        <button class="btn-card-action" style="margin-top:42px;" onclick="switchTab(event, 'hasil_pemeriksaan')">Lihat Hasil</button>
                     </div>
                 </div>
-
             </div>
 
             <div id="riwayat_kunjungan" class="tab-panel">
-                <div class="card"><div class="empty-tab-view"><i class="fa-solid fa-clock-rotate-left"></i>Data Riwayat Kunjungan Pasien</div></div>
+                <div class="card"><div class="empty-tab-view"><i class="fa-solid fa-clock-rotate-left"></i>Data Riwayat Kunjungan Pasien (Dinamis dari Supabase)</div></div>
             </div>
             <div id="pemeriksaan" class="tab-panel">
                 <div class="card"><div class="empty-tab-view"><i class="fa-solid fa-stethoscope"></i>Form & Data Pemeriksaan Fisik</div></div>
@@ -593,72 +538,58 @@ unset($item);
             <div id="dokumen" class="tab-panel">
                 <div class="card"><div class="empty-tab-view"><i class="fa-solid fa-folder-open"></i>Berkas Lampiran Penjamin / Surat Pengantar</div></div>
             </div>
-
         </div>
 
         <div class="right-column">
-            
             <div class="card">
                 <div class="widget-title"><span><i class="fa-solid fa-bolt"></i> Quick Action</span></div>
                 <div class="quick-action-grid">
-                    <button class="btn-qa"><i class="fa-solid fa-file-lines"></i> Clinical Note</button>
-                    <button class="btn-qa"><i class="fa-solid fa-receipt"></i> Resep Elektronik</button>
-                    <button class="btn-qa"><i class="fa-solid fa-vial"></i> Order Lab</button>
-                    <button class="btn-qa"><i class="fa-solid fa-x-ray"></i> Order Radiologi</button>
-                    <button class="btn-qa"><i class="fa-solid fa-envelope-open-text"></i> Surat Keterangan</button>
-                    <button class="btn-qa"><i class="fa-solid fa-copy"></i> Template Note</button>
+                    <button class="btn-qa" onclick="switchTab(event, 'ringkasan')"><i class="fa-solid fa-file-lines"></i> Clinical Note</button>
+                    <button class="btn-qa" onclick="switchTab(event, 'terapi_obat')"><i class="fa-solid fa-receipt"></i> Resep Elektronik</button>
+                    <button class="btn-qa" onclick="switchTab(event, 'order')"><i class="fa-solid fa-vial"></i> Order Lab</button>
+                    <button class="btn-qa" onclick="switchTab(event, 'order')"><i class="fa-solid fa-x-ray"></i> Order Radiologi</button>
+                    <button class="btn-qa" onclick="switchTab(event, 'dokumen')"><i class="fa-solid fa-envelope-open-text"></i> Surat Keterangan</button>
+                    <button class="btn-qa" onclick="switchTab(event, 'ringkasan')"><i class="fa-solid fa-copy"></i> Template Note</button>
                 </div>
             </div>
 
             <div class="card">
                 <div class="widget-title"><span><i class="fa-solid fa-history"></i> Riwayat Kunjungan Terakhir</span> <a href="#" class="widget-link">Lihat Semua</a></div>
-                <div class="history-box">
+                <div class="history-box" style="padding:16px; text-align:center;">
+                    <?php if (!empty($emr_pasien)): ?>
                     <div class="history-date-row">
-                        <span>10 Mei 2025 &bull; 10:15 WIB</span>
-                        <span style="background:#dcfce7; color:#15803d; font-size:10px; padding:1px 6px; border-radius:4px;">Selesai</span>
+                        <span><?= htmlspecialchars($emr_pasien[0]['waktu']) ?></span>
+                        <span style="background:#dcfce7; color:#15803d; font-size:10px; padding:1px 6px; border-radius:4px;">Tercatat</span>
                     </div>
-                    <div class="history-item-row"><span class="history-label">Keluhan:</span><span class="history-val">Demam, batuk, nyeri tenggorokan</span></div>
-                    <div class="history-item-row"><span class="history-label">Diagnosis:</span><span class="history-val">ISPA</span></div>
-                    <div class="history-item-row"><span class="history-label">Dokter:</span><span class="history-val">Dr. Hendrawan</span></div>
-                    <button class="btn-card-action" style="border:1px solid var(--gray-200); border-radius:6px; margin-top:8px; padding:6px;">Lihat Detail</button>
+                    <div class="history-item-row"><span class="history-label">Keluhan:</span><span class="history-val"><?= htmlspecialchars($emr_pasien[0]['subjective'] ?: '-') ?></span></div>
+                    <div class="history-item-row"><span class="history-label">Diagnosis:</span><span class="history-val"><?= htmlspecialchars($emr_pasien[0]['assessment'] ?: '-') ?></span></div>
+                    <?php else: ?>
+                    <p style="color:var(--gray-400); font-size:12px;">Belum ada riwayat kunjungan di database</p>
+                    <?php endif; ?>
                 </div>
             </div>
 
             <div class="card">
                 <div class="widget-title"><span><i class="fa-solid fa-star-of-life"></i> Diagnosa Aktif</span> <span style="color:var(--green-primary); cursor:pointer; font-size:11px;">+ Tambah</span></div>
-                <div style="padding:14px 16px; display:flex; align-items:center; justify-content:between; font-size:12px;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <span style="background:var(--green-pale); color:var(--green-primary); font-weight:700; padding:3px 6px; border-radius:4px; font-size:11px;">J00</span>
-                        <div>
-                            <div style="font-weight:700; color:var(--gray-800);">Acute nasopharyngitis [common cold]</div>
-                            <div style="font-size:10px; color:var(--gray-400); margin-top:1px;">Sejak: 10 Mei 2025</div>
-                        </div>
-                    </div>
+                <div style="padding:16px; text-align:center; font-size:12px; color:var(--gray-400);">
+                    <?php if (!empty($emr_pasien) && !empty($emr_pasien[0]['assessment'])): ?>
+                    <div style="text-align:left; font-weight:600; color:var(--gray-800);"><?= htmlspecialchars($emr_pasien[0]['assessment']) ?></div>
+                    <?php else: ?>
+                    Belum ada diagnosa aktif tercatat
+                    <?php endif; ?>
                 </div>
             </div>
 
             <div class="card">
                 <div class="widget-title"><span><i class="fa-solid fa-pills"></i> Terapi Aktif</span> <a href="#" class="widget-link">Lihat Semua</a></div>
-                <div class="order-list" style="padding:12px 16px;">
-                    <div class="med-item" style="border:none; padding:4px 0;">
-                        <i class="fa-solid fa-droplet" style="color:var(--green-light); font-size:13px; margin-top:3px;"></i>
-                        <div class="med-details" style="margin-left:10px;">
-                            <span class="med-name">Paracetamol 500 mg</span>
-                            <span class="med-rule">3x sehari setelah makan</span>
-                        </div>
-                        <span class="med-qty" style="font-size:11px; color:var(--gray-400);">10 Tablet</span>
-                    </div>
-                    <div class="med-item" style="border:none; padding:4px 0;">
-                        <i class="fa-solid fa-droplet" style="color:var(--green-light); font-size:13px; margin-top:3px;"></i>
-                        <div class="med-details" style="margin-left:10px;">
-                            <span class="med-name">Ambroxol 30 mg</span>
-                            <span class="med-rule">3x sehari setelah makan</span>
-                        </div>
-                        <span class="med-qty" style="font-size:11px; color:var(--gray-400);">10 Tablet</span>
-                    </div>
+                <div class="order-list" style="padding:16px; text-align:center; color:var(--gray-400); font-size:12px;">
+                    <?php if (!empty($resep_pasien)): ?>
+                    <div style="text-align:left; font-weight:600; color:var(--gray-800);">Resep Aktif #<?= htmlspecialchars($resep_pasien[0]['resep_id']) ?> (<?= htmlspecialchars($resep_pasien[0]['resep_status']) ?>)</div>
+                    <?php else: ?>
+                    Belum ada terapi obat aktif tercatat
+                    <?php endif; ?>
                 </div>
             </div>
-
         </div>
         </div></main>
 </div>

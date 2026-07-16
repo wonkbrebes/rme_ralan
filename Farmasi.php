@@ -456,6 +456,7 @@ unset($item);
                     </tr>
                 </thead>
                 <tbody>
+                    <?php if (!empty($daftar_obat)): ?>
                     <?php foreach ($daftar_obat as $row): ?>
                     <tr>
                         <td class="obat-code"><?= $row['kode'] ?></td>
@@ -479,20 +480,14 @@ unset($item);
                         </td>
                     </tr>
                     <?php endforeach; ?>
+                    <?php else: ?>
+                    <tr><td colspan="7" style="text-align: center; color: var(--gray-400); padding: 30px;">Belum ada data obat. Jalankan migrasi untuk mengisi data awal.</td></tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
 
             <div class="table-footer">
-                <p>Menampilkan 1 - 8 dari 1.245 data</p>
-                <div class="pagination-nav">
-                    <button class="page-btn"><i class="fa-solid fa-chevron-left"></i></button>
-                    <button class="page-btn active">1</button>
-                    <button class="page-btn">2</button>
-                    <button class="page-btn">3</button>
-                    <button class="page-btn" style="border:none; cursor:default; background:none;">...</button>
-                    <button class="page-btn">156</button>
-                    <button class="page-btn"><i class="fa-solid fa-chevron-right"></i></button>
-                </div>
+                <p>Menampilkan <?= count($daftar_obat) ?> data obat</p>
             </div>
         </div>
 
@@ -516,6 +511,7 @@ unset($item);
                     <a href="#" class="widget-link">Lihat Semua</a>
                 </div>
                 <div class="list-widget">
+                    <?php if (!empty($stok_menipis)): ?>
                     <?php foreach ($stok_menipis as $sm): ?>
                     <div class="list-item">
                         <div class="item-left <?= strtolower($sm['status']) === 'habis' ? 'habis' : '' ?>">
@@ -530,6 +526,9 @@ unset($item);
                         </span>
                     </div>
                     <?php endforeach; ?>
+                    <?php else: ?>
+                    <p style="text-align: center; color: var(--gray-400); padding: 16px; font-size: 12px;">Semua stok aman ✓</p>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -539,6 +538,7 @@ unset($item);
                     <a href="#" class="widget-link">Lihat Semua</a>
                 </div>
                 <div class="list-widget">
+                    <?php if (!empty($resep_terbaru)): ?>
                     <?php foreach ($resep_terbaru as $rs): ?>
                     <div class="resep-item">
                         <div class="resep-icon-box"><i class="fa-solid fa-file-prescription"></i></div>
@@ -550,6 +550,9 @@ unset($item);
                         <span class="badge-done"><?= $rs['status'] ?></span>
                     </div>
                     <?php endforeach; ?>
+                    <?php else: ?>
+                    <p style="text-align: center; color: var(--gray-400); padding: 16px; font-size: 12px;">Belum ada resep hari ini</p>
+                    <?php endif; ?>
                 </div>
             </div>
 

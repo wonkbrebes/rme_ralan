@@ -132,12 +132,12 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             <td><?= htmlspecialchars($row['poli']) ?></td>
                             <td><?= htmlspecialchars($row['dokter']) ?></td>
                             <td>
-                                <?php 
-                                $status_class = 'badge-menunggu';
-                                if (strtolower($row['status']) === 'dipanggil') $status_class = 'badge-dipanggil';
-                                if (strtolower($row['status']) === 'selesai') $status_class = 'badge-selesai';
+                                <?php
+                                $status_key = normalize_queue_status($row['status'] ?? '');
+                                $status_label = get_queue_status_label($status_key);
+                                $status_class = get_queue_badge_class($status_key);
                                 ?>
-                                <span class="badge-status <?= $status_class ?>"><?= htmlspecialchars($row['status']) ?></span>
+                                <span class="badge-status <?= $status_class ?>"><?= htmlspecialchars($status_label) ?></span>
                             </td>
                             <td><button class="btn-detail">Detail</button></td>
                         </tr>
@@ -242,13 +242,12 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                 <td><?= htmlspecialchars($row['poli']) ?></td>
                                 <td><?= htmlspecialchars($row['estimasi']) ?></td>
                                 <td>
-                                    <?php if ($row['status'] === 'dilayani'): ?>
-                                        <span class="badge-status badge-dilayani">Sedang Dilayani</span>
-                                    <?php elseif ($row['status'] === 'selesai'): ?>
-                                        <span class="badge-status badge-selesai">Selesai</span>
-                                    <?php else: ?>
-                                        <span class="badge-status badge-menunggu">Menunggu</span>
-                                    <?php endif; ?>
+                                    <?php
+                                    $status_key = normalize_queue_status($row['status'] ?? '');
+                                    $status_label = get_queue_status_label($status_key);
+                                    $status_class = get_queue_badge_class($status_key);
+                                    ?>
+                                    <span class="badge-status <?= $status_class ?>"><?= htmlspecialchars($status_label) ?></span>
                                 </td>
                                 <td><button class="btn-detail">Detail</button></td>
                             </tr>
@@ -334,9 +333,34 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             <i class="fa-solid fa-rotate-right"></i> Reset Form
                         </button>
                     </div>
-                    <form action="?page=pendaftaran" method="POST">
+                    <form action="?page=pendaftaran" method="POST" id="form-pendaftaran">
                         <input type="hidden" name="action" value="register_pasien">
+                        <input type="hidden" name="existing_patient_id" id="existing_patient_id" value="">
                         <div class="form-body">
+                            <!-- Dropdown Pilih Pasien Lama -->
+                            <div class="form-section-title" style="background: #f0fdf4; color: #166534; padding: 12px 16px; border: 1px dashed #22c55e; border-radius: 8px; margin-bottom: 20px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; width: 100%;">
+                                    <div style="flex: 1; min-width: 220px;">
+                                        <i class="fa-solid fa-user-check"></i> <b>Pilih dari Pasien Terdaftar (Pasien Lama)</b>
+                                        <div style="font-size: 12px; font-weight: normal; color: #15803d; margin-top: 4px;">Pilih pasien yang sudah pernah terdaftar agar data otomatis terisi & dibuatkan antrian hari ini.</div>
+                                    </div>
+                                    <div style="flex: 1; min-width: 260px;">
+                                        <select id="select-pasien-lama" class="form-select" style="border-color: #22c55e; font-weight: 600;" onchange="pilihPasienLama(this)">
+                                            <option value="">-- Pilih Pasien Terdaftar --</option>
+                                            <?php 
+                                            global $daftar_pasien_master;
+                                            if (!empty($daftar_pasien_master)) {
+                                                foreach ($daftar_pasien_master as $pm) {
+                                                    $data_json = htmlspecialchars(json_encode($pm), ENT_QUOTES, 'UTF-8');
+                                                    echo '<option value="' . $pm['id'] . '" data-pasien="' . $data_json . '">' . htmlspecialchars($pm['no_rm'] . ' - ' . $pm['nama_lengkap'] . ' (NIK: ' . ($pm['nik'] ?? '-') . ')') . '</option>';
+                                                }
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Data Pasien -->
                             <div class="form-section-title">
                                 <i class="fa-solid fa-user"></i> Data Pasien
@@ -495,6 +519,34 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             </button>
                         </div>
                     </form>
+                    <script>
+                    function pilihPasienLama(selectObj) {
+                        const opt = selectObj.options[selectObj.selectedIndex];
+                        if (!opt || !opt.value) {
+                            document.getElementById('existing_patient_id').value = '';
+                            document.getElementById('form-pendaftaran').reset();
+                            return;
+                        }
+                        const dataStr = opt.getAttribute('data-pasien');
+                        if (dataStr) {
+                            const p = JSON.parse(dataStr);
+                            document.getElementById('existing_patient_id').value = p.id || '';
+                            if (document.querySelector('#form-pendaftaran input[name="nama_lengkap"]')) document.querySelector('#form-pendaftaran input[name="nama_lengkap"]').value = p.nama_lengkap || '';
+                            if (document.querySelector('#form-pendaftaran input[name="nik"]')) document.querySelector('#form-pendaftaran input[name="nik"]').value = p.nik || '';
+                            if (document.querySelector('#form-pendaftaran input[name="tanggal_lahir"]')) document.querySelector('#form-pendaftaran input[name="tanggal_lahir"]').value = p.tanggal_lahir || '';
+                            if (document.querySelector('#form-pendaftaran input[name="tempat_lahir"]')) document.querySelector('#form-pendaftaran input[name="tempat_lahir"]').value = p.tempat_lahir || '';
+                            if (document.querySelector('#form-pendaftaran select[name="jenis_kelamin"]')) document.querySelector('#form-pendaftaran select[name="jenis_kelamin"]').value = p.jenis_kelamin || 'Laki-laki';
+                            if (document.querySelector('#form-pendaftaran input[name="no_telepon"]')) document.querySelector('#form-pendaftaran input[name="no_telepon"]').value = p.no_telepon || '';
+                            if (document.querySelector('#form-pendaftaran input[name="no_bpjs"]')) document.querySelector('#form-pendaftaran input[name="no_bpjs"]').value = p.no_bpjs || '';
+                            if (document.querySelector('#form-pendaftaran select[name="golongan_darah"]')) document.querySelector('#form-pendaftaran select[name="golongan_darah"]').value = p.gol_darah || '';
+                            if (document.querySelector('#form-pendaftaran select[name="jenis_pasien"]')) document.querySelector('#form-pendaftaran select[name="jenis_pasien"]').value = p.jenis_pasien || 'Umum';
+                            if (document.querySelector('#form-pendaftaran textarea[name="alamat"]') || document.querySelector('#form-pendaftaran input[name="alamat"]')) {
+                                const el = document.querySelector('#form-pendaftaran textarea[name="alamat"]') || document.querySelector('#form-pendaftaran input[name="alamat"]');
+                                el.value = p.alamat || '';
+                            }
+                        }
+                    }
+                    </script>
                 </div>
 
                 <!-- Kolom Kanan: Widget -->
@@ -505,8 +557,12 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             <i class="fa-solid fa-calendar-days"></i> Informasi Hari Ini
                         </div>
                         <div class="info-header">
-                            <span class="info-date">Kamis, 29 Mei 2025</span>
-                            <span class="info-time">09:15 WIB</span>
+                            <span class="info-date"><?php
+                                $hari_map = ['Sunday'=>'Minggu','Monday'=>'Senin','Tuesday'=>'Selasa','Wednesday'=>'Rabu','Thursday'=>'Kamis','Friday'=>'Jumat','Saturday'=>'Sabtu'];
+                                $bulan_map = [1=>'Januari',2=>'Februari',3=>'Maret',4=>'April',5=>'Mei',6=>'Juni',7=>'Juli',8=>'Agustus',9=>'September',10=>'Oktober',11=>'November',12=>'Desember'];
+                                echo $hari_map[date('l')] . ', ' . date('d') . ' ' . $bulan_map[(int)date('m')] . ' ' . date('Y');
+                            ?></span>
+                            <span class="info-time"><?= date('H:i') ?> WIB</span>
                         </div>
                         <div class="info-list">
                             <?php foreach ($info_hari_ini as $inf): ?>

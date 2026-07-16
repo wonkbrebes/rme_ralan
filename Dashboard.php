@@ -432,19 +432,42 @@ unset($item);
                         <div></div><div></div><div></div><div></div><div></div>
                     </div>
                     <div class="svg-chart-container">
-                        <svg width="100%" height="100%" viewBox="0 0 700 200" preserveAspectRatio="none">
-                            <path d="M 20 150 L 130 90 L 240 120 L 350 80 L 460 30 L 570 70 L 680 15" 
+                        <?php
+                        // Hitung koordinat SVG dari data $grafik_7_hari
+                        $max_val = max(1, max($grafik_7_hari));
+                        $chart_w = 700;
+                        $chart_h = 200;
+                        $padding_x = 20;
+                        $padding_y = 15;
+                        $usable_w = $chart_w - ($padding_x * 2);
+                        $usable_h = $chart_h - ($padding_y * 2);
+                        $step_x = $usable_w / 6; // 7 points = 6 gaps
+                        
+                        $points = [];
+                        foreach ($grafik_7_hari as $i => $val) {
+                            $x = $padding_x + ($i * $step_x);
+                            $y = $padding_y + $usable_h - (($val / $max_val) * $usable_h);
+                            $points[] = ['x' => round($x), 'y' => round($y)];
+                        }
+                        
+                        // Build SVG path
+                        $path_parts = [];
+                        foreach ($points as $i => $pt) {
+                            $path_parts[] = ($i === 0 ? 'M' : 'L') . " {$pt['x']} {$pt['y']}";
+                        }
+                        $path_d = implode(' ', $path_parts);
+                        ?>
+                        <svg width="100%" height="100%" viewBox="0 0 <?= $chart_w ?> <?= $chart_h ?>" preserveAspectRatio="none">
+                            <path d="<?= $path_d ?>" 
                                   fill="none" stroke="#2e7d32" stroke-width="3" stroke-linecap="round"/>
-                            <circle cx="20" cy="150" r="5" fill="#2e7d32"/>
-                            <circle cx="130" cy="90" r="5" fill="#2e7d32"/>
-                            <circle cx="240" cy="120" r="5" fill="#2e7d32"/>
-                            <circle cx="350" cy="80" r="5" fill="#2e7d32"/>
-                            <circle cx="460" cy="30" r="5" fill="#2e7d32"/>
-                            <circle cx="570" cy="70" r="5" fill="#2e7d32"/>
-                            <circle cx="680" cy="15" r="5" fill="#2e7d32"/>
+                            <?php foreach ($points as $pt): ?>
+                            <circle cx="<?= $pt['x'] ?>" cy="<?= $pt['y'] ?>" r="5" fill="#2e7d32"/>
+                            <?php endforeach; ?>
                         </svg>
                     <div style="position: absolute; bottom: 15px; left: 24px; right: 24px; display: flex; justify-content: space-between; font-size: 11px; color: #9ca3af; font-weight: 600; pointer-events: none;">
-                        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                        <?php foreach ($grafik_7_labels as $lbl): ?>
+                        <span><?= $lbl ?></span>
+                        <?php endforeach; ?>
                     </div>
                 </div>
             </div>
@@ -456,7 +479,7 @@ unset($item);
                 <div class="donut-wrapper">
                     <div class="donut-chart">
                         <div class="donut-center">
-                            <strong>128</strong>
+                            <strong><?= $cnt_total ?></strong>
                             <span>PASIEN</span>
                         </div>
                     </div>
@@ -499,6 +522,7 @@ unset($item);
                     </tr>
                 </thead>
                 <tbody>
+                    <?php if (!empty($antrian_terkini)): ?>
                     <?php foreach ($antrian_terkini as $row): ?>
                     <tr>
                         <td class="no-antrian"><?= htmlspecialchars($row['no']) ?></td>
@@ -508,7 +532,7 @@ unset($item);
                         <td>
                             <?php 
                             $status_class = 'badge-menunggu';
-                            if (strtolower($row['status']) === 'dipanggil') $status_class = 'badge-dipanggil';
+                            if (strtolower($row['status']) === 'dipanggil' || strtolower($row['status']) === 'dilayani') $status_class = 'badge-dipanggil';
                             if (strtolower($row['status']) === 'selesai') $status_class = 'badge-selesai';
                             ?>
                             <span class="badge-status <?= $status_class ?>"><?= htmlspecialchars($row['status']) ?></span>
@@ -516,11 +540,14 @@ unset($item);
                         <td><a href="?page=emr_dokter&no_antrian=<?= urlencode($row['no']) ?>&nama=<?= urlencode($row['nama']) ?>" class="btn-detail" style="text-decoration:none; display:inline-block;">Detail</a></td>
                     </tr>
                     <?php endforeach; ?>
+                    <?php else: ?>
+                    <tr><td colspan="6" style="text-align: center; color: var(--gray-400); padding: 30px;">Belum ada antrian hari ini</td></tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
 
             <div class="table-footer">
-                <p>Menampilkan 5 dari 14 antrian aktif</p>
+                <p>Menampilkan <?= count($antrian_terkini) ?> dari <?= $stats_antrian['total'] ?> antrian aktif</p>
                 <div class="pagination-nav">
                     <button class="nav-btn"><i class="fa-solid fa-chevron-left"></i></button>
                     <button class="nav-btn"><i class="fa-solid fa-chevron-right"></i></button>
