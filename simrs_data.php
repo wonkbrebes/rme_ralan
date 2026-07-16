@@ -78,6 +78,12 @@ $resep_terbaru = [];
 $detail_transaksi = [];
 $emr_pasien       = [];
 $resep_pasien     = [];
+$emr_history      = [];
+$diagnosa_pasien  = [];
+$order_lab        = [];
+$order_radiologi  = [];
+$order_results    = [];
+$surat_rujukan    = [];
 
 // Variabel pasien default (untuk EMR & Kasir)
 $nama_pasien   = !empty($_GET['nama']) ? htmlspecialchars($_GET['nama']) : "Belum Memilih Pasien";
@@ -413,14 +419,18 @@ if (function_exists('db_select')) {
         // ============================================================
 
         // Pencarian via URL parameter ?id_antrian= atau ?no_antrian= atau ?no_rm= atau ?nama=
-        if ((isset($_GET['id_antrian']) && !empty($_GET['id_antrian'])) || (isset($_GET['no_antrian']) && !empty($_GET['no_antrian']) && $_GET['no_antrian'] !== '-') || (isset($_GET['no_rm']) && !empty($_GET['no_rm']) && $_GET['no_rm'] !== '-') || (isset($_GET['nama']) && !empty($_GET['nama']) && $_GET['nama'] !== 'Belum Memilih Pasien')) {
+        $search_no_antrian = !empty($_GET['no_antrian']) && $_GET['no_antrian'] !== '-' ? trim($_GET['no_antrian']) : (!empty($_POST['no_antrian']) ? trim($_POST['no_antrian']) : '');
+        $search_nama = !empty($_GET['nama']) && $_GET['nama'] !== 'Belum Memilih Pasien' ? trim($_GET['nama']) : (!empty($_POST['nama']) ? trim($_POST['nama']) : '');
+        $search_no_rm = !empty($_GET['no_rm']) && $_GET['no_rm'] !== '-' ? trim($_GET['no_rm']) : '';
+
+        if ((isset($_GET['id_antrian']) && !empty($_GET['id_antrian'])) || !empty($search_no_antrian) || !empty($search_no_rm) || !empty($search_nama)) {
             try {
                 $q_row = false;
                 if (isset($_GET['id_antrian']) && !empty($_GET['id_antrian'])) {
                     $queue_id = intval($_GET['id_antrian']);
                     $q_row = db_select_one("SELECT q.id, p.nama_lengkap, p.no_rm, p.nik, p.tanggal_lahir, p.alamat, p.no_telepon, p.jenis_pasien, p.no_bpjs, pol.nama_poli FROM queues q JOIN patients p ON q.patient_id = p.id JOIN polyclinics pol ON q.polyclinic_id = pol.id WHERE q.id = :qid", ['qid' => $queue_id]);
-                } elseif (isset($_GET['no_antrian']) && !empty($_GET['no_antrian']) && $_GET['no_antrian'] !== '-') {
-                    $q_row = db_select_one("SELECT q.id, p.nama_lengkap, p.no_rm, p.nik, p.tanggal_lahir, p.alamat, p.no_telepon, p.jenis_pasien, p.no_bpjs, pol.nama_poli FROM queues q JOIN patients p ON q.patient_id = p.id JOIN polyclinics pol ON q.polyclinic_id = pol.id WHERE q.no_antrian = :qno ORDER BY q.id DESC LIMIT 1", ['qno' => trim($_GET['no_antrian'])]);
+                } elseif (!empty($search_no_antrian)) {
+                    $q_row = db_select_one("SELECT q.id, p.nama_lengkap, p.no_rm, p.nik, p.tanggal_lahir, p.alamat, p.no_telepon, p.jenis_pasien, p.no_bpjs, pol.nama_poli FROM queues q JOIN patients p ON q.patient_id = p.id JOIN polyclinics pol ON q.polyclinic_id = pol.id WHERE q.no_antrian = :qno ORDER BY q.id DESC LIMIT 1", ['qno' => $search_no_antrian]);
                 }
 
                 // Jika tidak ketemu di queues (atau hanya kirim no_rm/nama), cari langsung ke tabel patients
@@ -499,7 +509,14 @@ if (function_exists('db_select')) {
         if (!empty($no_rm) && $no_rm !== '-') {
             try {
                 $emr_rows = db_select("SELECT rm.subjective, rm.objective, rm.assessment, rm.plan, TO_CHAR(rm.created_at AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY HH24:MI') as waktu, v.keluhan_utama, p.nama_lengkap FROM rekam_medis rm JOIN visits v ON rm.kunjungan_id = v.kunjungan_id JOIN patients p ON v.pasien_id = p.id WHERE p.no_rm = :rm ORDER BY rm.created_at DESC LIMIT 5", ['rm' => $no_rm]);
-                if (is_array($emr_rows)) $emr_pasien = $emr_rows;
+                if (is_array($emr_rows) && !empty($emr_rows)) {
+                    $emr_pasien = $emr_rows;
+                } else {
+                    $notes_rows = db_select("SELECT en.subjective, en.objective, en.assessment, en.plan, TO_CHAR(en.created_at AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY HH24:MI') as waktu, en.keluhan_utama, p.nama_lengkap FROM emr_notes en JOIN queues q ON en.queue_id = q.id JOIN patients p ON q.patient_id = p.id WHERE p.no_rm = :rm ORDER BY en.created_at DESC LIMIT 5", ['rm' => $no_rm]);
+                    if (is_array($notes_rows) && !empty($notes_rows)) {
+                        $emr_pasien = $notes_rows;
+                    }
+                }
             } catch (Exception $e) {}
 
             try {
@@ -528,6 +545,57 @@ if (function_exists('db_select')) {
                             'subtotal' => $subtotal_val
                         ];
                     }
+                }
+            } catch (Exception $e) {}
+
+            try {
+                $history_rows = db_select("SELECT v.no_kunjungan, TO_CHAR(v.tanggal_kunjungan AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY') as tanggal, rm.subjective, rm.assessment, rm.plan, rm.pemeriksaan_fisik FROM visits v LEFT JOIN rekam_medis rm ON v.kunjungan_id = rm.kunjungan_id WHERE v.pasien_id = (SELECT id FROM patients WHERE no_rm = :rm LIMIT 1) ORDER BY v.tanggal_kunjungan DESC LIMIT 8", ['rm' => $no_rm]);
+                if (is_array($history_rows)) {
+                    foreach ($history_rows as $hr) {
+                        $emr_history[] = [
+                            'no_kunjungan' => $hr['no_kunjungan'],
+                            'tanggal' => $hr['tanggal'],
+                            'subjective' => $hr['subjective'] ?: '-',
+                            'assessment' => $hr['assessment'] ?: '-',
+                            'plan' => $hr['plan'] ?: '-',
+                            'pemeriksaan_fisik' => $hr['pemeriksaan_fisik'] ?: '-',
+                        ];
+                    }
+                }
+            } catch (Exception $e) {}
+
+            try {
+                $diag_rows = db_select("SELECT rd.kode_icd10, rd.nama_diagnosis, rd.jenis_diagnosis, TO_CHAR(rd.created_at AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY HH24:MI') as waktu FROM rm_diagnoses rd JOIN rekam_medis rm ON rd.rm_id = rm.rm_id JOIN visits v ON rm.kunjungan_id = v.kunjungan_id JOIN patients p ON v.pasien_id = p.id WHERE p.no_rm = :rm ORDER BY rd.created_at DESC LIMIT 10", ['rm' => $no_rm]);
+                if (is_array($diag_rows)) {
+                    $diagnosa_pasien = $diag_rows;
+                }
+            } catch (Exception $e) {}
+
+            try {
+                $order_lab_rows = db_select("SELECT ol.id, ol.jenis_pemeriksaan, ol.catatan, ol.status, TO_CHAR(ol.created_at AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY HH24:MI') as waktu FROM order_lab ol JOIN rekam_medis rm ON ol.rm_id = rm.rm_id JOIN visits v ON ol.kunjungan_id = v.kunjungan_id JOIN patients p ON v.pasien_id = p.id WHERE p.no_rm = :rm ORDER BY ol.created_at DESC LIMIT 8", ['rm' => $no_rm]);
+                if (is_array($order_lab_rows)) {
+                    $order_lab = $order_lab_rows;
+                }
+            } catch (Exception $e) {}
+
+            try {
+                $order_rad_rows = db_select("SELECT orad.id, orad.jenis_pemeriksaan, orad.catatan, orad.status, TO_CHAR(orad.created_at AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY HH24:MI') as waktu FROM order_radiologi orad JOIN rekam_medis rm ON orad.rm_id = rm.rm_id JOIN visits v ON orad.kunjungan_id = v.kunjungan_id JOIN patients p ON v.pasien_id = p.id WHERE p.no_rm = :rm ORDER BY orad.created_at DESC LIMIT 8", ['rm' => $no_rm]);
+                if (is_array($order_rad_rows)) {
+                    $order_radiologi = $order_rad_rows;
+                }
+            } catch (Exception $e) {}
+
+            try {
+                $results_rows = db_select("SELECT olh.id, olh.parameter, olh.nilai, olh.satuan, olh.nilai_rujukan, olh.keterangan, TO_CHAR(ol.created_at AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY') as tanggal, ol.jenis_pemeriksaan FROM order_lab_hasil olh JOIN order_lab ol ON olh.order_lab_id = ol.id JOIN rekam_medis rm ON ol.rm_id = rm.rm_id JOIN visits v ON ol.kunjungan_id = v.kunjungan_id JOIN patients p ON v.pasien_id = p.id WHERE p.no_rm = :rm ORDER BY olh.created_at DESC LIMIT 12", ['rm' => $no_rm]);
+                if (is_array($results_rows)) {
+                    $order_results = $results_rows;
+                }
+            } catch (Exception $e) {}
+
+            try {
+                $ref_rows = db_select("SELECT sr.id, sr.faskes_tujuan, sr.poli_tujuan, sr.alasan_rujukan, sr.no_rujukan_bpjs, TO_CHAR(sr.tanggal_rujukan, 'DD Mon YYYY') as tanggal, TO_CHAR(sr.created_at AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY HH24:MI') as waktu FROM surat_rujukan sr JOIN rekam_medis rm ON sr.rm_id = rm.rm_id JOIN visits v ON rm.kunjungan_id = v.kunjungan_id JOIN patients p ON v.pasien_id = p.id WHERE p.no_rm = :rm ORDER BY sr.created_at DESC LIMIT 6", ['rm' => $no_rm]);
+                if (is_array($ref_rows)) {
+                    $surat_rujukan = $ref_rows;
                 }
             } catch (Exception $e) {}
         }

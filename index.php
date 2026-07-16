@@ -18,7 +18,7 @@ require_once __DIR__ . '/simrs_data.php';
 // ============================================================
 // 9. FUNGSI RENDER KONTEN
 // ============================================================
-function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $stats_antrian, $antrian, $sedang_dilayani, $status_poli, $info_hari_ini, $riwayat_pendaftaran, $emr_tabs, $stats_farmasi, $daftar_obat, $stok_menipis, $resep_terbaru, $detail_transaksi, $nominal_cepat, $nama_pasien, $jenis_pasien, $no_rm, $nik, $tgl_lahir, $alamat, $telepon, $penjamin, $dokter, $poli) {
+function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $stats_antrian, $antrian, $sedang_dilayani, $status_poli, $info_hari_ini, $riwayat_pendaftaran, $emr_tabs, $stats_farmasi, $daftar_obat, $stok_menipis, $resep_terbaru, $detail_transaksi, $nominal_cepat, $nama_pasien, $jenis_pasien, $no_rm, $nik, $tgl_lahir, $alamat, $telepon, $penjamin, $dokter, $emr_pasien, $resep_pasien, $emr_history, $diagnosa_pasien, $order_lab, $order_radiologi, $order_results, $surat_rujukan, $poli) {
     switch ($page) {
         case 'dashboard':
             // ---------- DASHBOARD ----------
@@ -744,11 +744,43 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
 
             <?php if (!empty($_GET['no_antrian'])): ?>
             <div style="padding: 0 0 20px 0;">
-                <form method="POST" action="?page=emr_dokter" style="display:flex; gap: 10px; flex-wrap: wrap;">
+                <form method="POST" action="?page=emr_dokter&no_antrian=<?= urlencode($_GET['no_antrian']) ?>&nama=<?= urlencode($nama_pasien) ?>" style="display:flex; gap: 10px; flex-wrap: wrap;">
                     <input type="hidden" name="action" value="simpan_emr">
                     <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($_GET['no_antrian']) ?>">
                     <button type="submit" class="btn-submit" style="background:#2e7d32; color:#fff; border:none;">Mulai Pemeriksaan</button>
                     <a href="?page=kasir&no_antrian=<?= urlencode($_GET['no_antrian']) ?>&nama=<?= urlencode($nama_pasien) ?>" class="btn-submit" style="background:#2563eb; color:#fff; text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Lanjut ke Kasir</a>
+                </form>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($_GET['no_antrian'])): ?>
+            <div class="card" style="margin-bottom:16px;">
+                <div class="card-header"><h3>Form Catatan Pemeriksaan</h3></div>
+                <form method="POST" action="?page=emr_dokter">
+                    <input type="hidden" name="action" value="simpan_emr">
+                    <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($_GET['no_antrian']) ?>">
+                    <div class="note-body" style="display:flex; flex-direction:column; gap:16px; padding:16px;">
+                        <div class="note-row" style="flex-direction:column;">
+                            <label style="font-weight:700; margin-bottom:6px;">Subjective / Keluhan Utama</label>
+                            <textarea name="subjective" rows="3" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; resize:vertical;"></textarea>
+                        </div>
+                        <div class="note-row" style="flex-direction:column;">
+                            <label style="font-weight:700; margin-bottom:6px;">Objective</label>
+                            <textarea name="objective" rows="3" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; resize:vertical;"></textarea>
+                        </div>
+                        <div class="note-row" style="flex-direction:column;">
+                            <label style="font-weight:700; margin-bottom:6px;">Assessment / Diagnosis</label>
+                            <textarea name="assessment" rows="3" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; resize:vertical;"></textarea>
+                        </div>
+                        <div class="note-row" style="flex-direction:column;">
+                            <label style="font-weight:700; margin-bottom:6px;">Plan / Tindak Lanjut</label>
+                            <textarea name="plan" rows="3" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; resize:vertical;"></textarea>
+                        </div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button type="submit" class="btn-submit" style="background:#2e7d32; color:#fff; border:none;">Simpan Catatan</button>
+                            <a href="?page=kasir&no_antrian=<?= urlencode($_GET['no_antrian']) ?>&nama=<?= urlencode($nama_pasien) ?>" class="btn-submit" style="background:#2563eb; color:#fff; text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Lanjut ke Kasir</a>
+                        </div>
+                    </div>
                 </form>
             </div>
             <?php endif; ?>
@@ -854,25 +886,157 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                 </div>
 
                 <div id="riwayat_kunjungan" class="tab-panel">
-                    <div class="card"><div class="empty-tab-view"><i class="fa-solid fa-clock-rotate-left"></i>Data Riwayat Kunjungan Pasien (Dinamis dari Supabase)</div></div>
+                    <div class="card">
+                        <div class="card-header"><h3>Riwayat Kunjungan</h3></div>
+                        <?php if (!empty($emr_history)): ?>
+                        <div class="history-list" style="padding: 16px; display:grid; gap:12px;">
+                            <?php foreach ($emr_history as $rh): ?>
+                            <div class="history-item" style="border:1px solid #e5e7eb; border-radius:12px; padding:14px;">
+                                <div style="display:flex; justify-content:space-between; gap:12px; margin-bottom:8px;">
+                                    <strong><?= htmlspecialchars($rh['no_kunjungan']) ?></strong>
+                                    <span style="font-size:12px; color:#6b7280;"><?= htmlspecialchars($rh['tanggal']) ?></span>
+                                </div>
+                                <div style="font-size:13px; color:#374151;"><strong>Keluhan:</strong> <?= htmlspecialchars($rh['subjective']) ?></div>
+                                <div style="font-size:13px; color:#374151;"><strong>Diagnosis:</strong> <?= htmlspecialchars($rh['assessment']) ?></div>
+                                <div style="font-size:13px; color:#374151;"><strong>Rencana:</strong> <?= htmlspecialchars($rh['plan']) ?></div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php else: ?>
+                        <div class="empty-tab-view"><i class="fa-solid fa-clock-rotate-left"></i>Belum ada riwayat kunjungan pasien.</div>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <div id="pemeriksaan" class="tab-panel">
-                    <div class="card"><div class="empty-tab-view"><i class="fa-solid fa-stethoscope"></i>Form & Data Pemeriksaan Fisik</div></div>
+                    <div class="card">
+                        <div class="card-header"><h3>Form Pemeriksaan Fisik</h3></div>
+                        <form method="POST" action="?page=emr_dokter&no_antrian=<?= urlencode($_GET['no_antrian'] ?? '') ?>&nama=<?= urlencode($nama_pasien) ?>" style="padding:16px; display:grid; gap:14px;">
+                            <input type="hidden" name="action" value="simpan_emr">
+                            <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($_GET['no_antrian'] ?? '') ?>">
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Keluhan Utama</label><textarea name="subjective" rows="3" placeholder="Keluhan pasien" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></textarea></div>
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Tindakan / Pemeriksaan Objektif</label><textarea name="objective" rows="3" placeholder="Temuan objektif" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></textarea></div>
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Assessment / Diagnosa Klinik</label><textarea name="assessment" rows="3" placeholder="Hasil penilaian klinis" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></textarea></div>
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Rencana / Plan</label><textarea name="plan" rows="3" placeholder="Rencana penatalaksanaan" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></textarea></div>
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Tekanan Darah</label><input name="pemeriksaan_tekanan_darah" type="text" placeholder="120/80 mmHg" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></div>
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Berat Badan</label><input name="pemeriksaan_bb" type="text" placeholder="kg" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></div>
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Tinggi Badan</label><input name="pemeriksaan_tb" type="text" placeholder="cm" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></div>
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Pemeriksaan Fisik</label><textarea name="pemeriksaan_fisik" rows="4" placeholder="Temuan pemeriksaan fisik" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></textarea></div>
+                            <button type="submit" class="btn-submit" style="background:#2e7d32; color:#fff; border:none;">Simpan Pemeriksaan</button>
+                        </form>
+                    </div>
                 </div>
                 <div id="diagnosa" class="tab-panel">
-                    <div class="card"><div class="empty-tab-view"><i class="fa-solid fa-kit-medical"></i>Kelola Kode Diagnosa ICD-10</div></div>
+                    <div class="card">
+                        <div class="card-header"><h3>Diagnosa ICD-10</h3></div>
+                        <form method="POST" action="?page=emr_dokter&no_antrian=<?= urlencode($_GET['no_antrian'] ?? '') ?>&nama=<?= urlencode($nama_pasien) ?>" style="padding:16px; display:grid; gap:14px;">
+                            <input type="hidden" name="action" value="simpan_emr">
+                            <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($_GET['no_antrian'] ?? '') ?>">
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Kode ICD-10</label><input name="kode_icd10" type="text" placeholder="Misal: A09" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></div>
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Nama Diagnosa</label><input name="nama_diagnosa" type="text" placeholder="Misal: Gastroenteritis" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></div>
+                            <button type="submit" class="btn-submit" style="background:#2563eb; color:#fff; border:none;">Simpan Diagnosa</button>
+                        </form>
+                        <?php if (!empty($diagnosa_pasien)): ?>
+                        <div style="padding:16px; border-top:1px solid #e5e7eb;">
+                            <?php foreach ($diagnosa_pasien as $diag): ?>
+                            <div style="margin-bottom:10px; font-size:13px; color:#374151;">
+                                <strong><?= htmlspecialchars($diag['kode_icd10']) ?></strong> - <?= htmlspecialchars($diag['nama_diagnosis']) ?> <span style="color:#6b7280;">(<?= htmlspecialchars($diag['jenis_diagnosis']) ?>)</span><br>
+                                <span style="font-size:12px; color:#6b7280;"><?= htmlspecialchars($diag['waktu']) ?></span>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <div id="terapi_obat" class="tab-panel">
-                    <div class="card"><div class="empty-tab-view"><i class="fa-solid fa-pills"></i>Input Terapi dan Resep Elektronik</div></div>
+                    <div class="card">
+                        <div class="card-header"><h3>Resep & Terapi</h3></div>
+                        <form method="POST" action="?page=emr_dokter&no_antrian=<?= urlencode($_GET['no_antrian'] ?? '') ?>&nama=<?= urlencode($nama_pasien) ?>" style="padding:16px; display:grid; gap:14px;">
+                            <input type="hidden" name="action" value="simpan_emr">
+                            <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($_GET['no_antrian'] ?? '') ?>">
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Nama Obat / Terapi</label><input name="terapi_nama" type="text" placeholder="Nama obat atau terapi" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></div>
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Dosis / Aturan Pakai</label><textarea name="terapi_aturan" rows="3" placeholder="Aturan pemakaian" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></textarea></div>
+                            <button type="submit" class="btn-submit" style="background:#16a34a; color:#fff; border:none;">Simpan Resep</button>
+                        </form>
+                        <?php if (!empty($resep_pasien)): ?>
+                        <div style="padding:16px; border-top:1px solid #e5e7eb;">
+                            <?php foreach ($resep_pasien as $rsp): ?>
+                            <div style="margin-bottom:10px; font-size:13px; color:#374151;">
+                                <strong>Resep #<?= htmlspecialchars($rsp['resep_id']) ?></strong> (<?= htmlspecialchars($rsp['resep_status']) ?>)<br>
+                                <span style="font-size:12px; color:#6b7280;"><?= htmlspecialchars($rsp['waktu']) ?></span>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <div id="order" class="tab-panel">
-                    <div class="card"><div class="empty-tab-view"><i class="fa-solid fa-basket-shopping"></i>Form Order Lab / Radiologi</div></div>
+                    <div class="card">
+                        <div class="card-header"><h3>Order Lab / Radiologi</h3></div>
+                        <form method="POST" action="?page=emr_dokter&no_antrian=<?= urlencode($_GET['no_antrian'] ?? '') ?>&nama=<?= urlencode($nama_pasien) ?>" style="padding:16px; display:grid; gap:14px;">
+                            <input type="hidden" name="action" value="simpan_emr">
+                            <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($_GET['no_antrian'] ?? '') ?>">
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Pilih Tipe Order</label><select name="order_type" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"><option value="lab">Laboratorium</option><option value="radiologi">Radiologi</option></select></div>
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Jenis Pemeriksaan</label><input name="order_lab_jenis" type="text" placeholder="Misal: Hematologi / Rontgen" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></div>
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Catatan</label><textarea name="order_lab_catatan" rows="3" placeholder="Instruksi / catatan" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></textarea></div>
+                            <button type="submit" class="btn-submit" style="background:#2563eb; color:#fff; border:none;">Simpan Order</button>
+                        </form>
+                        <?php if ((!empty($order_lab) && is_array($order_lab)) || (!empty($order_radiologi) && is_array($order_radiologi))): ?>
+                        <div style="padding:16px; border-top:1px solid #e5e7eb; display:grid; gap:10px;">
+                            <?php if (!empty($order_lab) && is_array($order_lab)): foreach ($order_lab as $ord): ?>
+                            <div style="font-size:13px; color:#374151;"><strong>Lab:</strong> <?= htmlspecialchars($ord['jenis_pemeriksaan']) ?> <span style="color:#6b7280;">(<?= htmlspecialchars($ord['status']) ?>)</span><br><small><?= htmlspecialchars($ord['waktu']) ?></small></div>
+                            <?php endforeach; endif; ?>
+                            <?php if (!empty($order_radiologi) && is_array($order_radiologi)): foreach ($order_radiologi as $ord): ?>
+                            <div style="font-size:13px; color:#374151;"><strong>Radiologi:</strong> <?= htmlspecialchars($ord['jenis_pemeriksaan']) ?> <span style="color:#6b7280;">(<?= htmlspecialchars($ord['status']) ?>)</span><br><small><?= htmlspecialchars($ord['waktu']) ?></small></div>
+                            <?php endforeach; endif; ?>
+                        </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <div id="hasil_pemeriksaan" class="tab-panel">
-                    <div class="card"><div class="empty-tab-view"><i class="fa-solid fa-square-poll-horizontal"></i>Lembar Dokumen Hasil Laboratorium</div></div>
+                    <div class="card">
+                        <div class="card-header"><h3>Hasil Pemeriksaan</h3></div>
+                        <?php if (!empty($order_results)): ?>
+                        <div class="history-list" style="padding:16px; display:grid; gap:12px;">
+                            <?php foreach ($order_results as $res): ?>
+                            <div style="border:1px solid #e5e7eb; border-radius:12px; padding:14px;">
+                                <div style="font-size:13px; color:#374151;"><strong><?= htmlspecialchars($res['parameter']) ?></strong>: <?= htmlspecialchars($res['nilai']) ?> <?= htmlspecialchars($res['satuan']) ?></div>
+                                <div style="font-size:12px; color:#6b7280;">Referensi: <?= htmlspecialchars($res['nilai_rujukan']) ?></div>
+                                <div style="font-size:12px; color:#6b7280;">Pemeriksaan: <?= htmlspecialchars($res['jenis_pemeriksaan']) ?> · <?= htmlspecialchars($res['tanggal']) ?></div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php else: ?>
+                        <div class="empty-tab-view"><i class="fa-solid fa-square-poll-horizontal"></i>Belum ada hasil pemeriksaan yang tersedia.</div>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <div id="dokumen" class="tab-panel">
-                    <div class="card"><div class="empty-tab-view"><i class="fa-solid fa-folder-open"></i>Berkas Lampiran Penjamin / Surat Pengantar</div></div>
+                    <div class="card">
+                        <div class="card-header"><h3>Dokumen & Surat Rujukan</h3></div>
+                        <form method="POST" action="?page=emr_dokter&no_antrian=<?= urlencode($_GET['no_antrian'] ?? '') ?>&nama=<?= urlencode($nama_pasien) ?>" style="padding:16px; display:grid; gap:14px;">
+                            <input type="hidden" name="action" value="simpan_emr">
+                            <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($_GET['no_antrian'] ?? '') ?>">
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Fasilitas Tujuan</label><input name="rujukan_faskes" type="text" placeholder="Nama fasilitas tujuan" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></div>
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Poli Tujuan</label><input name="rujukan_poli" type="text" placeholder="Poli tujuan" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></div>
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Alasan Rujukan</label><textarea name="rujukan_alasan" rows="3" placeholder="Alasan rujukan" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></textarea></div>
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">No. Rujukan BPJS (opsional)</label><input name="rujukan_bpjs" type="text" placeholder="No. rujukan BPJS" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></div>
+                            <div class="note-row" style="flex-direction:column;"><label style="font-weight:700; margin-bottom:6px;">Tanggal Rujukan</label><input name="rujukan_tanggal" type="date" value="<?= date('Y-m-d') ?>" style="padding:10px; border:1px solid #d1d5db; border-radius:8px;"></div>
+                            <button type="submit" class="btn-submit" style="background:#0f766e; color:#fff; border:none;">Simpan Rujukan</button>
+                        </form>
+                        <?php if (!empty($surat_rujukan)): ?>
+                        <div class="history-list" style="padding:16px; display:grid; gap:12px;">
+                            <?php foreach ($surat_rujukan as $sr): ?>
+                            <div style="border:1px solid #e5e7eb; border-radius:12px; padding:14px;">
+                                <div style="font-size:13px; color:#374151;"><strong><?= htmlspecialchars($sr['faskes_tujuan']) ?></strong> - <?= htmlspecialchars($sr['poli_tujuan']) ?></div>
+                                <div style="font-size:12px; color:#6b7280;">Tanggal Rujukan: <?= htmlspecialchars($sr['tanggal']) ?></div>
+                                <div style="font-size:12px; color:#374151;">Alasan: <?= htmlspecialchars($sr['alasan_rujukan']) ?></div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php else: ?>
+                        <div class="empty-tab-view"><i class="fa-solid fa-folder-open"></i>Belum ada surat rujukan atau dokumen terlampir.</div>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
 
@@ -2178,6 +2342,14 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
             $telepon,
             $penjamin,
             $dokter,
+            $emr_pasien,
+            $resep_pasien,
+            $emr_history,
+            $diagnosa_pasien,
+            $order_lab,
+            $order_radiologi,
+            $order_results,
+            $surat_rujukan,
             $poli
         ); ?>
         <footer>
