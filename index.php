@@ -18,7 +18,7 @@ require_once __DIR__ . '/simrs_data.php';
 // ============================================================
 // 9. FUNGSI RENDER KONTEN
 // ============================================================
-function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $stats_antrian, $antrian, $sedang_dilayani, $status_poli, $info_hari_ini, $riwayat_pendaftaran, $emr_tabs, $stats_farmasi, $daftar_obat, $stok_menipis, $resep_terbaru, $detail_transaksi, $nominal_cepat, $nama_pasien, $no_rm, $nik, $tgl_lahir, $alamat, $telepon, $penjamin, $dokter, $poli) {
+function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $stats_antrian, $antrian, $sedang_dilayani, $status_poli, $info_hari_ini, $riwayat_pendaftaran, $emr_tabs, $stats_farmasi, $daftar_obat, $stok_menipis, $resep_terbaru, $detail_transaksi, $nominal_cepat, $nama_pasien, $jenis_pasien, $no_rm, $nik, $tgl_lahir, $alamat, $telepon, $penjamin, $dokter, $poli) {
     switch ($page) {
         case 'dashboard':
             // ---------- DASHBOARD ----------
@@ -2146,6 +2146,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
             $detail_transaksi,
             $nominal_cepat,
             $nama_pasien,
+            $jenis_pasien,
             $no_rm,
             $nik,
             $tgl_lahir,

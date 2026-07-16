@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'polyclinic_id' => $polyclinic_id,
                     'no_antrian' => $no_antrian_gen,
                     'tanggal' => date('Y-m-d'),
-                    'status' => 'menunggu',
+                    'status' => get_queue_db_status('menunggu'),
                     'jenis_daftar' => 'Offline'
                 ]);
             }
@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $no_antrian = trim($_POST['no_antrian'] ?? '');
         if (!empty($no_antrian)) {
             db_query("UPDATE queues SET status = :status WHERE no_antrian = :no_antrian", [
-                'status' => 'dipanggil',
+                'status' => get_queue_db_status('dipanggil'),
                 'no_antrian' => $no_antrian,
             ]);
         }
@@ -128,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $no_antrian = trim($_POST['no_antrian'] ?? '');
         if (!empty($no_antrian)) {
             db_query("UPDATE queues SET status = :status WHERE no_antrian = :no_antrian", [
-                'status' => 'dalam_pemeriksaan',
+                'status' => get_queue_db_status('dalam_pemeriksaan'),
                 'no_antrian' => $no_antrian,
             ]);
         }
@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $no_antrian = trim($_POST['no_antrian'] ?? '');
         if (!empty($no_antrian)) {
             db_query("UPDATE queues SET status = :status WHERE no_antrian = :no_antrian", [
-                'status' => 'selesai',
+                'status' => get_queue_db_status('selesai'),
                 'no_antrian' => $no_antrian,
             ]);
         }

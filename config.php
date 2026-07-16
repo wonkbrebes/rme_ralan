@@ -76,6 +76,22 @@ function get_queue_badge_class($status)
     }
 }
 
+function get_queue_db_status($status)
+{
+    switch (normalize_queue_status($status)) {
+        case 'dipanggil':
+            return 'Dipanggil';
+        case 'dalam_pemeriksaan':
+            return 'Dalam Pemeriksaan';
+        case 'selesai':
+            return 'Selesai';
+        case 'batal':
+            return 'Batal';
+        default:
+            return 'Menunggu';
+    }
+}
+
 function get_queue_priority($status)
 {
     switch (normalize_queue_status($status)) {
