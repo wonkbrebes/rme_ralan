@@ -555,6 +555,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
 
+                try {
+                    db_query("UPDATE queues SET status = :status, updated_at = CURRENT_TIMESTAMP WHERE no_antrian = :no_antrian", [
+                        'status' => get_queue_db_status('menunggu_kasir'),
+                        'no_antrian' => $no_antrian,
+                    ]);
+                } catch (Exception $e) {
+                    error_log("simpan_emr warning update status menunggu_kasir: " . $e->getMessage());
+                }
+
                 $msg_success = "Catatan EMR / SOAP untuk pasien berhasil disimpan!";
             } catch (Exception $e) {
                 error_log("simpan_emr error: " . $e->getMessage());

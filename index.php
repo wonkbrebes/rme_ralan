@@ -20,6 +20,7 @@ require_once __DIR__ . '/simrs_data.php';
 // 9. FUNGSI RENDER KONTEN
 // ============================================================
 function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $stats_antrian, $antrian, $sedang_dilayani, $status_poli, $info_hari_ini, $riwayat_pendaftaran, $emr_tabs, $stats_farmasi, $daftar_obat, $stok_menipis, $resep_terbaru, $detail_transaksi, $nominal_cepat, $nama_pasien, $jenis_pasien, $no_rm, $nik, $tgl_lahir, $alamat, $telepon, $penjamin, $dokter, $emr_pasien, $resep_pasien, $emr_history, $diagnosa_pasien, $order_lab, $order_radiologi, $order_results, $surat_rujukan, $poli) {
+    global $pasien_selesai_emr;
     switch ($page) {
         case 'dashboard':
             // ---------- DASHBOARD ----------
@@ -1293,17 +1294,70 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
 
         case 'kasir':
             // ---------- HALAMAN KASIR ----------
+            global $pasien_selesai_emr;
+            $no_antrian_active = trim($_GET['no_antrian'] ?? '');
             ?>
-            <section class="simulasi-box">
-                <span>💡 Pilih Pasien dari Antrian:</span>
-                <?php if (!empty($antrian)): ?>
-                <?php foreach (array_slice($antrian, 0, 3) as $qa): ?>
-                    <a href="?page=kasir&no_antrian=<?= urlencode($qa['no']) ?>&nama=<?= urlencode($qa['nama']) ?>" class="btn-sim">Pasien: <?= htmlspecialchars($qa['nama']) ?></a>
-                <?php endforeach; ?>
+            <?php if (!empty($pasien_selesai_emr) && count($pasien_selesai_emr) > 0): ?>
+            <div class="emr-ready-banner" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #93c5fd; border-left: 5px solid #2563eb; padding: 14px 20px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 6px rgba(37,99,235,0.08);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; background: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; flex-shrink: 0;">
+                        <i class="fa-solid fa-bell fa-shake"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #1e40af;">Perhatian: Ada <?= count($pasien_selesai_emr) ?> Pasien Selesai EMR Siap Pembayaran Kasir</h4>
+                        <p style="margin: 2px 0 0; font-size: 12px; color: #3b82f6;">Silakan pilih dari daftar pasien di bawah untuk memproses rincian transaksi & tagihan.</p>
+                    </div>
+                </div>
+                <span style="background: #2563eb; color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(37,99,235,0.2);">
+                    <i class="fa-solid fa-user-check"></i> <?= count($pasien_selesai_emr) ?> Selesai EMR
+                </span>
+            </div>
+            <?php endif; ?>
+
+            <section class="emr-completed-section" style="background: var(--white); border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06); border-top: 4px solid #2563eb;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-clipboard-check" style="color: #2563eb; font-size: 18px;"></i>
+                        <h3 style="font-size: 15px; font-weight: 700; color: var(--gray-800); margin: 0;">Daftar Pasien Selesai EMR (Klik untuk Pilih)</h3>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <?php if (!empty($pasien_selesai_emr)): ?>
+                            <span style="font-size: 12px; font-weight: 600; background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 12px;"><i class="fa-solid fa-users"></i> <?= count($pasien_selesai_emr) ?> Pasien Siap</span>
+                        <?php endif; ?>
+                        <a href="?page=kasir" class="btn-sim" style="background:#6b7280; padding: 6px 12px; font-size: 12px; border-radius: 6px; color: white; text-decoration: none; font-weight: 600;">Kosongkan Layar</a>
+                    </div>
+                </div>
+
+                <?php if (!empty($pasien_selesai_emr)): ?>
+                    <div class="emr-patient-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">
+                        <?php foreach ($pasien_selesai_emr as $p_emr): 
+                            $is_selected = ($no_antrian_active === $p_emr['no'] || $no_rm === $p_emr['no_rm'] || strcasecmp($nama_pasien, $p_emr['nama']) === 0);
+                        ?>
+                            <a href="?page=kasir&no_antrian=<?= urlencode($p_emr['no']) ?>&nama=<?= urlencode($p_emr['nama']) ?>" class="emr-patient-card-item" style="display: flex; flex-direction: column; justify-content: space-between; padding: 12px 14px; border: 1.5px solid <?= $is_selected ? '#2563eb' : '#e2e8f0' ?>; background: <?= $is_selected ? '#eff6ff' : '#ffffff' ?>; border-radius: 10px; text-decoration: none; transition: all 0.2s ease; position: relative;">
+                                <?php if ($is_selected): ?>
+                                    <div style="position: absolute; top: -8px; right: 10px; background: #2563eb; color: white; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px;">Sedang Diproses</div>
+                                <?php endif; ?>
+                                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
+                                    <div>
+                                        <strong style="font-size: 13.5px; color: var(--gray-800); display: block; line-height: 1.3;"><?= htmlspecialchars($p_emr['nama']) ?></strong>
+                                        <span style="font-size: 11.5px; color: var(--gray-400);"><?= htmlspecialchars($p_emr['no']) ?> • RM: <?= htmlspecialchars($p_emr['no_rm']) ?></span>
+                                    </div>
+                                    <span style="font-size: 10.5px; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 6px; white-space: nowrap; border: 1px solid #7dd3fc;"><i class="fa-solid fa-check"></i> Selesai EMR</span>
+                                </div>
+                                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: var(--gray-600); border-top: 1px dashed var(--gray-200); padding-top: 8px;">
+                                    <span><i class="fa-solid fa-stethoscope" style="color: var(--green-primary);"></i> <?= htmlspecialchars($p_emr['poli']) ?></span>
+                                    <span style="color: #2563eb; font-weight: 600;"><i class="fa-solid fa-arrow-right-long"></i> Pilih Kasir</span>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
                 <?php else: ?>
-                    <span style="font-size:12px; color:var(--gray-600);">Belum ada pasien antrian</span>
+                    <div style="padding: 24px; text-align: center; background: var(--gray-50); border: 1px dashed var(--gray-300); border-radius: 8px; color: var(--gray-600);">
+                        <i class="fa-solid fa-clipboard-check" style="font-size: 28px; color: var(--gray-400); margin-bottom: 8px; display: block;"></i>
+                        <p style="font-size: 13px; font-weight: 600; margin: 0;">Belum ada pasien yang selesai pemeriksaan EMR saat ini.</p>
+                        <span style="font-size: 11.5px; color: var(--gray-400);">Pasien akan otomatis muncul sebagai daftar di sini begitu dokter menyimpan catatan EMR (SOAP).</span>
+                    </div>
                 <?php endif; ?>
-                <a href="?page=kasir" class="btn-sim" style="background:#6b7280;">Kosongkan Layar</a>
             </section>
 
             <section class="search-patient-card">
@@ -1738,6 +1792,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
         .badge-dilayani  { background: #dcfce7; color: #15803d; }
         .badge-menunggu  { background: #fef9c3; color: #a16207; }
         .badge-selesai   { background: #e0e7ff; color: #3730a3; }
+        .badge-menunggu-kasir { background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; font-weight: 600; }
 
         .btn-detail {
             padding: 5px 14px;
@@ -2321,9 +2376,16 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
             <p class="breadcrumb">Front Office &rsaquo; <span><?= htmlspecialchars($page_title) ?></span></p>
         </div>
         <div class="topbar-right">
-            <button class="icon-btn">
-                <i class="fa-solid fa-bell"></i>
-                <span class="badge">3</span>
+            <?php 
+            $notif_emr_cnt = !empty($pasien_selesai_emr) ? count($pasien_selesai_emr) : 0;
+            ?>
+            <button class="icon-btn" title="<?= $notif_emr_cnt > 0 ? $notif_emr_cnt . ' Pasien Selesai EMR Menunggu Kasir' : 'Tidak ada notifikasi baru' ?>" onclick="if(<?= $notif_emr_cnt ?> > 0) window.location.href='?page=kasir'">
+                <i class="fa-solid fa-bell <?= $notif_emr_cnt > 0 ? 'fa-shake' : '' ?>" style="<?= $notif_emr_cnt > 0 ? 'color: #2563eb;' : '' ?>"></i>
+                <?php if ($notif_emr_cnt > 0): ?>
+                <span class="badge" style="background: #ef4444; color: white; font-weight: bold;"><?= $notif_emr_cnt ?></span>
+                <?php else: ?>
+                <span class="badge">0</span>
+                <?php endif; ?>
             </button>
             <button class="icon-btn"><i class="fa-solid fa-gear"></i></button>
             <div class="user-info">

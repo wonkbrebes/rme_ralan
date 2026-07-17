@@ -35,6 +35,7 @@ $nominal_cepat = ['100.000', '200.000', '500.000', 'Pas Tagihan'];
 
 // 2. DATA FALLBACK (Digunakan HANYA jika koneksi DB gagal)
 $antrian = [];
+$pasien_selesai_emr = [];
 $stats_antrian = ['total' => 0, 'dilayani' => 0, 'rata_tunggu' => 0, 'selesai' => 0];
 $stats = &$stats_antrian;
 $sedang_dilayani = ['no' => '-', 'nama' => '-', 'poli' => '-', 'estimasi' => '-', 'status' => '-'];
@@ -196,6 +197,61 @@ if (function_exists('db_select')) {
                             'status_label' => get_queue_status_label($status_key),
                             'badge_class'  => get_queue_badge_class($status_key),
                         ];
+                    }
+                }
+
+                // Query pasien selesai EMR (siap dibayar di Kasir)
+                $pasien_selesai_emr = [];
+                try {
+                    $rows_selesai_emr = db_select("
+                        SELECT DISTINCT q.id as queue_id, q.no_antrian, q.status as q_status, p.id as patient_id, p.no_rm, p.nama_lengkap, pol.nama_poli, COALESCE(TO_CHAR(q.updated_at AT TIME ZONE 'Asia/Jakarta', 'HH24:MI'), TO_CHAR(q.created_at AT TIME ZONE 'Asia/Jakarta', 'HH24:MI')) as waktu
+                        FROM queues q
+                        JOIN patients p ON q.patient_id = p.id
+                        JOIN polyclinics pol ON q.polyclinic_id = pol.id
+                        LEFT JOIN emr_notes e ON (e.queue_id = q.id OR e.no_antrian = q.no_antrian)
+                        LEFT JOIN visits v ON v.queue_id = q.id
+                        LEFT JOIN rekam_medis rm ON rm.kunjungan_id = v.id
+                        WHERE q.tanggal = :today 
+                          AND LOWER(q.status) != 'selesai' 
+                          AND LOWER(q.status) != 'batal'
+                          AND (
+                              LOWER(q.status) = 'menunggu kasir' 
+                              OR LOWER(q.status) = 'selesai diperiksa'
+                              OR LOWER(q.status) = 'selesai emr'
+                              OR e.id IS NOT NULL 
+                              OR rm.rm_id IS NOT NULL
+                          )
+                        ORDER BY q.id DESC
+                    ", ['today' => $today_wib]);
+
+                    if (is_array($rows_selesai_emr)) {
+                        foreach ($rows_selesai_emr as $rse) {
+                            $pasien_selesai_emr[] = [
+                                'no' => $rse['no_antrian'],
+                                'nama' => $rse['nama_lengkap'],
+                                'no_rm' => $rse['no_rm'],
+                                'poli' => $rse['nama_poli'],
+                                'waktu' => $rse['waktu'] ?: '-',
+                                'status' => $rse['q_status']
+                            ];
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log("simrs_data warning load pasien_selesai_emr: " . $e->getMessage());
+                }
+                // Fallback dari array antrian jika query di atas kosong
+                if (empty($pasien_selesai_emr) && !empty($antrian)) {
+                    foreach ($antrian as $a) {
+                        if (normalize_queue_status($a['status'] ?? '') === 'menunggu_kasir') {
+                            $pasien_selesai_emr[] = [
+                                'no' => $a['no'] ?? '-',
+                                'nama' => $a['nama'] ?? '-',
+                                'no_rm' => '-',
+                                'poli' => $a['poli'] ?? '-',
+                                'waktu' => $a['estimasi'] ?? '-',
+                                'status' => $a['status'] ?? 'Menunggu Kasir'
+                            ];
+                        }
                     }
                 }
 

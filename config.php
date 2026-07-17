@@ -59,6 +59,11 @@ function normalize_queue_status($status)
         'dalam_pemeriksaan' => 'dalam_pemeriksaan',
         'sedang dilayani' => 'dipanggil',
         'dilayani' => 'dipanggil',
+        'menunggu kasir' => 'menunggu_kasir',
+        'menunggu_kasir' => 'menunggu_kasir',
+        'selesai emr' => 'menunggu_kasir',
+        'selesai diperiksa' => 'menunggu_kasir',
+        'selesai_diperiksa' => 'menunggu_kasir',
         'selesai' => 'selesai',
         'batal' => 'batal',
         'dibatalkan' => 'batal',
@@ -75,6 +80,8 @@ function get_queue_status_label($status)
             return 'Dipanggil';
         case 'dalam_pemeriksaan':
             return 'Sedang Dilayani';
+        case 'menunggu_kasir':
+            return 'Selesai EMR (Menunggu Kasir)';
         case 'selesai':
             return 'Selesai';
         case 'batal':
@@ -90,6 +97,8 @@ function get_queue_badge_class($status)
         case 'dipanggil':
         case 'dalam_pemeriksaan':
             return 'badge-dipanggil';
+        case 'menunggu_kasir':
+            return 'badge-menunggu-kasir';
         case 'selesai':
             return 'badge-selesai';
         case 'batal':
@@ -106,6 +115,8 @@ function get_queue_db_status($status)
             return 'Dipanggil';
         case 'dalam_pemeriksaan':
             return 'Dalam Pemeriksaan';
+        case 'menunggu_kasir':
+            return 'Menunggu Kasir';
         case 'selesai':
             return 'Selesai';
         case 'batal':
@@ -122,14 +133,16 @@ function get_queue_priority($status)
             return 1;
         case 'dalam_pemeriksaan':
             return 2;
+        case 'menunggu_kasir':
+            return 3;
         case 'menunggu':
-            return 3;
-        case 'selesai':
             return 4;
-        case 'batal':
+        case 'selesai':
             return 5;
+        case 'batal':
+            return 6;
         default:
-            return 3;
+            return 4;
     }
 }
 
