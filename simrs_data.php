@@ -108,7 +108,7 @@ if (function_exists('db_select')) {
         $daftar_polyclinics = db_select("SELECT id, kode_poli, nama_poli FROM polyclinics WHERE is_active = true ORDER BY nama_poli");
         $db_connected = true;
     } catch (Exception $e) {
-        // Fallback: form akan tampil tanpa data dinamis
+        error_log("simrs_data warning load polyclinics: " . $e->getMessage());
     }
 
     if ($db_connected) {
@@ -303,7 +303,7 @@ if (function_exists('db_select')) {
                 ];
             }
         } catch (Exception $e) {
-            // Fallback aman ke data default (sudah di-set di atas)
+            error_log("simrs_data warning load antrian/pendaftaran: " . $e->getMessage());
         }
 
         // ============================================================
@@ -322,6 +322,7 @@ if (function_exists('db_select')) {
                 $grafik_7_hari[] = $row_count ? intval($row_count['cnt']) : 0;
             }
         } catch (Exception $e) {
+            error_log("simrs_data warning load grafik 7 hari: " . $e->getMessage());
             $grafik_7_hari = [0, 0, 0, 0, 0, 0, 0];
             $grafik_7_labels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
         }
@@ -407,11 +408,11 @@ if (function_exists('db_select')) {
                     }
                 }
             } catch (Exception $e) {
-                // Resep table mungkin belum ada data, abaikan
+                error_log("simrs_data warning load resep terbaru: " . $e->getMessage());
             }
 
         } catch (Exception $e) {
-            // Farmasi fallback sudah di-set di atas
+            error_log("simrs_data warning load farmasi: " . $e->getMessage());
         }
 
         // ============================================================
@@ -468,7 +469,7 @@ if (function_exists('db_select')) {
                     $jenis_pasien = $q_row['jenis_pasien'] ?: '-';
                 }
             } catch (Exception $e) {
-                // Gagal query, tetap default
+                error_log("simrs_data warning cari pasien by antrian/id: " . $e->getMessage());
             }
         }
 
@@ -497,6 +498,7 @@ if (function_exists('db_select')) {
                     }
                 }
             } catch (Exception $e) {
+                error_log("simrs_data warning cari pasien keyword: " . $e->getMessage());
                 if (!defined('AJAX_REQUEST')) {
                     echo "<script>alert('Gagal mencari pasien: " . addslashes($e->getMessage()) . "');</script>";
                 }
@@ -517,12 +519,16 @@ if (function_exists('db_select')) {
                         $emr_pasien = $notes_rows;
                     }
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+                error_log("simrs_data warning load EMR notes: " . $e->getMessage());
+            }
 
             try {
                 $rsp_rows = db_select("SELECT r.id as resep_id, r.status as resep_status, TO_CHAR(r.created_at AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY HH24:MI') as waktu FROM resep r JOIN rekam_medis rm ON r.rm_id = rm.rm_id JOIN visits v ON rm.kunjungan_id = v.kunjungan_id JOIN patients p ON v.pasien_id = p.id WHERE p.no_rm = :rm ORDER BY r.created_at DESC LIMIT 5", ['rm' => $no_rm]);
                 if (is_array($rsp_rows)) $resep_pasien = $rsp_rows;
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+                error_log("simrs_data warning load resep pasien: " . $e->getMessage());
+            }
 
             try {
                 $tag_rows = db_select("SELECT t.id, t.nama_layanan, t.biaya, t.jumlah, t.subtotal FROM transaksi_detail t JOIN transaksi tr ON t.transaksi_id = tr.id JOIN visits v ON tr.kunjungan_id = v.kunjungan_id JOIN patients p ON v.pasien_id = p.id WHERE p.no_rm = :rm ORDER BY t.id ASC", ['rm' => $no_rm]);
@@ -546,7 +552,9 @@ if (function_exists('db_select')) {
                         ];
                     }
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+                error_log("simrs_data warning load transaksi detail: " . $e->getMessage());
+            }
 
             try {
                 $history_rows = db_select("SELECT v.no_kunjungan, TO_CHAR(v.tanggal_kunjungan AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY') as tanggal, rm.subjective, rm.assessment, rm.plan, rm.pemeriksaan_fisik FROM visits v LEFT JOIN rekam_medis rm ON v.kunjungan_id = rm.kunjungan_id WHERE v.pasien_id = (SELECT id FROM patients WHERE no_rm = :rm LIMIT 1) ORDER BY v.tanggal_kunjungan DESC LIMIT 8", ['rm' => $no_rm]);
@@ -562,42 +570,54 @@ if (function_exists('db_select')) {
                         ];
                     }
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+                error_log("simrs_data warning load history: " . $e->getMessage());
+            }
 
             try {
                 $diag_rows = db_select("SELECT rd.kode_icd10, rd.nama_diagnosis, rd.jenis_diagnosis, TO_CHAR(rd.created_at AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY HH24:MI') as waktu FROM rm_diagnoses rd JOIN rekam_medis rm ON rd.rm_id = rm.rm_id JOIN visits v ON rm.kunjungan_id = v.kunjungan_id JOIN patients p ON v.pasien_id = p.id WHERE p.no_rm = :rm ORDER BY rd.created_at DESC LIMIT 10", ['rm' => $no_rm]);
                 if (is_array($diag_rows)) {
                     $diagnosa_pasien = $diag_rows;
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+                error_log("simrs_data warning load diagnosa pasien: " . $e->getMessage());
+            }
 
             try {
                 $order_lab_rows = db_select("SELECT ol.id, ol.jenis_pemeriksaan, ol.catatan, ol.status, TO_CHAR(ol.created_at AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY HH24:MI') as waktu FROM order_lab ol JOIN rekam_medis rm ON ol.rm_id = rm.rm_id JOIN visits v ON ol.kunjungan_id = v.kunjungan_id JOIN patients p ON v.pasien_id = p.id WHERE p.no_rm = :rm ORDER BY ol.created_at DESC LIMIT 8", ['rm' => $no_rm]);
                 if (is_array($order_lab_rows)) {
                     $order_lab = $order_lab_rows;
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+                error_log("simrs_data warning load order lab: " . $e->getMessage());
+            }
 
             try {
                 $order_rad_rows = db_select("SELECT orad.id, orad.jenis_pemeriksaan, orad.catatan, orad.status, TO_CHAR(orad.created_at AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY HH24:MI') as waktu FROM order_radiologi orad JOIN rekam_medis rm ON orad.rm_id = rm.rm_id JOIN visits v ON orad.kunjungan_id = v.kunjungan_id JOIN patients p ON v.pasien_id = p.id WHERE p.no_rm = :rm ORDER BY orad.created_at DESC LIMIT 8", ['rm' => $no_rm]);
                 if (is_array($order_rad_rows)) {
                     $order_radiologi = $order_rad_rows;
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+                error_log("simrs_data warning load order radiologi: " . $e->getMessage());
+            }
 
             try {
                 $results_rows = db_select("SELECT olh.id, olh.parameter, olh.nilai, olh.satuan, olh.nilai_rujukan, olh.keterangan, TO_CHAR(ol.created_at AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY') as tanggal, ol.jenis_pemeriksaan FROM order_lab_hasil olh JOIN order_lab ol ON olh.order_lab_id = ol.id JOIN rekam_medis rm ON ol.rm_id = rm.rm_id JOIN visits v ON ol.kunjungan_id = v.kunjungan_id JOIN patients p ON v.pasien_id = p.id WHERE p.no_rm = :rm ORDER BY olh.created_at DESC LIMIT 12", ['rm' => $no_rm]);
                 if (is_array($results_rows)) {
                     $order_results = $results_rows;
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+                error_log("simrs_data warning load lab results: " . $e->getMessage());
+            }
 
             try {
                 $ref_rows = db_select("SELECT sr.id, sr.faskes_tujuan, sr.poli_tujuan, sr.alasan_rujukan, sr.no_rujukan_bpjs, TO_CHAR(sr.tanggal_rujukan, 'DD Mon YYYY') as tanggal, TO_CHAR(sr.created_at AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY HH24:MI') as waktu FROM surat_rujukan sr JOIN rekam_medis rm ON sr.rm_id = rm.rm_id JOIN visits v ON rm.kunjungan_id = v.kunjungan_id JOIN patients p ON v.pasien_id = p.id WHERE p.no_rm = :rm ORDER BY sr.created_at DESC LIMIT 6", ['rm' => $no_rm]);
                 if (is_array($ref_rows)) {
                     $surat_rujukan = $ref_rows;
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+                error_log("simrs_data warning load surat rujukan: " . $e->getMessage());
+            }
         }
 
     } // end if ($db_connected)

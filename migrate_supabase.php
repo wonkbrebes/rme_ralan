@@ -331,6 +331,43 @@ echo "\n=========================================================\n";
 echo "  MIGRASI TABEL SELESAI!                                 \n";
 echo "=========================================================\n\n";
 
+echo "[ALTER] Memeriksa & menambahkan kolom baru pada tabel eksisting...\n";
+$alter_queries = [
+    "queues (jenis_daftar)" => "ALTER TABLE queues ADD COLUMN IF NOT EXISTS jenis_daftar VARCHAR(20) DEFAULT 'Offline'",
+    "queues (dipanggil_at)" => "ALTER TABLE queues ADD COLUMN IF NOT EXISTS dipanggil_at TIMESTAMP WITH TIME ZONE NULL",
+    "queues (mulai_at)" => "ALTER TABLE queues ADD COLUMN IF NOT EXISTS mulai_at TIMESTAMP WITH TIME ZONE NULL",
+    "queues (selesai_at)" => "ALTER TABLE queues ADD COLUMN IF NOT EXISTS selesai_at TIMESTAMP WITH TIME ZONE NULL",
+    "queues (created_at)" => "ALTER TABLE queues ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP",
+    "queues (updated_at)" => "ALTER TABLE queues ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP",
+    "patients (satusehat_patient_id)" => "ALTER TABLE patients ADD COLUMN IF NOT EXISTS satusehat_patient_id VARCHAR(100) NULL",
+    "patients (gol_darah)" => "ALTER TABLE patients ADD COLUMN IF NOT EXISTS gol_darah VARCHAR(5) NULL",
+    "patients (jenis_pasien)" => "ALTER TABLE patients ADD COLUMN IF NOT EXISTS jenis_pasien VARCHAR(30) DEFAULT 'Umum'",
+    "patients (alergi)" => "ALTER TABLE patients ADD COLUMN IF NOT EXISTS alergi TEXT NULL",
+    "visits (registered_by)" => "ALTER TABLE visits ADD COLUMN IF NOT EXISTS registered_by BIGINT NULL REFERENCES users(id) ON DELETE SET NULL",
+    "visits (satusehat_encounter_id)" => "ALTER TABLE visits ADD COLUMN IF NOT EXISTS satusehat_encounter_id VARCHAR(100) NULL",
+    "visits (alasan_batal)" => "ALTER TABLE visits ADD COLUMN IF NOT EXISTS alasan_batal TEXT NULL",
+    "visits (jenis_pembayaran)" => "ALTER TABLE visits ADD COLUMN IF NOT EXISTS jenis_pembayaran VARCHAR(30) NULL",
+    "visits (no_sep)" => "ALTER TABLE visits ADD COLUMN IF NOT EXISTS no_sep VARCHAR(50) NULL",
+    "visits (keluhan_utama)" => "ALTER TABLE visits ADD COLUMN IF NOT EXISTS keluhan_utama TEXT NULL",
+    "rekam_medis (addendum)" => "ALTER TABLE rekam_medis ADD COLUMN IF NOT EXISTS addendum TEXT NULL",
+    "rekam_medis (satusehat_pushed_at)" => "ALTER TABLE rekam_medis ADD COLUMN IF NOT EXISTS satusehat_pushed_at TIMESTAMP WITH TIME ZONE NULL",
+    "tagihan (metode_pembayaran)" => "ALTER TABLE tagihan ADD COLUMN IF NOT EXISTS metode_pembayaran VARCHAR(50) NULL",
+    "tagihan (dibayar_at)" => "ALTER TABLE tagihan ADD COLUMN IF NOT EXISTS dibayar_at TIMESTAMP WITH TIME ZONE NULL",
+    "tagihan (status_pembayaran)" => "ALTER TABLE tagihan ADD COLUMN IF NOT EXISTS status_pembayaran VARCHAR(30) DEFAULT 'BELUM_DIBAYAR'",
+    "tagihan (total_biaya)" => "ALTER TABLE tagihan ADD COLUMN IF NOT EXISTS total_biaya NUMERIC(12, 2) DEFAULT 0",
+];
+
+foreach ($alter_queries as $desc => $alter_sql) {
+    try {
+        echo " - Memeriksa kolom $desc... ";
+        $pdo->exec($alter_sql);
+        echo "OK! ✓\n";
+    } catch (PDOException $e) {
+        echo "SKIP (" . $e->getMessage() . ")\n";
+    }
+}
+echo "\n";
+
 // ===== SEED DATA: Polyclinics (Poliklinik) =====
 echo "[SEED] Mengisi data poliklinik awal...\n";
 $seed_polyclinics = [

@@ -20,6 +20,7 @@ function get_default_dokter_id() {
         $row = db_select_one("SELECT dokter_id FROM dokter ORDER BY dokter_id LIMIT 1");
         return $row ? intval($row['dokter_id']) : null;
     } catch (Exception $e) {
+        error_log("post_handler error in get_default_dokter_id: " . $e->getMessage());
         return null;
     }
 }
@@ -58,6 +59,7 @@ function create_or_get_visit_for_queue($queue_id, $subjective, $jenis_pembayaran
         $visit = db_select_one("SELECT kunjungan_id FROM visits WHERE queue_id = :qid", ['qid' => $queue_id]);
         return $visit ? intval($visit['kunjungan_id']) : null;
     } catch (Exception $e) {
+        error_log("post_handler error in create_or_get_visit_for_queue: " . $e->getMessage());
         return null;
     }
 }
@@ -89,6 +91,7 @@ function create_rekam_medis_for_visit($kunjungan_id, $dokter_id, $keluhan_utama,
         $row = db_select_one("SELECT rm_id FROM rekam_medis WHERE kunjungan_id = :kid", ['kid' => $kunjungan_id]);
         return $row ? intval($row['rm_id']) : null;
     } catch (Exception $e) {
+        error_log("post_handler error in create_rekam_medis_for_visit: " . $e->getMessage());
         return null;
     }
 }
@@ -127,6 +130,7 @@ function create_rm_diagnosa($rm_id, $kode_icd10, $nama_diagnosa, $jenis_diagnosi
         ]);
         return true;
     } catch (Exception $e) {
+        error_log("post_handler error in create_rm_diagnosa: " . $e->getMessage());
         return null;
     }
 }
@@ -154,6 +158,7 @@ function create_resep_for_rm($rm_id, $catatan) {
         $row = db_select_one("SELECT id FROM resep WHERE rm_id = :rm_id", ['rm_id' => $rm_id]);
         return $row ? intval($row['id']) : null;
     } catch (Exception $e) {
+        error_log("post_handler error in create_resep_for_rm: " . $e->getMessage());
         return null;
     }
 }
@@ -174,6 +179,7 @@ function create_order_lab_for_visit($rm_id, $kunjungan_id, $jenis_pemeriksaan, $
         $row = db_select_one("SELECT id FROM order_lab WHERE rm_id = :rm_id AND kunjungan_id = :kid ORDER BY created_at DESC LIMIT 1", ['rm_id' => $rm_id, 'kid' => $kunjungan_id]);
         return $row ? intval($row['id']) : null;
     } catch (Exception $e) {
+        error_log("post_handler error in create_order_lab_for_visit: " . $e->getMessage());
         return null;
     }
 }
@@ -194,6 +200,7 @@ function create_order_radiologi_for_visit($rm_id, $kunjungan_id, $jenis_pemeriks
         $row = db_select_one("SELECT id FROM order_radiologi WHERE rm_id = :rm_id AND kunjungan_id = :kid ORDER BY created_at DESC LIMIT 1", ['rm_id' => $rm_id, 'kid' => $kunjungan_id]);
         return $row ? intval($row['id']) : null;
     } catch (Exception $e) {
+        error_log("post_handler error in create_order_radiologi_for_visit: " . $e->getMessage());
         return null;
     }
 }
@@ -221,6 +228,7 @@ function create_surat_rujukan_for_rm($rm_id, $faskes_tujuan, $poli_tujuan, $alas
         ]);
         return true;
     } catch (Exception $e) {
+        error_log("post_handler error in create_surat_rujukan_for_rm: " . $e->getMessage());
         return null;
     }
 }
@@ -237,7 +245,7 @@ function create_tagihan_detail_table_if_missing() {
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         )");
     } catch (Exception $e) {
-        // ignore
+        error_log("post_handler warning in create_tagihan_detail_table_if_missing: " . $e->getMessage());
     }
 }
 
@@ -273,7 +281,7 @@ function create_tagihan_for_visit($kunjungan_id, $nominal, $metode_pembayaran) {
             ]);
         }
     } catch (Exception $e) {
-        // ignore if tagihan table not available
+        error_log("post_handler warning in create_tagihan_for_visit: " . $e->getMessage());
     }
 }
 
@@ -384,13 +392,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'panggil_antrian') {
         $no_antrian = trim($_POST['no_antrian'] ?? '');
         if (!empty($no_antrian)) {
-            db_query("UPDATE queues SET status = :status, dipanggil_at = COALESCE(dipanggil_at, CURRENT_TIMESTAMP) WHERE no_antrian = :no_antrian", [
-                'status' => get_queue_db_status('dipanggil'),
-                'no_antrian' => $no_antrian,
-            ]);
-            $msg_success = "Antrian nomor " . htmlspecialchars($no_antrian) . " sedang dipanggil ke poli!";
+            try {
+                db_query("UPDATE queues SET status = :status, dipanggil_at = COALESCE(dipanggil_at, CURRENT_TIMESTAMP) WHERE no_antrian = :no_antrian", [
+                    'status' => get_queue_db_status('dipanggil'),
+                    'no_antrian' => $no_antrian,
+                ]);
+                $msg_success = "Antrian nomor " . htmlspecialchars($no_antrian) . " sedang dipanggil ke poli!";
+            } catch (Exception $e) {
+                error_log("panggil_antrian error: " . $e->getMessage());
+                $msg_error = "Gagal memproses panggilan antrian: " . $e->getMessage();
+            }
         } else {
             $msg_error = "Nomor antrian tidak valid untuk panggilan.";
+        }
+    } elseif ($action === 'konfirmasi_masuk') {
+        $no_antrian = trim($_POST['no_antrian'] ?? '');
+        if (!empty($no_antrian)) {
+            try {
+                db_query("UPDATE queues SET status = :status, mulai_at = COALESCE(mulai_at, CURRENT_TIMESTAMP) WHERE no_antrian = :no_antrian", [
+                    'status' => get_queue_db_status('dalam_pemeriksaan'),
+                    'no_antrian' => $no_antrian,
+                ]);
+                $msg_success = "Antrian nomor " . htmlspecialchars($no_antrian) . " telah dikonfirmasi masuk ruangan.";
+            } catch (Exception $e) {
+                error_log("konfirmasi_masuk error: " . $e->getMessage());
+                $msg_error = "Gagal konfirmasi masuk ruangan: " . $e->getMessage();
+            }
+        } else {
+            $msg_error = "Nomor antrian tidak valid untuk konfirmasi masuk.";
+        }
+    } elseif ($action === 'tunda_antrian') {
+        $no_antrian = trim($_POST['no_antrian'] ?? '');
+        if (!empty($no_antrian)) {
+            try {
+                db_query("UPDATE queues SET status = :status, dipanggil_at = NULL, mulai_at = NULL WHERE no_antrian = :no_antrian", [
+                    'status' => get_queue_db_status('menunggu'),
+                    'no_antrian' => $no_antrian,
+                ]);
+                $msg_success = "Antrian nomor " . htmlspecialchars($no_antrian) . " dikembalikan ke status menunggu.";
+            } catch (Exception $e) {
+                error_log("tunda_antrian error: " . $e->getMessage());
+                $msg_error = "Gagal menunda antrian: " . $e->getMessage();
+            }
+        } else {
+            $msg_error = "Nomor antrian tidak valid untuk ditunda.";
         }
     } elseif ($action === 'simpan_emr') {
         $no_antrian = trim($_POST['no_antrian'] ?? '');
@@ -420,96 +465,101 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $rujukan_tanggal = trim($_POST['rujukan_tanggal'] ?? date('Y-m-d'));
 
         if (!empty($no_antrian)) {
-            db_query("UPDATE queues SET status = :status, dipanggil_at = COALESCE(dipanggil_at, CURRENT_TIMESTAMP), mulai_at = COALESCE(mulai_at, CURRENT_TIMESTAMP) WHERE no_antrian = :no_antrian", [
-                'status' => get_queue_db_status('dalam_pemeriksaan'),
-                'no_antrian' => $no_antrian,
-            ]);
-
             try {
-                db_query("CREATE TABLE IF NOT EXISTS emr_notes (
-                    id BIGSERIAL PRIMARY KEY,
-                    queue_id BIGINT NOT NULL REFERENCES queues(id) ON DELETE CASCADE,
-                    no_antrian VARCHAR(20) NOT NULL,
-                    keluhan_utama TEXT NULL,
-                    subjective TEXT NULL,
-                    objective TEXT NULL,
-                    assessment TEXT NULL,
-                    plan TEXT NULL,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-                )");
-            } catch (Exception $e) {
-                // ignore
-            }
+                db_query("UPDATE queues SET status = :status, dipanggil_at = COALESCE(dipanggil_at, CURRENT_TIMESTAMP), mulai_at = COALESCE(mulai_at, CURRENT_TIMESTAMP) WHERE no_antrian = :no_antrian", [
+                    'status' => get_queue_db_status('dalam_pemeriksaan'),
+                    'no_antrian' => $no_antrian,
+                ]);
 
-            $rm_id = null;
-            $visit_id = null;
-            try {
-                $queue_row = db_select_one("SELECT q.id, q.patient_id, q.polyclinic_id, q.jenis_daftar, p.jenis_pasien FROM queues q JOIN patients p ON q.patient_id = p.id WHERE q.no_antrian = :no_antrian", ['no_antrian' => $no_antrian]);
-                if ($queue_row) {
-                    $visit_id = create_or_get_visit_for_queue($queue_row['id'], $subjective, $queue_row['jenis_pasien'], $subjective);
-                    if ($visit_id) {
-                        $dokter_id = get_default_dokter_id();
-                        if ($dokter_id) {
-                            $rm_id = create_rekam_medis_for_visit($visit_id, $dokter_id, $subjective, $subjective, $objective, $assessment, $plan, $pemeriksaan_fisik, $berat_badan, $tinggi_badan);
+                try {
+                    db_query("CREATE TABLE IF NOT EXISTS emr_notes (
+                        id BIGSERIAL PRIMARY KEY,
+                        queue_id BIGINT NOT NULL REFERENCES queues(id) ON DELETE CASCADE,
+                        no_antrian VARCHAR(20) NOT NULL,
+                        keluhan_utama TEXT NULL,
+                        subjective TEXT NULL,
+                        objective TEXT NULL,
+                        assessment TEXT NULL,
+                        plan TEXT NULL,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                    )");
+                } catch (Exception $e) {
+                    error_log("simpan_emr warning create emr_notes: " . $e->getMessage());
+                }
+
+                $rm_id = null;
+                $visit_id = null;
+                try {
+                    $queue_row = db_select_one("SELECT q.id, q.patient_id, q.polyclinic_id, q.jenis_daftar, p.jenis_pasien FROM queues q JOIN patients p ON q.patient_id = p.id WHERE q.no_antrian = :no_antrian", ['no_antrian' => $no_antrian]);
+                    if ($queue_row) {
+                        $visit_id = create_or_get_visit_for_queue($queue_row['id'], $subjective, $queue_row['jenis_pasien'], $subjective);
+                        if ($visit_id) {
+                            $dokter_id = get_default_dokter_id();
+                            if ($dokter_id) {
+                                $rm_id = create_rekam_medis_for_visit($visit_id, $dokter_id, $subjective, $subjective, $objective, $assessment, $plan, $pemeriksaan_fisik, $berat_badan, $tinggi_badan);
+                            }
                         }
                     }
+                } catch (Exception $e) {
+                    error_log("simpan_emr warning visit/rm: " . $e->getMessage());
                 }
+
+                try {
+                    $queue_row = db_select_one("SELECT id FROM queues WHERE no_antrian = :no_antrian", ['no_antrian' => $no_antrian]);
+                    if ($queue_row && ($subjective !== '' || $objective !== '' || $assessment !== '' || $plan !== '')) {
+                        db_insert('emr_notes', [
+                            'queue_id' => $queue_row['id'],
+                            'no_antrian' => $no_antrian,
+                            'keluhan_utama' => $subjective,
+                            'subjective' => $subjective,
+                            'objective' => $objective,
+                            'assessment' => $assessment,
+                            'plan' => $plan,
+                        ]);
+                    }
+                } catch (Exception $e) {
+                    error_log("simpan_emr warning insert emr_notes: " . $e->getMessage());
+                }
+
+                if ($rm_id) {
+                    try {
+                        if (!empty($kode_icd10) && !empty($nama_diagnosa)) {
+                            create_rm_diagnosa($rm_id, $kode_icd10, $nama_diagnosa);
+                        }
+                    } catch (Exception $e) {
+                        error_log("simpan_emr warning diagnosis: " . $e->getMessage());
+                    }
+
+                    try {
+                        if (!empty($terapi_nama) && !empty($terapi_aturan)) {
+                            create_resep_for_rm($rm_id, $terapi_nama . '\n' . $terapi_aturan);
+                        }
+                    } catch (Exception $e) {
+                        error_log("simpan_emr warning resep: " . $e->getMessage());
+                    }
+
+                    try {
+                        if (!empty($order_jenis)) {
+                            create_order_for_rm($rm_id, $visit_id, $order_jenis, $order_catatan, strtolower($order_type) === 'radiologi');
+                        }
+                    } catch (Exception $e) {
+                        error_log("simpan_emr warning order: " . $e->getMessage());
+                    }
+
+                    try {
+                        if (!empty($rujukan_faskes) && !empty($rujukan_poli) && !empty($rujukan_alasan)) {
+                            create_surat_rujukan_for_rm($rm_id, $rujukan_faskes, $rujukan_poli, $rujukan_alasan, $rujukan_bpjs, $rujukan_tanggal);
+                        }
+                    } catch (Exception $e) {
+                        error_log("simpan_emr warning rujukan: " . $e->getMessage());
+                    }
+                }
+
+                $msg_success = "Catatan EMR / SOAP untuk pasien berhasil disimpan!";
             } catch (Exception $e) {
-                // ignore visit/rekam_medis persistence if missing
+                error_log("simpan_emr error: " . $e->getMessage());
+                $msg_error = "Gagal menyimpan EMR: " . $e->getMessage();
             }
-
-            try {
-                $queue_row = db_select_one("SELECT id FROM queues WHERE no_antrian = :no_antrian", ['no_antrian' => $no_antrian]);
-                if ($queue_row && ($subjective !== '' || $objective !== '' || $assessment !== '' || $plan !== '')) {
-                    db_insert('emr_notes', [
-                        'queue_id' => $queue_row['id'],
-                        'no_antrian' => $no_antrian,
-                        'keluhan_utama' => $subjective,
-                        'subjective' => $subjective,
-                        'objective' => $objective,
-                        'assessment' => $assessment,
-                        'plan' => $plan,
-                    ]);
-                }
-            } catch (Exception $e) {
-                // ignore if emr_notes not available
-            }
-
-            if ($rm_id) {
-                try {
-                    if (!empty($kode_icd10) && !empty($nama_diagnosa)) {
-                        create_rm_diagnosa($rm_id, $kode_icd10, $nama_diagnosa);
-                    }
-                } catch (Exception $e) {
-                    // ignore diagnosis persistence
-                }
-
-                try {
-                    if (!empty($terapi_nama) && !empty($terapi_aturan)) {
-                        create_resep_for_rm($rm_id, $terapi_nama . '\n' . $terapi_aturan);
-                    }
-                } catch (Exception $e) {
-                    // ignore resep persistence
-                }
-
-                try {
-                    if (!empty($order_jenis)) {
-                        create_order_for_rm($rm_id, $visit_id, $order_jenis, $order_catatan, strtolower($order_type) === 'radiologi');
-                    }
-                } catch (Exception $e) {
-                    // ignore order persistence
-                }
-
-                try {
-                    if (!empty($rujukan_faskes) && !empty($rujukan_poli) && !empty($rujukan_alasan)) {
-                        create_surat_rujukan_for_rm($rm_id, $rujukan_faskes, $rujukan_poli, $rujukan_alasan, $rujukan_bpjs, $rujukan_tanggal);
-                    }
-                } catch (Exception $e) {
-                    // ignore referral persistence
-                }
-            }
-
-            $msg_success = "Catatan EMR / SOAP untuk pasien berhasil disimpan!";
         } else {
             $msg_error = "Nomor antrian tidak valid untuk menyimpan EMR.";
         }
@@ -520,24 +570,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $payment_method = trim($_POST['payment_method'] ?? 'Tunai');
 
         if (!empty($no_antrian)) {
-            db_query("UPDATE queues SET status = :status, selesai_at = CURRENT_TIMESTAMP WHERE no_antrian = :no_antrian", [
-                'status' => get_queue_db_status('selesai'),
-                'no_antrian' => $no_antrian,
-            ]);
-
             try {
-                $queue_row = db_select_one("SELECT q.id FROM queues q WHERE q.no_antrian = :no_antrian", ['no_antrian' => $no_antrian]);
-                if ($queue_row) {
-                    $visit_row = db_select_one("SELECT kunjungan_id FROM visits WHERE queue_id = :qid", ['qid' => $queue_row['id']]);
-                    if ($visit_row && !empty($visit_row['kunjungan_id'])) {
-                        create_tagihan_for_visit(intval($visit_row['kunjungan_id']), $nominal, $payment_method);
-                    }
-                }
-            } catch (Exception $e) {
-                // ignore billing persistence if missing
-            }
+                db_query("UPDATE queues SET status = :status, selesai_at = CURRENT_TIMESTAMP WHERE no_antrian = :no_antrian", [
+                    'status' => get_queue_db_status('selesai'),
+                    'no_antrian' => $no_antrian,
+                ]);
 
-            $msg_success = "Pembayaran sebesar Rp " . number_format($nominal, 0, ',', '.') . " berhasil diproses!";
+                try {
+                    $queue_row = db_select_one("SELECT q.id FROM queues q WHERE q.no_antrian = :no_antrian", ['no_antrian' => $no_antrian]);
+                    if ($queue_row) {
+                        $visit_row = db_select_one("SELECT kunjungan_id FROM visits WHERE queue_id = :qid", ['qid' => $queue_row['id']]);
+                        if ($visit_row && !empty($visit_row['kunjungan_id'])) {
+                            create_tagihan_for_visit(intval($visit_row['kunjungan_id']), $nominal, $payment_method);
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log("bayar_kasir warning tagihan: " . $e->getMessage());
+                }
+
+                $msg_success = "Pembayaran sebesar Rp " . number_format($nominal, 0, ',', '.') . " berhasil diproses!";
+            } catch (Exception $e) {
+                error_log("bayar_kasir error: " . $e->getMessage());
+                $msg_error = "Gagal memproses pembayaran kasir: " . $e->getMessage();
+            }
         } else {
             $msg_error = "Nomor antrian tidak valid untuk pembayaran kasir.";
         }

@@ -4,10 +4,11 @@
 // ============================================================
 require_once __DIR__ . '/config.php';
 
-$page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
-if ($page === 'emr') {
-    $page = 'emr_dokter';
-}
+try {
+    $page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
+    if ($page === 'emr') {
+        $page = 'emr_dokter';
+    }
 
 // HANDLE FORM SUBMISSION (POST) - Shared handler
 require_once __DIR__ . '/post_handler.php';
@@ -280,6 +281,17 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                         <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($row['no']) ?>">
                                         <button type="submit" class="btn-detail" style="text-decoration:none; display:inline-block;">Panggil</button>
                                     </form>
+                                    <?php elseif ($status_key === 'dipanggil'): ?>
+                                    <form method="POST" action="?page=antrian" style="display:inline; margin-right: 6px;">
+                                        <input type="hidden" name="action" value="konfirmasi_masuk">
+                                        <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($row['no']) ?>">
+                                        <button type="submit" class="btn-detail" style="text-decoration:none; display:inline-block;">Masuk Ruangan</button>
+                                    </form>
+                                    <form method="POST" action="?page=antrian" style="display:inline; margin-right: 6px;">
+                                        <input type="hidden" name="action" value="tunda_antrian">
+                                        <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($row['no']) ?>">
+                                        <button type="submit" class="btn-detail btn-danger" style="text-decoration:none; display:inline-block;">Kembali Menunggu</button>
+                                    </form>
                                     <?php endif; ?>
                                     <a href="?page=emr_dokter&no_antrian=<?= urlencode($row['no']) ?>&nama=<?= urlencode($row['nama']) ?>" class="btn-detail" style="text-decoration:none; display:inline-block;">Detail / Dilayani</a>
                                 </td>
@@ -323,6 +335,21 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                 <span>Estimasi selesai</span>
                                 <strong><?= htmlspecialchars($sedang_dilayani['estimasi']) ?></strong>
                             </div>
+                        </div>
+                        <div class="dilayani-actions" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:18px;">
+                            <button type="button" class="btn-detail" onclick="announceQueueNumber()" style="background:#2563eb;">Speaker</button>
+                            <?php if ($sedang_dilayani['status_key'] === 'dipanggil'): ?>
+                            <form method="POST" action="?page=antrian" style="margin:0;">
+                                <input type="hidden" name="action" value="konfirmasi_masuk">
+                                <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($sedang_dilayani['no']) ?>">
+                                <button type="submit" class="btn-detail" style="background:#16a34a;">Konfirmasi Masuk</button>
+                            </form>
+                            <form method="POST" action="?page=antrian" style="margin:0;">
+                                <input type="hidden" name="action" value="tunda_antrian">
+                                <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($sedang_dilayani['no']) ?>">
+                                <button type="submit" class="btn-detail btn-danger" style="background:#dc2626;">Kembali Menunggu</button>
+                            </form>
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -390,6 +417,22 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                         this.classList.add('active');
                     });
                 });
+
+                window.announceQueueNumber = function() {
+                    const noNode = document.querySelector('.antrian-box .no');
+                    if (!noNode) {
+                        alert('Nomor antrian belum tersedia.');
+                        return;
+                    }
+                    const nomor = noNode.textContent.trim();
+                    if (!('speechSynthesis' in window)) {
+                        alert('Browser tidak mendukung speaker announce.');
+                        return;
+                    }
+                    const utter = new SpeechSynthesisUtterance('Nomor antrian ' + nomor + ' dipersilakan menuju ruang pemeriksaan.');
+                    utter.lang = 'id-ID';
+                    window.speechSynthesis.speak(utter);
+                };
             });
             </script>
             <?php
@@ -2315,43 +2358,52 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
             <?= $msg_error ?>
         </div>
         <?php endif; ?>
-        <?php renderContent(
-            $page,
-            $stats_dashboard,
-            $antrian_terkini,
-            $distribusi,
-            $stats_antrian,
-            $antrian,
-            $sedang_dilayani,
-            $status_poli,
-            $info_hari_ini,
-            $riwayat_pendaftaran,
-            $emr_tabs,
-            $stats_farmasi,
-            $daftar_obat,
-            $stok_menipis,
-            $resep_terbaru,
-            $detail_transaksi,
-            $nominal_cepat,
-            $nama_pasien,
-            $jenis_pasien,
-            $no_rm,
-            $nik,
-            $tgl_lahir,
-            $alamat,
-            $telepon,
-            $penjamin,
-            $dokter,
-            $emr_pasien,
-            $resep_pasien,
-            $emr_history,
-            $diagnosa_pasien,
-            $order_lab,
-            $order_radiologi,
-            $order_results,
-            $surat_rujukan,
-            $poli
-        ); ?>
+        <?php
+        try {
+            renderContent(
+                $page,
+                $stats_dashboard,
+                $antrian_terkini,
+                $distribusi,
+                $stats_antrian,
+                $antrian,
+                $sedang_dilayani,
+                $status_poli,
+                $info_hari_ini,
+                $riwayat_pendaftaran,
+                $emr_tabs,
+                $stats_farmasi,
+                $daftar_obat,
+                $stok_menipis,
+                $resep_terbaru,
+                $detail_transaksi,
+                $nominal_cepat,
+                $nama_pasien,
+                $jenis_pasien,
+                $no_rm,
+                $nik,
+                $tgl_lahir,
+                $alamat,
+                $telepon,
+                $penjamin,
+                $dokter,
+                $emr_pasien,
+                $resep_pasien,
+                $emr_history,
+                $diagnosa_pasien,
+                $order_lab,
+                $order_radiologi,
+                $order_results,
+                $surat_rujukan,
+                $poli
+            );
+        } catch (Throwable $e) {
+            error_log('Render exception: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            echo '<div style="background: #fee2e2; color: #b91c1c; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #dc2626;">';
+            echo '<strong>Maaf, halaman ini gagal ditampilkan.</strong><br>Ada masalah saat merender konten. Silakan muat ulang atau kembali ke menu utama.';
+            echo '</div>';
+        }
+        ?>
         <footer>
             &copy; 2026 SIMRS. All rights reserved.
         </footer>
@@ -2431,3 +2483,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </body>
 </html>
+<?php
+} catch (Throwable $e) {
+    error_log('Unhandled exception in index.php: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    if (function_exists('renderFriendlyErrorPage')) {
+        renderFriendlyErrorPage('Terjadi Kesalahan pada Halaman', $e->getMessage());
+    } else {
+        echo '<div style="padding:20px;color:red;">Error: ' . htmlspecialchars($e->getMessage()) . '</div>';
+    }
+}
+?>

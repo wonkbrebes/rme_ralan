@@ -1,16 +1,17 @@
 <?php
-// Memuat koneksi database & sumber data terpusat
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/simrs_data.php';
+try {
+    // Memuat koneksi database & sumber data terpusat
+    require_once __DIR__ . '/config.php';
+    require_once __DIR__ . '/simrs_data.php';
 
-// Menyesuaikan active nav untuk EMR Dokter
-foreach ($nav_items as &$item) {
-    if ($item['page'] === 'emr_dokter') {
-        $item['active'] = true;
+    // Menyesuaikan active nav untuk EMR Dokter
+    foreach ($nav_items as &$item) {
+        if ($item['page'] === 'emr_dokter') {
+            $item['active'] = true;
+        }
     }
-}
-unset($item);
-?>
+    unset($item);
+?> 
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -370,9 +371,37 @@ unset($item);
                 <i class="fa-solid fa-bell"></i>
                 <span class="badge">3</span>
             </button>
-            <button class="icon-btn"><i class="fa-solid fa-gear"></i></button>
             <div class="user-info">
-<section class="patient-card">
+                <div class="user-avatar"><i class="fa-solid fa-user-doctor"></i></div>
+                <div class="user-text">
+                    <strong>Dr. Hendrawan</strong>
+                    <small>Dokter Umum</small>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="content">
+        <?php if (!empty($db_conn_error)): ?>
+        <div style="background: #fef3c7; color: #92400e; padding: 14px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #f59e0b; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 18px;"></i>
+            <span><strong>Mode Offline / Fallback:</strong> <?= htmlspecialchars($db_conn_error) ?></span>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($msg_success)): ?>
+        <div style="background: #dcfce7; color: #166534; padding: 14px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #22c55e; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-circle-check" style="font-size: 18px;"></i>
+            <?= $msg_success ?>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($msg_error)): ?>
+        <div style="background: #fee2e2; color: #b91c1c; padding: 14px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #dc2626; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-circle-exclamation" style="font-size: 18px;"></i>
+            <?= $msg_error ?>
+        </div>
+        <?php endif; ?>
+
+        <section class="patient-card">
             <div class="patient-left">
                 <div class="patient-avatar" style="background: #e2e8f0; display:flex; align-items:center; justify-content:center; font-size:32px; color:#94a3b8;"><i class="fa-solid fa-user"></i></div>
                 <div class="patient-meta">
@@ -612,3 +641,13 @@ function switchTab(event, tabId) {
 
 </body>
 </html>
+<?php
+} catch (Throwable $e) {
+    error_log('Unhandled exception in EMR_Dokter.php: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    if (function_exists('renderFriendlyErrorPage')) {
+        renderFriendlyErrorPage('Terjadi Kesalahan pada Halaman', $e->getMessage());
+    } else {
+        echo '<div style="padding:20px;color:red;">Error: ' . htmlspecialchars($e->getMessage()) . '</div>';
+    }
+}
+?>

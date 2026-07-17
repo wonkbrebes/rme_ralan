@@ -1,15 +1,16 @@
 <?php
-// Memuat koneksi database & sumber data terpusat
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/simrs_data.php';
+try {
+    // Memuat koneksi database & sumber data terpusat
+    require_once __DIR__ . '/config.php';
+    require_once __DIR__ . '/simrs_data.php';
 
-// Menyesuaikan active nav untuk Dashboard
-foreach ($nav_items as &$item) {
-    if ($item['page'] === 'dashboard') {
-        $item['active'] = true;
+    // Menyesuaikan active nav untuk Dashboard
+    foreach ($nav_items as &$item) {
+        if ($item['page'] === 'dashboard') {
+            $item['active'] = true;
+        }
     }
-}
-unset($item);
+    unset($item);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -398,6 +399,24 @@ unset($item);
     </header>
 
     <main class="content">
+        <?php if (!empty($db_conn_error)): ?>
+        <div style="background: #fef3c7; color: #92400e; padding: 14px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #f59e0b; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 18px;"></i>
+            <span><strong>Mode Offline / Fallback:</strong> <?= htmlspecialchars($db_conn_error) ?></span>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($msg_success)): ?>
+        <div style="background: #dcfce7; color: #166534; padding: 14px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #22c55e; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-circle-check" style="font-size: 18px;"></i>
+            <?= $msg_success ?>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($msg_error)): ?>
+        <div style="background: #fee2e2; color: #b91c1c; padding: 14px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #dc2626; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-circle-exclamation" style="font-size: 18px;"></i>
+            <?= $msg_error ?>
+        </div>
+        <?php endif; ?>
 
         <div class="stat-grid">
             <?php foreach ($stats_dashboard as $st): ?>
@@ -563,3 +582,13 @@ unset($item);
 
 </body>
 </html>
+<?php
+} catch (Throwable $e) {
+    error_log('Unhandled exception in Dashboard.php: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    if (function_exists('renderFriendlyErrorPage')) {
+        renderFriendlyErrorPage('Terjadi Kesalahan pada Halaman', $e->getMessage());
+    } else {
+        echo '<div style="padding:20px;color:red;">Error: ' . htmlspecialchars($e->getMessage()) . '</div>';
+    }
+}
+?>

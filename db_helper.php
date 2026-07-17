@@ -44,6 +44,7 @@ function get_db_connection() {
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             ]);
+            ensure_supabase_schema_updated($pdo);
         } catch (PDOException $e) {
             $last_error = "Koneksi Supabase Gagal: " . $e->getMessage();
             throw new Exception($last_error);
@@ -53,6 +54,67 @@ function get_db_connection() {
         throw new Exception($last_error);
     }
     return $pdo;
+}
+
+/**
+ * Otomatis menyinkronkan/memigrasi skema kolom tabel di Supabase PostgreSQL
+ * jika tabel sudah terbentuk dari versi sebelumnya namun kolom baru belum ada.
+ */
+function ensure_supabase_schema_updated($pdo) {
+    static $synced = false;
+    if ($synced || !$pdo) return;
+    $synced = true;
+
+    $alter_queries = [
+        // queues table additions
+        "ALTER TABLE queues ADD COLUMN IF NOT EXISTS jenis_daftar VARCHAR(20) DEFAULT 'Offline'",
+        "ALTER TABLE queues ADD COLUMN IF NOT EXISTS dipanggil_at TIMESTAMP WITH TIME ZONE NULL",
+        "ALTER TABLE queues ADD COLUMN IF NOT EXISTS mulai_at TIMESTAMP WITH TIME ZONE NULL",
+        "ALTER TABLE queues ADD COLUMN IF NOT EXISTS selesai_at TIMESTAMP WITH TIME ZONE NULL",
+        "ALTER TABLE queues ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP",
+        "ALTER TABLE queues ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP",
+
+        // patients table additions
+        "ALTER TABLE patients ADD COLUMN IF NOT EXISTS satusehat_patient_id VARCHAR(100) NULL",
+        "ALTER TABLE patients ADD COLUMN IF NOT EXISTS gol_darah VARCHAR(5) NULL",
+        "ALTER TABLE patients ADD COLUMN IF NOT EXISTS jenis_pasien VARCHAR(30) DEFAULT 'Umum'",
+        "ALTER TABLE patients ADD COLUMN IF NOT EXISTS alergi TEXT NULL",
+
+        // visits table additions
+        "ALTER TABLE visits ADD COLUMN IF NOT EXISTS registered_by BIGINT NULL REFERENCES users(id) ON DELETE SET NULL",
+        "ALTER TABLE visits ADD COLUMN IF NOT EXISTS satusehat_encounter_id VARCHAR(100) NULL",
+        "ALTER TABLE visits ADD COLUMN IF NOT EXISTS alasan_batal TEXT NULL",
+        "ALTER TABLE visits ADD COLUMN IF NOT EXISTS jenis_pembayaran VARCHAR(30) NULL",
+        "ALTER TABLE visits ADD COLUMN IF NOT EXISTS no_sep VARCHAR(50) NULL",
+        "ALTER TABLE visits ADD COLUMN IF NOT EXISTS keluhan_utama TEXT NULL",
+
+        // rekam_medis table additions
+        "ALTER TABLE rekam_medis ADD COLUMN IF NOT EXISTS addendum TEXT NULL",
+        "ALTER TABLE rekam_medis ADD COLUMN IF NOT EXISTS satusehat_pushed_at TIMESTAMP WITH TIME ZONE NULL",
+
+        // tagihan & tagihan_detail table additions
+        "ALTER TABLE tagihan ADD COLUMN IF NOT EXISTS metode_pembayaran VARCHAR(50) NULL",
+        "ALTER TABLE tagihan ADD COLUMN IF NOT EXISTS dibayar_at TIMESTAMP WITH TIME ZONE NULL",
+        "ALTER TABLE tagihan ADD COLUMN IF NOT EXISTS status_pembayaran VARCHAR(30) DEFAULT 'BELUM_DIBAYAR'",
+        "ALTER TABLE tagihan ADD COLUMN IF NOT EXISTS total_biaya NUMERIC(12, 2) DEFAULT 0",
+        "CREATE TABLE IF NOT EXISTS tagihan_detail (
+            id BIGSERIAL PRIMARY KEY,
+            tagihan_id BIGINT NOT NULL REFERENCES tagihan(id) ON DELETE CASCADE,
+            nama_layanan VARCHAR(255) NOT NULL,
+            biaya NUMERIC(12,2) NOT NULL,
+            jumlah INTEGER NOT NULL DEFAULT 1,
+            subtotal NUMERIC(12,2) NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        )"
+    ];
+
+    foreach ($alter_queries as $sql) {
+        try {
+            $pdo->exec($sql);
+        } catch (Throwable $e) {
+            // Abaikan jika tabel referensi belum ada atau constraint sudah ada
+        }
+    }
 }
 
 /**

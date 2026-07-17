@@ -1,19 +1,20 @@
 <?php
-require_once __DIR__ . '/config.php';
+try {
+    require_once __DIR__ . '/config.php';
 
-// HANDLE FORM SUBMISSION (POST) - Shared handler
-require_once __DIR__ . '/post_handler.php';
+    // HANDLE FORM SUBMISSION (POST) - Shared handler
+    require_once __DIR__ . '/post_handler.php';
 
-// ============================================================
-// 1. AMBIL PARAMETER HALAMAN
-// ============================================================
-$page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
-if ($page === 'emr') {
-    $page = 'emr_dokter';
-}
+    // ============================================================
+    // 1. AMBIL PARAMETER HALAMAN
+    // ============================================================
+    $page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
+    if ($page === 'emr') {
+        $page = 'emr_dokter';
+    }
 
-// Memuat semua data dan sinkronisasi real-time database terpusat
-require_once __DIR__ . '/simrs_data.php';
+    // Memuat semua data dan sinkronisasi real-time database terpusat
+    require_once __DIR__ . '/simrs_data.php';
 
 // ============================================================
 // 6. FUNGSI RENDER KONTEN
@@ -1312,6 +1313,12 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
     </header>
 
     <main class="content">
+        <?php if (!empty($db_conn_error)): ?>
+        <div style="background: #fef3c7; color: #92400e; padding: 14px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #f59e0b; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-triangle-exclamation" style="font-size: 18px;"></i>
+            <span><strong>Mode Offline / Fallback:</strong> <?= htmlspecialchars($db_conn_error) ?></span>
+        </div>
+        <?php endif; ?>
         <?php if (!empty($msg_success)): ?>
         <div style="background: #dcfce7; color: #15803d; padding: 14px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #16a34a; font-weight: 600; display: flex; align-items: center; gap: 10px;">
             <i class="fa-solid fa-circle-check" style="font-size: 18px;"></i>
@@ -1324,18 +1331,27 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
             <?= $msg_error ?>
         </div>
         <?php endif; ?>
-        <?php renderContent(
-            $page,
-            $stats_dashboard,
-            $antrian_terkini,
-            $distribusi,
-            $stats_antrian,
-            $antrian,
-            $sedang_dilayani,
-            $status_poli,
-            $info_hari_ini,
-            $riwayat_pendaftaran
-        ); ?>
+        <?php
+        try {
+            renderContent(
+                $page,
+                $stats_dashboard,
+                $antrian_terkini,
+                $distribusi,
+                $stats_antrian,
+                $antrian,
+                $sedang_dilayani,
+                $status_poli,
+                $info_hari_ini,
+                $riwayat_pendaftaran
+            );
+        } catch (Throwable $e) {
+            error_log('Render exception in Pendaftaran.php: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            echo '<div style="background: #fee2e2; color: #b91c1c; padding: 20px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #dc2626;">';
+            echo '<strong>Maaf, halaman ini gagal ditampilkan.</strong><br>Ada masalah saat merender konten. Silakan muat ulang atau kembali ke menu utama.';
+            echo '</div>';
+        }
+        ?>
         <footer>
             &copy; 2026 SIMRS. All rights reserved.
         </footer>
@@ -1344,3 +1360,13 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
 
 </body>
 </html>
+<?php
+} catch (Throwable $e) {
+    error_log('Unhandled exception in Pendaftaran.php: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+    if (function_exists('renderFriendlyErrorPage')) {
+        renderFriendlyErrorPage('Terjadi Kesalahan pada Halaman', $e->getMessage());
+    } else {
+        echo '<div style="padding:20px;color:red;">Error: ' . htmlspecialchars($e->getMessage()) . '</div>';
+    }
+}
+?>
