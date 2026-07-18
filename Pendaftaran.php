@@ -1,6 +1,10 @@
 <?php
 try {
     require_once __DIR__ . '/config.php';
+    if (isset($_GET['page']) && $_GET['page'] !== 'pendaftaran') {
+        header('Location: index.php?page=' . urlencode($_GET['page']));
+        exit;
+    }
 
     // HANDLE FORM SUBMISSION (POST) - Shared handler
     require_once __DIR__ . '/post_handler.php';
@@ -8,7 +12,7 @@ try {
     // ============================================================
     // 1. AMBIL PARAMETER HALAMAN
     // ============================================================
-    $page = isset($_GET['page']) ? $_GET['page'] : 'dashboard';
+    $page = isset($_GET['page']) ? $_GET['page'] : 'pendaftaran';
     if ($page === 'emr') {
         $page = 'emr_dokter';
     }
@@ -338,27 +342,38 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                         <input type="hidden" name="action" value="register_pasien">
                         <input type="hidden" name="existing_patient_id" id="existing_patient_id" value="">
                         <div class="form-body">
-                            <!-- Dropdown Pilih Pasien Lama -->
-                            <div class="form-section-title" style="background: #f0fdf4; color: #166534; padding: 12px 16px; border: 1px dashed #22c55e; border-radius: 8px; margin-bottom: 20px;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; width: 100%;">
-                                    <div style="flex: 1; min-width: 220px;">
-                                        <i class="fa-solid fa-user-check"></i> <b>Pilih dari Pasien Terdaftar (Pasien Lama)</b>
-                                        <div style="font-size: 12px; font-weight: normal; color: #15803d; margin-top: 4px;">Pilih pasien yang sudah pernah terdaftar agar data otomatis terisi & dibuatkan antrian hari ini.</div>
+                            <!-- Dropdown & Live Search Pilih Pasien Lama -->
+                            <div class="form-section-title" style="background: #f0fdf4; color: #166534; padding: 14px 18px; border: 1.5px dashed #22c55e; border-radius: 10px; margin-bottom: 22px; position: relative;">
+                                <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                                        <div>
+                                            <i class="fa-solid fa-user-check" style="font-size: 16px; margin-right: 6px;"></i> <b style="font-size: 15px;">Pilih dari Pasien Terdaftar (Pasien Lama - Live Search)</b>
+                                            <div style="font-size: 12px; font-weight: normal; color: #15803d; margin-top: 3px;">Ketik No. RM, NIK, atau Nama Pasien untuk pencarian cepat & otomatis mengisi formulir.</div>
+                                        </div>
+                                        <button type="button" id="btn-reset-pasien-lama" onclick="resetPasienLama()" style="display: none; background: #fee2e2; color: #dc2626; border: 1px solid #f87171; border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;"><i class="fa-solid fa-rotate-left"></i> Reset / Pasien Baru</button>
                                     </div>
-                                    <div style="flex: 1; min-width: 260px;">
-                                        <select id="select-pasien-lama" class="form-select" style="border-color: #22c55e; font-weight: 600;" onchange="pilihPasienLama(this)">
-                                            <option value="">-- Pilih Pasien Terdaftar --</option>
-                                            <?php 
-                                            global $daftar_pasien_master;
-                                            if (!empty($daftar_pasien_master)) {
-                                                foreach ($daftar_pasien_master as $pm) {
-                                                    $data_json = htmlspecialchars(json_encode($pm), ENT_QUOTES, 'UTF-8');
-                                                    echo '<option value="' . $pm['id'] . '" data-pasien="' . $data_json . '">' . htmlspecialchars($pm['no_rm'] . ' - ' . $pm['nama_lengkap'] . ' (NIK: ' . ($pm['nik'] ?? '-') . ')') . '</option>';
-                                                }
+                                    <div style="position: relative; width: 100%;">
+                                        <div id="search-box-pasien-lama" style="display: flex; align-items: center; background: #ffffff; border: 2px solid #22c55e; border-radius: 8px; padding: 8px 14px; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.12); transition: all 0.2s;">
+                                            <i class="fa-solid fa-magnifying-glass" style="color: #16a34a; font-size: 16px; margin-right: 12px;"></i>
+                                            <input type="text" id="input-live-pasien-lama" class="form-input" placeholder="🔍 Ketik No. RM (mis. RM-2026), NIK (16 digit), atau Nama Pasien..." style="border: none; outline: none; box-shadow: none; padding: 4px 0; font-size: 14px; font-weight: 600; width: 100%; background: transparent; color: #1e293b;" autocomplete="off" oninput="handleLiveSearchPasien(this.value)" onclick="handleLiveSearchPasien(this.value)">
+                                            <span id="badge-terpilih-pasien" style="display: none; background: #dcfce7; color: #166534; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 20px; border: 1px solid #86efac; white-space: nowrap;"><i class="fa-solid fa-check-circle"></i> Terpilih</span>
+                                        </div>
+                                        <!-- Hasil Pencarian -->
+                                        <div id="dropdown-pasien-results" style="display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: #ffffff; border: 1.5px solid #22c55e; border-radius: 8px; box-shadow: 0 12px 30px rgba(0,0,0,0.18); max-height: 280px; overflow-y: auto; z-index: 99999;">
+                                        </div>
+                                    </div>
+                                    <select id="select-pasien-lama" class="form-select" style="display: none;" onchange="pilihPasienLama(this)">
+                                        <option value="">-- Pilih Pasien Terdaftar --</option>
+                                        <?php 
+                                        global $daftar_polyclinics, $daftar_pasien_master, $daftar_dokter_aktif, $jadwal_dokter_list, $daftar_antrian_all;
+                                        if (!empty($daftar_pasien_master)) {
+                                            foreach ($daftar_pasien_master as $pm) {
+                                                $data_json = htmlspecialchars(json_encode($pm), ENT_QUOTES, 'UTF-8');
+                                                echo '<option value="' . $pm['id'] . '" data-pasien="' . $data_json . '">' . htmlspecialchars($pm['no_rm'] . ' - ' . $pm['nama_lengkap'] . ' (NIK: ' . ($pm['nik'] ?? '-') . ')') . '</option>';
                                             }
-                                            ?>
-                                        </select>
-                                    </div>
+                                        }
+                                        ?>
+                                    </select>
                                 </div>
                             </div>
 
@@ -427,14 +442,14 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                 </div>
                             </div>
 
-                            <!-- Pendaftaran Pelayanan -->
+                            <!-- Pendaftaran Pelayanan & Dokter Praktek -->
                             <div class="form-section-title">
-                                <i class="fa-solid fa-hospital"></i> Pendaftaran Pelayanan
+                                <i class="fa-solid fa-hospital"></i> Pendaftaran Pelayanan & Dokter Praktek
                             </div>
                             <div class="form-row-2">
                                 <div class="form-group">
                                     <label>Poliklinik Tujuan<span>*</span></label>
-                                    <select name="polyclinic_id" class="form-select" required>
+                                    <select name="polyclinic_id" id="polyclinic_id_select" class="form-select" onchange="filterDokterByPoli(this.value)" required>
                                         <option value="" disabled selected>Pilih poliklinik tujuan</option>
                                         <?php
                                         if (!empty($daftar_polyclinics)) {
@@ -442,7 +457,6 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                                 echo '<option value="' . htmlspecialchars($poli_opt['id']) . '">' . htmlspecialchars($poli_opt['nama_poli']) . '</option>';
                                             }
                                         } else {
-                                            // Fallback statis jika query gagal
                                             echo '<option value="1">Poli Umum</option>';
                                             echo '<option value="2">Poli Gigi</option>';
                                             echo '<option value="3">Poli Anak</option>';
@@ -454,6 +468,25 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                     </select>
                                 </div>
                                 <div class="form-group">
+                                    <label>Dokter Praktek Hari Ini (Spesialis / Umum)<span>*</span></label>
+                                    <select name="dokter_id" id="dokter_id_select" class="form-select" onchange="updateEstimasiBiaya(this.options[this.selectedIndex])" required>
+                                        <option value="">-- Pilih Dokter Praktek (Tarif otomatis ke Kasir) --</option>
+                                        <?php
+                                        if (!empty($daftar_dokter_aktif)) {
+                                            foreach ($daftar_dokter_aktif as $dok_opt) {
+                                                $is_sp = (stripos($dok_opt['jenis_dokter'] ?? '', 'spesialis') !== false || stripos($dok_opt['spesialisasi'] ?? '', 'spesialis') !== false || stripos($dok_opt['nama_lengkap'] ?? '', 'Sp.') !== false);
+                                                $kat = $dok_opt['jenis_dokter'] ?? ($is_sp ? 'Spesialis' : 'Umum');
+                                                $fee_dok = !empty($dok_opt['biaya_jasa']) ? floatval($dok_opt['biaya_jasa']) : ($is_sp ? 150000 : 50000);
+                                                $label_dok = htmlspecialchars($dok_opt['nama_lengkap']) . " [Kategori: $kat - Tarif: Rp " . number_format($fee_dok, 0, ',', '.') . "]";
+                                                echo '<option value="' . htmlspecialchars($dok_opt['dokter_id']) . '" data-poli="' . htmlspecialchars($dok_opt['polyclinic_id'] ?? '') . '">' . $label_dok . '</option>';
+                                            }
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row-2">
+                                <div class="form-group">
                                     <label>Jenis Pasien / Penjamin<span>*</span></label>
                                     <select name="jenis_pasien" class="form-select" required>
                                         <option value="" disabled selected>Pilih jenis pasien</option>
@@ -462,6 +495,10 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                         <option value="Asuransi Lain">Asuransi Lain</option>
                                         <option value="Gratis">Gratis</option>
                                     </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Estimasi Biaya Jasa Dokter</label>
+                                    <input type="text" id="estimasi_biaya_show" class="form-input form-input-locked" value="Rp 0 (Pilih Dokter)" readonly style="background: #f0fdf4; font-weight: 700; color: #16a34a; border-color: #86efac;">
                                 </div>
                             </div>
 
@@ -521,16 +558,60 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                         </div>
                     </form>
                     <script>
-                    function pilihPasienLama(selectObj) {
-                        const opt = selectObj.options[selectObj.selectedIndex];
-                        if (!opt || !opt.value) {
-                            document.getElementById('existing_patient_id').value = '';
-                            document.getElementById('form-pendaftaran').reset();
+                    const masterPasienList = [
+                        <?php 
+                        if (!empty($daftar_pasien_master)) {
+                            foreach ($daftar_pasien_master as $pm) {
+                                echo json_encode($pm, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) . ",";
+                            }
+                        }
+                        ?>
+                    ];
+
+                    function handleLiveSearchPasien(keyword) {
+                        const resultsDiv = document.getElementById('dropdown-pasien-results');
+                        if (!resultsDiv) return;
+                        const kw = (keyword || '').trim().toLowerCase();
+                        if (kw.length < 1) {
+                            renderPasienResults(masterPasienList.slice(0, 12));
                             return;
                         }
-                        const dataStr = opt.getAttribute('data-pasien');
-                        if (dataStr) {
-                            const p = JSON.parse(dataStr);
+                        const filtered = masterPasienList.filter(p => {
+                            const rm = (p.no_rm || '').toLowerCase();
+                            const nm = (p.nama_lengkap || '').toLowerCase();
+                            const nik = (p.nik || '').toLowerCase();
+                            const tel = (p.no_telepon || '').toLowerCase();
+                            return rm.includes(kw) || nm.includes(kw) || nik.includes(kw) || tel.includes(kw);
+                        });
+                        renderPasienResults(filtered.slice(0, 15));
+                    }
+
+                    function renderPasienResults(list) {
+                        const resultsDiv = document.getElementById('dropdown-pasien-results');
+                        if (!resultsDiv) return;
+                        if (!list || list.length === 0) {
+                            resultsDiv.innerHTML = '<div style="padding: 16px; text-align: center; color: #64748b; font-size: 13px;"><i class="fa-solid fa-user-xmark" style="font-size: 20px; display: block; margin-bottom: 6px; color: #94a3b8;"></i> Pasien tidak ditemukan dengan kata kunci tersebut.</div>';
+                            resultsDiv.style.display = 'block';
+                            return;
+                        }
+                        let html = '<div style="padding: 6px 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Daftar Pasien Cocok (' + list.length + ' hasil)</div>';
+                        list.forEach((p) => {
+                            const pJsonStr = encodeURIComponent(JSON.stringify(p));
+                            html += `<div onclick="selectLivePasien('${pJsonStr}')" style="padding: 10px 14px; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.15s; display: flex; justify-content: space-between; align-items: center;" onmouseover="this.style.background='#f0fdf4'" onmouseout="this.style.background='#ffffff'">
+                                <div>
+                                    <div style="font-weight: 700; color: #0f172a; font-size: 14px;">${p.nama_lengkap || '-'} <span style="font-size: 12px; color: #16a34a; background: #dcfce7; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${p.no_rm || '-'}</span></div>
+                                    <div style="font-size: 12px; color: #64748b; margin-top: 2px;"><i class="fa-regular fa-id-card"></i> NIK: ${p.nik || '-'} &nbsp;|&nbsp; <i class="fa-solid fa-phone"></i> Telp: ${p.no_telepon || '-'} &nbsp;|&nbsp; <i class="fa-solid fa-location-dot"></i> ${p.alamat || '-'}</div>
+                                </div>
+                                <div style="color: #22c55e; font-size: 14px;"><i class="fa-solid fa-circle-check"></i> Pilih</div>
+                            </div>`;
+                        });
+                        resultsDiv.innerHTML = html;
+                        resultsDiv.style.display = 'block';
+                    }
+
+                    function selectLivePasien(pJsonEncoded) {
+                        try {
+                            const p = JSON.parse(decodeURIComponent(pJsonEncoded));
                             document.getElementById('existing_patient_id').value = p.id || '';
                             if (document.querySelector('#form-pendaftaran input[name="nama_lengkap"]')) document.querySelector('#form-pendaftaran input[name="nama_lengkap"]').value = p.nama_lengkap || '';
                             if (document.querySelector('#form-pendaftaran input[name="nik"]')) document.querySelector('#form-pendaftaran input[name="nik"]').value = p.nik || '';
@@ -545,8 +626,58 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                                 const el = document.querySelector('#form-pendaftaran textarea[name="alamat"]') || document.querySelector('#form-pendaftaran input[name="alamat"]');
                                 el.value = p.alamat || '';
                             }
+                            
+                            const sel = document.getElementById('select-pasien-lama');
+                            if (sel) sel.value = p.id || '';
+
+                            const inputLive = document.getElementById('input-live-pasien-lama');
+                            if (inputLive) inputLive.value = `[${p.no_rm}] ${p.nama_lengkap} (NIK: ${p.nik || '-'})`;
+                            const badge = document.getElementById('badge-terpilih-pasien');
+                            if (badge) badge.style.display = 'inline-block';
+                            const btnReset = document.getElementById('btn-reset-pasien-lama');
+                            if (btnReset) btnReset.style.display = 'inline-block';
+                            const resultsDiv = document.getElementById('dropdown-pasien-results');
+                            if (resultsDiv) resultsDiv.style.display = 'none';
+
+                            if (document.querySelector('#form-pendaftaran input[name="nama_lengkap"]')) document.querySelector('#form-pendaftaran input[name="nama_lengkap"]').style.background = '#f8fafc';
+                        } catch (e) {
+                            console.error("Error selecting live pasien:", e);
                         }
                     }
+
+                    function resetPasienLama() {
+                        document.getElementById('existing_patient_id').value = '';
+                        document.getElementById('form-pendaftaran').reset();
+                        const sel = document.getElementById('select-pasien-lama');
+                        if (sel) sel.value = '';
+                        const inputLive = document.getElementById('input-live-pasien-lama');
+                        if (inputLive) inputLive.value = '';
+                        const badge = document.getElementById('badge-terpilih-pasien');
+                        if (badge) badge.style.display = 'none';
+                        const btnReset = document.getElementById('btn-reset-pasien-lama');
+                        if (btnReset) btnReset.style.display = 'none';
+                        if (document.querySelector('#form-pendaftaran input[name="nama_lengkap"]')) document.querySelector('#form-pendaftaran input[name="nama_lengkap"]').style.background = '#ffffff';
+                    }
+
+                    function pilihPasienLama(selectObj) {
+                        const opt = selectObj.options[selectObj.selectedIndex];
+                        if (!opt || !opt.value) {
+                            resetPasienLama();
+                            return;
+                        }
+                        const dataStr = opt.getAttribute('data-pasien');
+                        if (dataStr) {
+                            selectLivePasien(encodeURIComponent(dataStr));
+                        }
+                    }
+
+                    document.addEventListener('click', function(e) {
+                        const box = document.getElementById('search-box-pasien-lama');
+                        const resultsDiv = document.getElementById('dropdown-pasien-results');
+                        if (box && resultsDiv && !box.contains(e.target) && !resultsDiv.contains(e.target)) {
+                            resultsDiv.style.display = 'none';
+                        }
+                    });
                     </script>
                 </div>
 
@@ -609,20 +740,239 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                             <i class="fa-solid fa-clock-rotate-left"></i> Riwayat Pendaftaran Terakhir
                         </div>
                         <div class="history-list">
-                            <?php foreach ($riwayat_pendaftaran as $riw): ?>
-                            <div class="history-item">
-                                <div class="history-badge"><?= $riw['no'] ?></div>
-                                <div class="history-details">
-                                    <div class="history-name"><?= htmlspecialchars($riw['nama']) ?></div>
-                                    <div class="history-sub"><?= htmlspecialchars($riw['poli']) ?> &bull; <?= $riw['waktu'] ?></div>
+                            <?php if (!empty($riwayat_pendaftaran) && count($riwayat_pendaftaran) > 0): ?>
+                                <?php foreach ($riwayat_pendaftaran as $riw): ?>
+                                <div class="history-item">
+                                    <div class="history-badge"><?= htmlspecialchars($riw['no'] ?? '-') ?></div>
+                                    <div class="history-details">
+                                        <div class="history-name"><?= htmlspecialchars($riw['nama'] ?? '-') ?></div>
+                                        <div class="history-sub"><?= htmlspecialchars($riw['poli'] ?? '-') ?> &bull; <?= htmlspecialchars($riw['waktu'] ?? '-') ?></div>
+                                    </div>
                                 </div>
-                            </div>
-                            <?php endforeach; ?>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div style="text-align: center; padding: 24px 12px; color: #94a3b8; font-size: 13px;">
+                                    <i class="fa-solid fa-folder-open" style="font-size: 26px; margin-bottom: 8px; display: block; color: #cbd5e1;"></i>
+                                    Belum ada riwayat pendaftaran baru hari ini
+                                </div>
+                            <?php endif; ?>
                         </div>
-                        <button class="btn-view-all">Lihat Semua</button>
+                        <button type="button" class="btn-view-all" onclick="window.location.href='?page=antrian'">Lihat Semua Antrian</button>
                     </div>
                 </div>
             </div>
+
+            <!-- Bagian Pencarian Riwayat & Edit Data Pendaftaran Pasien -->
+            <div class="card" style="margin-top: 24px;">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h2><i class="fa-solid fa-list-check" style="color: #2e7d32; margin-right: 8px;"></i> Riwayat & Edit Data Pendaftaran Pasien</h2>
+                        <p style="font-size: 12px; color: var(--gray-400); font-weight: normal; margin-top: 2px;">Perawat, Resepsionis, atau Admisi dapat mencari dan memperbarui data pendaftaran / antrian pasien</p>
+                    </div>
+                    <div class="search-wrap" style="min-width: 280px; position: relative;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 11px; color: #9ca3af; font-size: 13px;"></i>
+                        <input type="text" id="searchRiwayatInput" placeholder="Cari Nama Pasien / No RM / Antrian..." style="width: 100%; padding: 8px 12px 8px 34px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px;" oninput="filterRiwayatTable(this.value)">
+                    </div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;" id="tableRiwayatDaftar">
+                        <thead>
+                            <tr style="background: var(--gray-50); font-size: 12px; color: var(--gray-600); border-bottom: 1px solid var(--gray-200);">
+                                <th style="padding: 12px 16px;">No. Antrian</th>
+                                <th style="padding: 12px 16px;">No. RM</th>
+                                <th style="padding: 12px 16px;">Nama Pasien</th>
+                                <th style="padding: 12px 16px;">Poliklinik</th>
+                                <th style="padding: 12px 16px;">Dokter Praktek</th>
+                                <th style="padding: 12px 16px;">Penjamin / Jenis</th>
+                                <th style="padding: 12px 16px;">Status</th>
+                                <th style="padding: 12px 16px; text-align: center;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php 
+                            $list_edit = !empty($daftar_antrian_all) ? $daftar_antrian_all : (!empty($antrian_terkini) ? $antrian_terkini : (!empty($antrian) ? $antrian : []));
+                            if (!empty($list_edit)):
+                                foreach ($list_edit as $qrow):
+                                    $q_id = $qrow['queue_id'] ?? $qrow['id'] ?? 0;
+                            ?>
+                            <tr style="border-bottom: 1px solid var(--gray-100); font-size: 13px;" class="row-riwayat">
+                                <td style="padding: 12px 16px; font-weight: 700; color: #2e7d32;"><?= htmlspecialchars($qrow['no'] ?? $qrow['no_antrian'] ?? '-') ?></td>
+                                <td style="padding: 12px 16px; color: var(--gray-600);"><?= htmlspecialchars($qrow['no_rm'] ?? '-') ?></td>
+                                <td style="padding: 12px 16px; font-weight: 600; color: var(--gray-800);" class="cell-nama"><?= htmlspecialchars($qrow['nama'] ?? $qrow['nama_lengkap'] ?? '-') ?></td>
+                                <td style="padding: 12px 16px; color: var(--gray-600);" class="cell-poli"><?= htmlspecialchars($qrow['poli'] ?? $qrow['nama_poli'] ?? '-') ?></td>
+                                <td style="padding: 12px 16px; color: var(--gray-600);"><?= htmlspecialchars($qrow['dokter'] ?? $qrow['nama_dokter'] ?? '-') ?></td>
+                                <td style="padding: 12px 16px;"><span style="padding: 2px 8px; background: #f1f5f9; border-radius: 4px; font-size: 11px; font-weight: 600; color: #475569;"><?= htmlspecialchars($qrow['jenis_pasien'] ?? 'Umum') ?></span></td>
+                                <td style="padding: 12px 16px;">
+                                    <?php 
+                                    $st_class = 'badge-menunggu';
+                                    $st_val = strtolower($qrow['status'] ?? $qrow['q_status'] ?? '');
+                                    if ($st_val === 'dipanggil' || $st_val === 'dilayani') $st_class = 'badge-dipanggil';
+                                    if ($st_val === 'selesai') $st_class = 'badge-selesai';
+                                    ?>
+                                    <span class="badge-status <?= $st_class ?>"><?= htmlspecialchars($qrow['status_label'] ?? $qrow['status'] ?? '-') ?></span>
+                                </td>
+                                <td style="padding: 12px 16px; text-align: center;">
+                                    <button type="button" class="btn-secondary" style="padding: 6px 12px; font-size: 12px; border-radius: 6px; background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; cursor: pointer;" onclick='bukaModalEdit(<?= htmlspecialchars(json_encode($qrow), ENT_QUOTES, 'UTF-8') ?>)'>
+                                        <i class="fa-solid fa-pen-to-square"></i> Edit
+                                    </button>
+                                </td>
+                            </tr>
+                            <?php endforeach;
+                            else: ?>
+                            <tr><td colspan="8" style="text-align: center; color: var(--gray-400); padding: 24px;">Belum ada data pendaftaran untuk dieksplorasi</td></tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modal Edit Pendaftaran -->
+            <div id="modalEditPendaftaran" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000; position: fixed; inset: 0; background: rgba(0,0,0,0.5);">
+                <div class="modal-content" style="max-width: 580px; width: 90%; border-radius: 14px; overflow: hidden; background: white; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; padding: 18px 22px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-pen-to-square" style="font-size: 20px; color: #fde047;"></i>
+                            <h3 style="margin: 0; font-size: 16px;">Edit Data Pendaftaran & Antrian</h3>
+                        </div>
+                        <button type="button" onclick="tutupModalEdit()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">&times;</button>
+                    </div>
+                    <form method="POST" action="?page=pendaftaran" style="padding: 22px;" onsubmit="return handleEditPendaftaranSubmit(event, this)">
+                        <input type="hidden" name="action" value="edit_pendaftaran">
+                        <input type="hidden" name="queue_id" id="edit_queue_id" value="">
+                        <input type="hidden" name="pam_supervisor_pin" id="edit_pam_supervisor_pin" value="">
+                        <input type="hidden" name="pam_supervisor_name" id="edit_pam_supervisor_name" value="">
+                        <div class="form-group" style="margin-bottom: 14px;">
+                            <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px;">Nama Lengkap Pasien</label>
+                            <input type="text" name="nama_lengkap" id="edit_nama" class="form-input" required style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px;">
+                        </div>
+                        <div style="display: flex; gap: 14px; margin-bottom: 14px;">
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px;">No. Telepon</label>
+                                <input type="text" name="no_telepon" id="edit_telepon" class="form-input" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px;">Jenis Pasien / Penjamin</label>
+                                <select name="jenis_pasien" id="edit_jenis_pasien" class="form-select" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px;">
+                                    <option value="Umum">Umum / Pribadi</option>
+                                    <option value="BPJS">BPJS Kesehatan</option>
+                                    <option value="Asuransi Lain">Asuransi Lain</option>
+                                    <option value="Gratis">Gratis</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 14px;">
+                            <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px;">Alamat</label>
+                            <input type="text" name="alamat" id="edit_alamat" class="form-input" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px;">
+                        </div>
+                        <div style="display: flex; gap: 14px; margin-bottom: 18px;">
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px;">Poliklinik Tujuan</label>
+                                <select name="polyclinic_id" id="edit_polyclinic_id" class="form-select" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px;">
+                                    <?php
+                                    if (!empty($daftar_polyclinics)) {
+                                        foreach ($daftar_polyclinics as $po) {
+                                            echo '<option value="' . htmlspecialchars($po['id']) . '">' . htmlspecialchars($po['nama_poli']) . '</option>';
+                                        }
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px;">Dokter Praktek</label>
+                                <select name="dokter_id" id="edit_dokter_id" class="form-select" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px;">
+                                    <?php
+                                    if (!empty($daftar_dokter_aktif)) {
+                                        foreach ($daftar_dokter_aktif as $do) {
+                                            echo '<option value="' . htmlspecialchars($do['dokter_id']) . '">' . htmlspecialchars($do['nama_lengkap']) . '</option>';
+                                        }
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                            <button type="button" class="btn-secondary" onclick="tutupModalEdit()" style="padding: 9px 16px; border-radius: 8px;">Batal</button>
+                            <button type="submit" class="btn-primary" style="padding: 9px 18px; border-radius: 8px; background: #2563eb; color: white; font-weight: 600;">Simpan Perubahan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <script>
+            function filterRiwayatTable(kw) {
+                const rows = document.querySelectorAll('#tableRiwayatDaftar tbody .row-riwayat');
+                const lk = kw.toLowerCase().trim();
+                rows.forEach(r => {
+                    const text = r.textContent.toLowerCase();
+                    r.style.display = text.includes(lk) ? '' : 'none';
+                });
+            }
+            function bukaModalEdit(data) {
+                const m = document.getElementById('modalEditPendaftaran');
+                if (!m) return;
+                document.getElementById('edit_queue_id').value = data.queue_id || data.id || '';
+                document.getElementById('edit_nama').value = data.nama || data.nama_lengkap || '';
+                document.getElementById('edit_telepon').value = data.no_telepon || data.telepon || '';
+                document.getElementById('edit_alamat').value = data.alamat || '';
+                if (data.jenis_pasien) document.getElementById('edit_jenis_pasien').value = data.jenis_pasien;
+                if (data.polyclinic_id || data.poli_id) document.getElementById('edit_polyclinic_id').value = data.polyclinic_id || data.poli_id;
+                if (data.dokter_id) document.getElementById('edit_dokter_id').value = data.dokter_id;
+                m.style.display = 'flex';
+            }
+            function tutupModalEdit() {
+                const m = document.getElementById('modalEditPendaftaran');
+                if (m) m.style.display = 'none';
+            }
+            function handleEditPendaftaranSubmit(e, formObj) {
+                <?php if (isset($_SESSION['role']) && strtolower(trim($_SESSION['role'])) === 'superuser'): ?>
+                e.preventDefault();
+                openPAMModal('Edit Data Pendaftaran Pasien', 'edit_pendaftaran', () => {
+                    formObj.submit();
+                }, formObj);
+                return false;
+                <?php else: ?>
+                return true;
+                <?php endif; ?>
+            }
+            function filterDokterByPoli(poliId) {
+                const dokSelect = document.getElementById('dokter_id_select');
+                if (!dokSelect) return;
+                const opts = dokSelect.querySelectorAll('option');
+                let firstMatched = false;
+                opts.forEach(opt => {
+                    if (!opt.value) return;
+                    const dPoli = opt.getAttribute('data-poli');
+                    if (!poliId || dPoli === String(poliId) || !dPoli) {
+                        opt.style.display = '';
+                        if (!firstMatched && dPoli === String(poliId)) {
+                            dokSelect.value = opt.value;
+                            firstMatched = true;
+                            updateEstimasiBiaya(opt);
+                        }
+                    } else {
+                        opt.style.display = 'none';
+                    }
+                });
+                if (!firstMatched) {
+                    dokSelect.value = '';
+                    updateEstimasiBiaya(null);
+                }
+            }
+            function updateEstimasiBiaya(opt) {
+                const show = document.getElementById('estimasi_biaya_show');
+                if (!show) return;
+                if (!opt || !opt.value) {
+                    show.value = 'Rp 0 (Pilih Dokter)';
+                    return;
+                }
+                const txt = opt.text;
+                const match = txt.match(/Tarif: Rp ([0-9\.]+)/);
+                if (match && match[1]) {
+                    show.value = 'Rp ' + match[1];
+                } else {
+                    show.value = 'Tertera di Kasir';
+                }
+            }
+            </script>
             <?php
             break;
 
@@ -1265,7 +1615,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
             $is_active = ($page == $item['page']) ? 'class="active"' : '';
         ?>
         <li>
-            <a href="?page=<?= $item['page'] ?>" <?= $is_active ?>>
+            <a href="<?= $item['url'] ?? ('index.php?page=' . $item['page']) ?>" <?= $is_active ?>>
                 <i class="fa-solid <?= htmlspecialchars($item['icon']) ?>"></i>
                 <span><?= htmlspecialchars($item['label']) ?></span>
             </a>
@@ -1273,7 +1623,7 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
         <?php endforeach; ?>
     </ul>
 
-    <a href="?page=pendaftaran" class="btn-quick">
+    <a href="index.php?page=pendaftaran" class="btn-quick">
         <i class="fa-solid fa-plus"></i> <span>Quick Admission</span>
     </a>
 

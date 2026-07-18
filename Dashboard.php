@@ -2,6 +2,10 @@
 try {
     // Memuat koneksi database & sumber data terpusat
     require_once __DIR__ . '/config.php';
+    if (isset($_GET['page']) && $_GET['page'] !== 'dashboard') {
+        header('Location: index.php?page=' . urlencode($_GET['page']));
+        exit;
+    }
     require_once __DIR__ . '/simrs_data.php';
 
     // Menyesuaikan active nav untuk Dashboard
@@ -360,7 +364,7 @@ try {
     <ul class="nav-list">
         <?php foreach ($nav_items as $item): ?>
         <li>
-            <a href="?page=<?= isset($item['page']) ? $item['page'] : 'dashboard' ?>" <?= !empty($item['active']) ? 'class="active"' : '' ?>>
+            <a href="<?= $item['url'] ?? ('index.php?page=' . $item['page']) ?>" <?= !empty($item['active']) ? 'class="active"' : '' ?>>
                 <i class="fa-solid <?= htmlspecialchars($item['icon']) ?>"></i>
                 <?= htmlspecialchars($item['label']) ?>
             </a>
@@ -368,7 +372,7 @@ try {
         <?php endforeach; ?>
     </ul>
 
-    <button class="btn-quick" onclick="window.location.href='?page=pendaftaran'">
+    <button class="btn-quick" onclick="window.location.href='index.php?page=pendaftaran'">
         <i class="fa-solid fa-plus"></i> Quick Admission
     </button>
 
@@ -420,7 +424,7 @@ try {
 
         <div class="stat-grid">
             <?php foreach ($stats_dashboard as $st): ?>
-            <div class="stat-card">
+            <div class="stat-card" <?= !empty($st['url']) ? 'onclick="window.location.href=\'' . $st['url'] . '\'" style="cursor: pointer; transition: all 0.2s;" title="Klik untuk membuka halaman ' . htmlspecialchars($st['label']) . '"' : '' ?>>
                 <div class="stat-left">
                     <div class="stat-icon"><i class="fa-solid <?= $st['icon'] ?>"></i></div>
                     <div class="stat-label"><?= $st['label'] ?></div>
@@ -514,6 +518,75 @@ try {
                         <?php endforeach; ?>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header">
+                <div>
+                    <h2><i class="fa-solid fa-user-doctor" style="color: #2e7d32; margin-right: 8px;"></i> Jadwal Praktik & Estimasi Biaya Dokter</h2>
+                    <p style="font-size: 12px; color: var(--gray-400); font-weight: normal; margin-top: 2px;">Referensi lengkap jadwal dokter serta perbedaan tarif Dokter Spesialis dan Dokter Umum untuk pertimbangan pasien</p>
+                </div>
+                <div class="btn-group">
+                    <span style="font-size: 12px; font-weight: 600; padding: 4px 10px; background: #e0e7ff; color: #3730a3; border-radius: 6px;">Spesialis: Rp 150.000 - Rp 200.000</span>
+                    <span style="font-size: 12px; font-weight: 600; padding: 4px 10px; background: #dcfce7; color: #166534; border-radius: 6px;">Umum: Rp 50.000</span>
+                </div>
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--gray-50); text-align: left; font-size: 12px; color: var(--gray-600);">
+                            <th style="padding: 12px 16px;">Nama Dokter</th>
+                            <th style="padding: 12px 16px;">Poliklinik / Spesialisasi</th>
+                            <th style="padding: 12px 16px;">Kategori</th>
+                            <th style="padding: 12px 16px;">Jadwal Praktik</th>
+                            <th style="padding: 12px 16px;">Estimasi Biaya Jasa</th>
+                            <th style="padding: 12px 16px;">Status / Kuota</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($jadwal_dokter_list)): ?>
+                        <?php foreach ($jadwal_dokter_list as $dok): 
+                            $is_spesialis = (stripos($dok['jenis_dokter'] ?? '', 'spesialis') !== false || stripos($dok['spesialisasi'] ?? '', 'spesialis') !== false || stripos($dok['nama_lengkap'] ?? '', 'Sp.') !== false);
+                            $fee = !empty($dok['biaya_jasa']) ? floatval($dok['biaya_jasa']) : ($is_spesialis ? 150000 : 50000);
+                            $badge_type = $is_spesialis ? 'background: #fef3c7; color: #92400e; border: 1px solid #fde68a;' : 'background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;';
+                        ?>
+                        <tr style="border-bottom: 1px solid var(--gray-100); font-size: 13px;">
+                            <td style="padding: 12px 16px; font-weight: 600; color: var(--gray-800);">
+                                <i class="fa-solid <?= $is_spesialis ? 'fa-user-md' : 'fa-stethoscope' ?>" style="color: #2e7d32; margin-right: 6px;"></i>
+                                <?= htmlspecialchars($dok['nama_lengkap'] ?? 'Dokter') ?>
+                            </td>
+                            <td style="padding: 12px 16px; color: var(--gray-600);"><?= htmlspecialchars($dok['spesialisasi'] ?? 'Umum') ?></td>
+                            <td style="padding: 12px 16px;">
+                                <span style="padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; <?= $badge_type ?>">
+                                    <?= htmlspecialchars($dok['jenis_dokter'] ?? ($is_spesialis ? 'Spesialis' : 'Umum')) ?>
+                                </span>
+                            </td>
+                            <td style="padding: 12px 16px; color: var(--gray-600);">
+                                <i class="fa-regular fa-calendar-days" style="color: #64748b; margin-right: 4px;"></i> <?= htmlspecialchars($dok['hari_praktik'] ?? 'Senin - Jumat') ?>
+                                <span style="color: #94a3b8; font-size: 12px; margin-left: 4px;">(<?= htmlspecialchars(substr($dok['jam_mulai'] ?? '08:00', 0, 5) . ' - ' . substr($dok['jam_selesai'] ?? '14:00', 0, 5)) ?>)</span>
+                            </td>
+                            <td style="padding: 12px 16px; font-weight: 700; color: #16a34a;">
+                                Rp <?= number_format($fee, 0, ',', '.') ?>
+                            </td>
+                            <td style="padding: 12px 16px;">
+                                <?php 
+                                $kuota = intval($dok['kuota'] ?? 20);
+                                $terisi = intval($dok['terisi'] ?? 0);
+                                $sisa = max(0, $kuota - $terisi);
+                                if ($sisa > 0): ?>
+                                    <span style="color: #15803d; font-weight: 600; font-size: 12px;"><i class="fa-solid fa-check-circle"></i> Tersedia (Sisa <?= $sisa ?>)</span>
+                                <?php else: ?>
+                                    <span style="color: #dc2626; font-weight: 600; font-size: 12px;"><i class="fa-solid fa-times-circle"></i> Penuh</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php else: ?>
+                        <tr><td colspan="6" style="text-align: center; color: var(--gray-400); padding: 24px;">Data jadwal dokter belum tersedia</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
 

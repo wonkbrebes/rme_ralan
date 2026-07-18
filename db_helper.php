@@ -105,6 +105,31 @@ function ensure_supabase_schema_updated($pdo) {
             jumlah INTEGER NOT NULL DEFAULT 1,
             subtotal NUMERIC(12,2) NOT NULL,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        )",
+
+        // revisi tester A-G schema additions
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(255) NULL",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS nama VARCHAR(255) NULL",
+        "ALTER TABLE users ALTER COLUMN nama DROP NOT NULL",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(30) DEFAULT 'admisi'",
+        "ALTER TABLE users ALTER COLUMN role_id DROP NOT NULL",
+        "ALTER TABLE dokter ADD COLUMN IF NOT EXISTS jenis_dokter VARCHAR(30) DEFAULT 'Umum'",
+        "ALTER TABLE dokter ADD COLUMN IF NOT EXISTS biaya_jasa NUMERIC(12, 2) DEFAULT 50000",
+        "ALTER TABLE obat ADD COLUMN IF NOT EXISTS harga NUMERIC(12, 2) DEFAULT 10000",
+        "ALTER TABLE queues ADD COLUMN IF NOT EXISTS dokter_id BIGINT NULL REFERENCES dokter(dokter_id) ON DELETE SET NULL",
+        "ALTER TABLE queues ADD COLUMN IF NOT EXISTS biaya_jasa NUMERIC(12, 2) DEFAULT 50000",
+        "ALTER TABLE visits ADD COLUMN IF NOT EXISTS biaya_jasa NUMERIC(12, 2) DEFAULT 50000",
+        "CREATE TABLE IF NOT EXISTS pam_approvals (
+            id BIGSERIAL PRIMARY KEY,
+            requested_by BIGINT NULL REFERENCES users(id) ON DELETE CASCADE,
+            action_type VARCHAR(100) NOT NULL,
+            target_table VARCHAR(100) NULL,
+            target_id VARCHAR(100) NULL,
+            payload JSONB NULL,
+            status VARCHAR(30) DEFAULT 'PENDING',
+            approved_by BIGINT NULL REFERENCES users(id) ON DELETE SET NULL,
+            reason TEXT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         )"
     ];
 
@@ -153,8 +178,42 @@ function db_select_one($sql, $params = []) {
 function db_insert($table, $data) {
     $columns = implode(', ', array_keys($data));
     $placeholders = ':' . implode(', :', array_keys($data));
-    $sql = "INSERT INTO $table ($columns) VALUES ($placeholders)";
-    db_query($sql, $data);
+    
+    $pk_map = [
+        'users' => 'id',
+        'patients' => 'id',
+        'queues' => 'id',
+        'visits' => 'kunjungan_id',
+        'rekam_medis' => 'rm_id',
+        'resep' => 'id',
+        'resep_items' => 'id',
+        'tagihan' => 'id',
+        'tagihan_detail' => 'id',
+        'dokter' => 'dokter_id',
+        'obat' => 'obat_id',
+        'polyclinics' => 'id',
+        'jadwal_dokter' => 'jadwal_id',
+        'emr_notes' => 'id',
+        'order_lab' => 'id',
+        'order_radiologi' => 'id',
+        'surat_rujukan' => 'id'
+    ];
+    $pk = isset($pk_map[$table]) ? $pk_map[$table] : 'id';
+    
+    $sql = "INSERT INTO $table ($columns) VALUES ($placeholders) RETURNING *";
+    $stmt = db_query($sql, $data);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row) {
+        if (isset($row[$pk])) {
+            return is_numeric($row[$pk]) ? intval($row[$pk]) : $row[$pk];
+        }
+        foreach ($row as $k => $v) {
+            if ($k === 'id' || str_ends_with($k, '_id')) {
+                return is_numeric($v) ? intval($v) : $v;
+            }
+        }
+        return true;
+    }
     return true;
 }
 
@@ -172,8 +231,18 @@ function db_update($table, $data, $whereClause, $whereParams = []) {
     foreach ($data as $col => $val) {
         $params["val_$col"] = $val;
     }
-    foreach ($whereParams as $k => $v) {
-        $params[$k] = $v;
+    
+    if (is_array($whereClause)) {
+        $whereParts = [];
+        foreach ($whereClause as $k => $v) {
+            $whereParts[] = "$k = :where_$k";
+            $params["where_$k"] = $v;
+        }
+        $whereClause = implode(' AND ', $whereParts);
+    } else {
+        foreach ($whereParams as $k => $v) {
+            $params[$k] = $v;
+        }
     }
     
     $sql = "UPDATE $table SET $setString WHERE $whereClause";
@@ -185,7 +254,18 @@ function db_update($table, $data, $whereClause, $whereParams = []) {
  * Delete data dari tabel
  */
 function db_delete($table, $whereClause, $whereParams = []) {
+    $params = [];
+    if (is_array($whereClause)) {
+        $whereParts = [];
+        foreach ($whereClause as $k => $v) {
+            $whereParts[] = "$k = :where_$k";
+            $params["where_$k"] = $v;
+        }
+        $whereClause = implode(' AND ', $whereParts);
+    } else {
+        $params = $whereParams;
+    }
     $sql = "DELETE FROM $table WHERE $whereClause";
-    db_query($sql, $whereParams);
+    db_query($sql, $params);
     return true;
 }

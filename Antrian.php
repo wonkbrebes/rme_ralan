@@ -2,6 +2,10 @@
 try {
     // Memuat koneksi database & sumber data terpusat
     require_once __DIR__ . '/config.php';
+    if (isset($_GET['page']) && $_GET['page'] !== 'antrian') {
+        header('Location: index.php?page=' . urlencode($_GET['page']));
+        exit;
+    }
     require_once __DIR__ . '/simrs_data.php';
 
     // Menyesuaikan variabel untuk kompatibilitas tampilan halaman Antrian
@@ -18,6 +22,7 @@ try {
     foreach ($antrian as $row) {
         $statusKey = normalize_queue_status($row['status'] ?? '');
         $antrian_display[] = [
+            'queue_id' => $row['queue_id'] ?? 0,
             'no' => $row['no'] ?? '-',
             'nama' => $row['nama'] ?? '-',
             'poli' => $row['poli'] ?? '-',
@@ -25,6 +30,7 @@ try {
             'status' => $statusKey,
             'status_label' => get_queue_status_label($statusKey),
             'badge_class' => get_queue_badge_class($statusKey),
+            'poli_kosong' => !empty($row['poli_kosong'])
         ];
     }
     $antrian = $antrian_display;
@@ -471,7 +477,7 @@ try {
     <ul class="nav-list">
         <?php foreach ($nav_items as $item): ?>
         <li>
-            <a href="?page=<?= $item['page'] ?>" <?= !empty($item['active']) ? 'class="active"' : '' ?>>
+            <a href="<?= $item['url'] ?? ('index.php?page=' . $item['page']) ?>" <?= !empty($item['active']) ? 'class="active"' : '' ?>>
                 <i class="fa-solid <?= htmlspecialchars($item['icon']) ?>"></i>
                 <?= htmlspecialchars($item['label']) ?>
             </a>
@@ -622,11 +628,44 @@ try {
                             <td><?= htmlspecialchars($row['poli']) ?></td>
                             <td><?= htmlspecialchars($row['estimasi']) ?></td>
                             <td>
-                                <span class="badge-status <?= htmlspecialchars($row['badge_class'] ?? 'badge-menunggu') ?>">
-                                    <?= htmlspecialchars($row['status_label'] ?? 'Menunggu') ?>
+                                <?php
+                                $status_key = normalize_queue_status($row['status'] ?? '');
+                                $status_label = get_queue_status_label($status_key);
+                                $status_class = get_queue_badge_class($status_key);
+                                ?>
+                                <span class="badge-status <?= htmlspecialchars($status_class) ?>"><?= htmlspecialchars($status_label) ?></span>
+                                <?php if (!empty($row['poli_kosong'])): ?>
+                                <span class="badge-status" style="background:#fef3c7; color:#b45309; margin-top:4px; display:inline-block; font-weight:700; border:1px solid #f59e0b;" title="Poli tujuan sedang kosong, pasien ini dapat didahulukan!">
+                                    <i class="fa-solid fa-bolt"></i> Siap Masuk (Poli Kosong)
                                 </span>
+                                <?php endif; ?>
                             </td>
-                            <td><a href="?page=emr_dokter&no_antrian=<?= urlencode($row['no']) ?>&nama=<?= urlencode($row['nama']) ?>" class="btn-detail" style="text-decoration:none; display:inline-block;">Detail / Dilayani</a></td>
+                            <td>
+                                <button type="button" class="btn-detail" onclick="announceSpecificQueue('<?= htmlspecialchars(addslashes($row['no'] ?? '')) ?>', '<?= htmlspecialchars(addslashes($row['poli'] ?? '')) ?>')" style="margin-right:4px; background:#e0f2fe; color:#0284c7; border-color:#38bdf8;" title="Panggil Suara Pasien Ini">
+                                    <i class="fa-solid fa-volume-high"></i>
+                                </button>
+                                <?php if ($status_key === 'menunggu'): ?>
+                                <form method="POST" action="?page=antrian" style="display:inline; margin-right: 4px;">
+                                    <input type="hidden" name="action" value="panggil_antrian">
+                                    <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($row['no']) ?>">
+                                    <button type="submit" class="btn-detail" style="<?= !empty($row['poli_kosong']) ? 'background:#d97706; color:#fff; border-color:#b45309; font-weight:700;' : '' ?>">
+                                        <?= !empty($row['poli_kosong']) ? '<i class="fa-solid fa-bolt"></i> Panggil Cepat' : 'Panggil' ?>
+                                    </button>
+                                </form>
+                                <?php elseif ($status_key === 'dipanggil'): ?>
+                                <form method="POST" action="?page=antrian" style="display:inline; margin-right: 4px;">
+                                    <input type="hidden" name="action" value="konfirmasi_masuk">
+                                    <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($row['no']) ?>">
+                                    <button type="submit" class="btn-detail" style="background:#16a34a; color:#fff; border-color:#15803d; font-weight:600;">Masuk Ruangan</button>
+                                </form>
+                                <form method="POST" action="?page=antrian" style="display:inline; margin-right: 4px;">
+                                    <input type="hidden" name="action" value="tunda_antrian">
+                                    <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($row['no']) ?>">
+                                    <button type="submit" class="btn-detail" style="background:#fee2e2; color:#dc2626; border-color:#f87171;">Kembali Menunggu</button>
+                                </form>
+                                <?php endif; ?>
+                                <a href="?page=emr_dokter&no_antrian=<?= urlencode($row['no']) ?>&nama=<?= urlencode($row['nama']) ?>" class="btn-detail" style="text-decoration:none; display:inline-block;">Detail / Dilayani</a>
+                            </td>
                         </tr>
                         <?php endforeach; ?>
                         <?php else: ?>
@@ -672,6 +711,24 @@ try {
                             <strong><?= htmlspecialchars($sedang_dilayani['estimasi']) ?></strong>
                         </div>
                     </div>
+
+                    <div class="dilayani-actions" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:16px;">
+                        <button type="button" class="btn-detail" onclick="announceQueueNumber()" style="background:#2563eb; color:#fff; border:none; padding:8px 12px; border-radius:8px; font-weight:600; flex:1; justify-content:center; display:flex; align-items:center; gap:6px;">
+                            <i class="fa-solid fa-volume-high"></i> Panggil Suara
+                        </button>
+                        <?php if (($sedang_dilayani['status_key'] ?? '') === 'dipanggil'): ?>
+                        <form method="POST" action="?page=antrian" style="margin:0; flex:1;">
+                            <input type="hidden" name="action" value="konfirmasi_masuk">
+                            <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($sedang_dilayani['no']) ?>">
+                            <button type="submit" class="btn-detail" style="background:#16a34a; color:#fff; border:none; padding:8px 12px; border-radius:8px; font-weight:600; width:100%;">Masuk Ruangan</button>
+                        </form>
+                        <form method="POST" action="?page=antrian" style="margin:0; flex:1;">
+                            <input type="hidden" name="action" value="tunda_antrian">
+                            <input type="hidden" name="no_antrian" value="<?= htmlspecialchars($sedang_dilayani['no']) ?>">
+                            <button type="submit" class="btn-detail" style="background:#dc2626; color:#fff; border:none; padding:8px 12px; border-radius:8px; font-weight:600; width:100%;">Kembali Menunggu</button>
+                        </form>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <div class="poli-card">
@@ -681,9 +738,12 @@ try {
                         <div class="poli-item">
                             <div class="poli-top">
                                 <div class="poli-icon"><i class="fa-solid <?= htmlspecialchars($poli['icon']) ?>"></i></div>
-                                <div>
+                                <div style="flex:1;">
                                     <div class="poli-name"><?= htmlspecialchars($poli['nama']) ?></div>
-                                    <div class="poli-count"><?= $poli['sekarang'] ?> / <?= $poli['total'] ?></div>
+                                    <div class="poli-count" style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                                        <span><?= $poli['sekarang'] ?> / <?= $poli['total'] ?></span>
+                                        <?= $poli['badge_html'] ?? '' ?>
+                                    </div>
                                 </div>
                             </div>
                             <div class="progress-bar">
@@ -741,6 +801,36 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('active');
         });
     });
+
+    window.announceQueueNumber = function() {
+        const noNode = document.querySelector('.antrian-box .no');
+        const poliNode = document.querySelector('.dilayani-header p');
+        if (!noNode) {
+            alert('Nomor antrian belum tersedia.');
+            return;
+        }
+        const nomor = noNode.textContent.trim();
+        const poli = poliNode ? poliNode.textContent.trim() : 'ruang pemeriksaan';
+        if (!('speechSynthesis' in window)) {
+            alert('Browser tidak mendukung speaker announce.');
+            return;
+        }
+        const utter = new SpeechSynthesisUtterance('Nomor antrian ' + nomor + ' dipersilakan menuju ' + poli + '.');
+        utter.lang = 'id-ID';
+        window.speechSynthesis.speak(utter);
+    };
+
+    window.announceSpecificQueue = function(nomor, poli) {
+        if (!nomor) return;
+        if (!('speechSynthesis' in window)) {
+            alert('Browser tidak mendukung speaker announce.');
+            return;
+        }
+        const targetPoli = poli ? poli : 'ruang pemeriksaan';
+        const utter = new SpeechSynthesisUtterance('Nomor antrian ' + nomor + ' dipersilakan bersiap menuju ' + targetPoli + '.');
+        utter.lang = 'id-ID';
+        window.speechSynthesis.speak(utter);
+    };
 });
 </script>
 </body>

@@ -5,8 +5,9 @@
  */
 date_default_timezone_set('Asia/Jakarta');
 
-// Memanggil helper database Supabase
+// Memanggil helper database Supabase & middleware autentikasi RBAC
 require_once __DIR__ . '/db_helper.php';
+require_once __DIR__ . '/auth.php';
 
 $db_conn_error = '';
 try {
@@ -59,6 +60,8 @@ function normalize_queue_status($status)
         'dalam_pemeriksaan' => 'dalam_pemeriksaan',
         'sedang dilayani' => 'dipanggil',
         'dilayani' => 'dipanggil',
+        'menunggu farmasi' => 'menunggu_farmasi',
+        'menunggu_farmasi' => 'menunggu_farmasi',
         'menunggu kasir' => 'menunggu_kasir',
         'menunggu_kasir' => 'menunggu_kasir',
         'selesai emr' => 'menunggu_kasir',
@@ -80,6 +83,8 @@ function get_queue_status_label($status)
             return 'Dipanggil';
         case 'dalam_pemeriksaan':
             return 'Sedang Dilayani';
+        case 'menunggu_farmasi':
+            return 'Menunggu Farmasi';
         case 'menunggu_kasir':
             return 'Selesai EMR (Menunggu Kasir)';
         case 'selesai':
@@ -96,6 +101,8 @@ function get_queue_badge_class($status)
     switch (normalize_queue_status($status)) {
         case 'dipanggil':
         case 'dalam_pemeriksaan':
+            return 'badge-dipanggil';
+        case 'menunggu_farmasi':
             return 'badge-dipanggil';
         case 'menunggu_kasir':
             return 'badge-menunggu-kasir';
@@ -115,6 +122,8 @@ function get_queue_db_status($status)
             return 'Dipanggil';
         case 'dalam_pemeriksaan':
             return 'Dalam Pemeriksaan';
+        case 'menunggu_farmasi':
+            return 'Menunggu Farmasi';
         case 'menunggu_kasir':
             return 'Menunggu Kasir';
         case 'selesai':
@@ -132,6 +141,8 @@ function get_queue_priority($status)
         case 'dipanggil':
             return 1;
         case 'dalam_pemeriksaan':
+            return 2;
+        case 'menunggu_farmasi':
             return 2;
         case 'menunggu_kasir':
             return 3;

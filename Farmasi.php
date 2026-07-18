@@ -2,6 +2,10 @@
 try {
     // Memuat koneksi database & sumber data terpusat
     require_once __DIR__ . '/config.php';
+    if (isset($_GET['page']) && $_GET['page'] !== 'farmasi') {
+        header('Location: index.php?page=' . urlencode($_GET['page']));
+        exit;
+    }
     require_once __DIR__ . '/simrs_data.php';
 
     // Menyesuaikan active nav untuk Farmasi
@@ -361,7 +365,7 @@ try {
     <ul class="nav-list">
         <?php foreach ($nav_items as $item): ?>
         <li>
-            <a href="?page=<?= isset($item['page']) ? $item['page'] : 'dashboard' ?>" <?= !empty($item['active']) ? 'class="active"' : '' ?>>
+            <a href="<?= $item['url'] ?? ('index.php?page=' . $item['page']) ?>" <?= !empty($item['active']) ? 'class="active"' : '' ?>>
                 <i class="fa-solid <?= htmlspecialchars($item['icon']) ?>"></i>
                 <?= htmlspecialchars($item['label']) ?>
             </a>
@@ -369,7 +373,7 @@ try {
         <?php endforeach; ?>
     </ul>
 
-    <button class="btn-quick" onclick="window.location.href='?page=pendaftaran'">
+    <button class="btn-quick" onclick="window.location.href='index.php?page=pendaftaran'">
         <i class="fa-solid fa-plus"></i> Quick Admission
     </button>
 
@@ -527,7 +531,7 @@ try {
             <div class="card">
                 <div class="widget-title">
                     <span><i class="fa-solid fa-triangle-exclamation"></i> Stok Menipis</span>
-                    <a href="#" class="widget-link">Lihat Semua</a>
+                    <a href="#" class="widget-link" onclick="document.querySelector('.table-container').scrollIntoView({behavior: 'smooth'}); return false;">Lihat Semua</a>
                 </div>
                 <div class="list-widget">
                     <?php if (!empty($stok_menipis)): ?>
@@ -554,7 +558,7 @@ try {
             <div class="card">
                 <div class="widget-title">
                     <span><i class="fa-solid fa-receipt"></i> Resep Terbaru</span>
-                    <a href="#" class="widget-link">Lihat Semua</a>
+                    <a href="index.php?page=emr_dokter" class="widget-link">Lihat Semua</a>
                 </div>
                 <div class="list-widget">
                     <?php if (!empty($resep_terbaru)): ?>

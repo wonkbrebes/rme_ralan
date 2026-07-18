@@ -2,6 +2,10 @@
 try {
     // Memuat koneksi database & sumber data terpusat (sudah dinamis)
     require_once __DIR__ . '/config.php';
+    if (isset($_GET['page']) && $_GET['page'] !== 'kasir') {
+        header('Location: index.php?page=' . urlencode($_GET['page']));
+        exit;
+    }
     require_once __DIR__ . '/simrs_data.php';
 
     // Variabel pasien sudah di-load dari simrs_data.php (query DB)
@@ -178,7 +182,7 @@ try {
     </div>
     <ul class="nav-list">
         <?php foreach ($nav_items as $item): ?>
-            <li><a href="?page=<?= isset($item['page']) ? $item['page'] : 'dashboard' ?>" class="<?= !empty($item['active']) ? 'active':'' ?>"><i class="fa-solid <?= $item['icon'] ?>"></i> <?= $item['label'] ?></a></li>
+            <li><a href="<?= $item['url'] ?? ('index.php?page=' . $item['page']) ?>" class="<?= !empty($item['active']) ? 'active':'' ?>"><i class="fa-solid <?= $item['icon'] ?>"></i> <?= $item['label'] ?></a></li>
         <?php endforeach; ?>
     </ul>
 </aside>
