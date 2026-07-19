@@ -558,32 +558,37 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                         </div>
                     </form>
                     <script>
-                    const masterPasienList = [
-                        <?php 
-                        if (!empty($daftar_pasien_master)) {
-                            foreach ($daftar_pasien_master as $pm) {
-                                echo json_encode($pm, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) . ",";
-                            }
-                        }
-                        ?>
-                    ];
+                    let searchTimeoutPasien = null;
 
                     function handleLiveSearchPasien(keyword) {
                         const resultsDiv = document.getElementById('dropdown-pasien-results');
                         if (!resultsDiv) return;
-                        const kw = (keyword || '').trim().toLowerCase();
-                        if (kw.length < 1) {
-                            renderPasienResults(masterPasienList.slice(0, 12));
-                            return;
-                        }
-                        const filtered = masterPasienList.filter(p => {
-                            const rm = (p.no_rm || '').toLowerCase();
-                            const nm = (p.nama_lengkap || '').toLowerCase();
-                            const nik = (p.nik || '').toLowerCase();
-                            const tel = (p.no_telepon || '').toLowerCase();
-                            return rm.includes(kw) || nm.includes(kw) || nik.includes(kw) || tel.includes(kw);
-                        });
-                        renderPasienResults(filtered.slice(0, 15));
+
+                        if (searchTimeoutPasien) clearTimeout(searchTimeoutPasien);
+
+                        const kw = (keyword || '').trim();
+
+                        resultsDiv.innerHTML = '<div style="padding: 12px; text-align: center; color: #64748b; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Mencari data pasien...</div>';
+                        resultsDiv.style.display = 'block';
+
+                        searchTimeoutPasien = setTimeout(() => {
+                            fetch(`api/search_pasien.php?keyword=${encodeURIComponent(kw)}`)
+                                .then(response => {
+                                    if (!response.ok) throw new Error('Network response was not ok');
+                                    return response.json();
+                                })
+                                .then(res => {
+                                    if (res.status === 'success') {
+                                        renderPasienResults(res.data);
+                                    } else {
+                                        renderPasienResults([]);
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error fetching pasien:', error);
+                                    resultsDiv.innerHTML = '<div style="padding: 12px; text-align: center; color: #ef4444; font-size: 13px;"><i class="fa-solid fa-triangle-exclamation"></i> Gagal mengambil data dari server.</div>';
+                                });
+                        }, 300);
                     }
 
                     function renderPasienResults(list) {

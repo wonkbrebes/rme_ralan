@@ -770,32 +770,37 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
                         </div>
                     </form>
                     <script>
-                    const masterPasienList = [
-                        <?php 
-                        if (!empty($daftar_pasien_master)) {
-                            foreach ($daftar_pasien_master as $pm) {
-                                echo json_encode($pm, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) . ",";
-                            }
-                        }
-                        ?>
-                    ];
+                    let searchTimeoutPasien = null;
 
                     function handleLiveSearchPasien(keyword) {
                         const resultsDiv = document.getElementById('dropdown-pasien-results');
                         if (!resultsDiv) return;
-                        const kw = (keyword || '').trim().toLowerCase();
-                        if (kw.length < 1) {
-                            renderPasienResults(masterPasienList.slice(0, 12));
-                            return;
-                        }
-                        const filtered = masterPasienList.filter(p => {
-                            const rm = (p.no_rm || '').toLowerCase();
-                            const nm = (p.nama_lengkap || '').toLowerCase();
-                            const nik = (p.nik || '').toLowerCase();
-                            const tel = (p.no_telepon || '').toLowerCase();
-                            return rm.includes(kw) || nm.includes(kw) || nik.includes(kw) || tel.includes(kw);
-                        });
-                        renderPasienResults(filtered.slice(0, 15));
+
+                        if (searchTimeoutPasien) clearTimeout(searchTimeoutPasien);
+
+                        const kw = (keyword || '').trim();
+
+                        resultsDiv.innerHTML = '<div style="padding: 12px; text-align: center; color: #64748b; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Mencari data pasien...</div>';
+                        resultsDiv.style.display = 'block';
+
+                        searchTimeoutPasien = setTimeout(() => {
+                            fetch(`api/search_pasien.php?keyword=${encodeURIComponent(kw)}`)
+                                .then(response => {
+                                    if (!response.ok) throw new Error('Network response was not ok');
+                                    return response.json();
+                                })
+                                .then(res => {
+                                    if (res.status === 'success') {
+                                        renderPasienResults(res.data);
+                                    } else {
+                                        renderPasienResults([]);
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error fetching pasien:', error);
+                                    resultsDiv.innerHTML = '<div style="padding: 12px; text-align: center; color: #ef4444; font-size: 13px;"><i class="fa-solid fa-triangle-exclamation"></i> Gagal mengambil data dari server.</div>';
+                                });
+                        }, 300);
                     }
 
                     function renderPasienResults(list) {
@@ -2052,7 +2057,8 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
             </div>
 
             <script>
-            const daftarObatData = <?= json_encode($daftar_obat ?? []) ?>;
+            let daftarObatData = <?= json_encode($daftar_obat ?? []) ?>;
+            let searchTimeoutObat = null;
 
             function switchFarmasiTab(tabName) {
                 document.querySelectorAll('.farmasi-panel').forEach(p => p.style.display = 'none');
@@ -2077,12 +2083,56 @@ function renderContent($page, $stats_dashboard, $antrian_terkini, $distribusi, $
             }
 
             function filterTabelObat() {
-                const query = (document.getElementById('searchObatInput').value || '').toLowerCase();
-                const rows = document.querySelectorAll('#tabelDaftarObat tbody .obat-row');
-                rows.forEach(row => {
-                    const text = row.textContent.toLowerCase();
-                    row.style.display = text.includes(query) ? '' : 'none';
-                });
+                const query = (document.getElementById('searchObatInput').value || '').trim();
+                const tbody = document.querySelector('#tabelDaftarObat tbody');
+                if (!tbody) return;
+
+                if (searchTimeoutObat) clearTimeout(searchTimeoutObat);
+
+                if (query === '') {
+                    // Jika kosong, kembalikan tampilan dari daftarObatData awal atau ambil ulang 25 data
+                }
+
+                searchTimeoutObat = setTimeout(() => {
+                    fetch(`api/search_obat.php?keyword=${encodeURIComponent(query)}`)
+                        .then(res => res.json())
+                        .then(res => {
+                            if (res.status === 'success' && Array.isArray(res.data)) {
+                                daftarObatData = res.data;
+                                if (res.data.length === 0) {
+                                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--gray-400); padding: 30px;"><i class="fa-solid fa-box-open" style="font-size: 20px; display:block; margin-bottom: 6px;"></i> Obat tidak ditemukan dengan kata kunci tersebut.</td></tr>';
+                                    return;
+                                }
+                                let html = '';
+                                res.data.forEach(row => {
+                                    const stokVal = parseInt(row.stok_num || row.stok || 0);
+                                    let badgeClass = 'badge-aman';
+                                    let statusLabel = row.status || 'Aman';
+                                    if (stokVal <= 0) { badgeClass = 'badge-habis'; statusLabel = 'Habis'; }
+                                    elseif (stokVal <= 15) { badgeClass = 'badge-menipis'; statusLabel = 'Menipis'; }
+                                    
+                                    html += `<tr class="obat-row">
+                                        <td class="obat-code">${row.kode || '-'}</td>
+                                        <td class="obat-name">${row.nama || '-'}</td>
+                                        <td>${row.kategori || '-'}</td>
+                                        <td>${row.satuan || '-'}</td>
+                                        <td style="font-weight: 600; color: var(--gray-800);">${row.stok || '0'}</td>
+                                        <td>Rp ${row.harga ? Number(row.harga).toLocaleString('id-ID') : '10.000'}</td>
+                                        <td><span class="status-badge ${badgeClass}">${statusLabel}</span></td>
+                                        <td>
+                                            <button onclick="bukaModalRestock('${row.obat_id || row.id || ''}', '${(row.nama || '').replace(/'/g, "\\'")}', ${stokVal}, ${row.harga || 10000})" class="btn-restock">
+                                                <i class="fa-solid fa-boxes-packing"></i> Opname / Edit
+                                            </button>
+                                        </td>
+                                    </tr>`;
+                                });
+                                tbody.innerHTML = html;
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Error fetching obat:', err);
+                        });
+                }, 300);
             }
 
             function bukaModalProsesFarmasi(qid, noAntrian, namaPasien, itemsJson) {

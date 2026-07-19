@@ -179,8 +179,8 @@ if (function_exists('db_select')) {
             $cnt_bulan_row = db_select_one("SELECT COUNT(*) as total FROM patients WHERE created_at >= date_trunc('month', (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Jakarta'))");
             $cnt_bulan = $cnt_bulan_row ? intval($cnt_bulan_row['total']) : 0;
 
-            // Query seluruh master data pasien untuk dropdown pendaftaran antrian pasien lama
-            $rows_master = db_select("SELECT id, no_rm, nama_lengkap, nik, tanggal_lahir, jenis_kelamin, alamat, no_telepon, no_bpjs, gol_darah, jenis_pasien FROM patients ORDER BY nama_lengkap ASC");
+            // Query master data pasien awal (dibatas 15 baris agar cepat, pencarian lengkap via AJAX Fetch API)
+            $rows_master = db_select("SELECT id, no_rm, nama_lengkap, nik, tanggal_lahir, jenis_kelamin, alamat, no_telepon, no_bpjs, gol_darah, jenis_pasien FROM patients ORDER BY id DESC LIMIT 15");
             if (is_array($rows_master)) {
                 $daftar_pasien_master = $rows_master;
             }
@@ -516,8 +516,8 @@ if (function_exists('db_select')) {
         // 3d. FARMASI — Daftar Obat, Stok Menipis, Resep (Dinamis)
         // ============================================================
         try {
-            // Daftar obat dari tabel obat
-            $rows_obat = db_select("SELECT obat_id, kode_obat, nama_obat, satuan, stok FROM obat WHERE is_active = true ORDER BY nama_obat ASC");
+            // Daftar obat awal dari tabel obat (dibatasi 25 baris agar cepat, pencarian lengkap via AJAX Fetch API)
+            $rows_obat = db_select("SELECT obat_id, kode_obat, nama_obat, satuan, stok FROM obat WHERE is_active = true ORDER BY nama_obat ASC LIMIT 25");
             if (is_array($rows_obat) && !empty($rows_obat)) {
                 $daftar_obat = [];
                 $cnt_aman = 0; $cnt_menipis = 0; $cnt_habis = 0;
@@ -891,7 +891,7 @@ if (function_exists('db_select')) {
         $daftar_users = [];
         if ($page === 'manajemen_user' || (isset($_SESSION['role']) && in_array(strtolower(trim($_SESSION['role'])), ['superuser', 'supervisor'], true))) {
             try {
-                $rows_usr = db_select("SELECT id, name, email, role, TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY HH24:MI') as tgl_dibuat FROM users ORDER BY id ASC");
+                $rows_usr = db_select("SELECT id, name, email, role, TO_CHAR(created_at AT TIME ZONE 'Asia/Jakarta', 'DD Mon YYYY HH24:MI') as tgl_dibuat FROM users ORDER BY id ASC LIMIT 50");
                 if (is_array($rows_usr)) {
                     $daftar_users = $rows_usr;
                 }
